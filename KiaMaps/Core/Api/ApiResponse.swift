@@ -12,13 +12,25 @@ struct ApiResponse<Result: Decodable>: Decodable {
     let returnCode: String
     let resultCode: String
     let result: Result
-    let resultd: UUID
-    
+    let resultId: UUID
+
     private enum CodingKeys: String, CodingKey {
         case returnCode = "retCode"
         case resultCode = "resCode"
         case result = "resMsg"
-        case resultd = "msgId"
+        case resultId = "msgId"
+    }
+}
+
+struct ApiResponseEmpty: Decodable {
+    let returnCode: String
+    let resultCode: String
+    let resultId: UUID
+
+    private enum CodingKeys: String, CodingKey {
+        case returnCode = "retCode"
+        case resultCode = "resCode"
+        case resultId = "msgId"
     }
 }
 

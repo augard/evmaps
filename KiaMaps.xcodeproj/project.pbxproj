@@ -196,6 +196,35 @@
 			path = Vehicle;
 			sourceTree = "<group>";
 		};
+		5550E6362C24A18C008B5328 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				55DE31882C1348F1001D7302 /* Authorization */,
+				55141EFD2C085B9E00F56A68 /* Api */,
+				55DE31652C11D381001D7302 /* Responses */,
+				553177F52C1B029900A0E60C /* Vehicle */,
+				557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		5550E6372C24A1DA008B5328 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				5550E6382C24A1E4008B5328 /* Views */,
+				CDA8AD8422E8CF7C00B1EAF8 /* AppDelegate.swift */,
+				55141EFB2C07B77500F56A68 /* MainView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		5550E6382C24A1E4008B5328 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 		55DE31652C11D381001D7302 /* Responses */ = {
 			isa = PBXGroup;
 			children = (
@@ -244,13 +273,8 @@
 		CDA8AD8322E8CF7B00B1EAF8 /* KiaMaps */ = {
 			isa = PBXGroup;
 			children = (
-				55DE31882C1348F1001D7302 /* Authorization */,
-				55141EFD2C085B9E00F56A68 /* Api */,
-				55DE31652C11D381001D7302 /* Responses */,
-				553177F52C1B029900A0E60C /* Vehicle */,
-				557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */,
-				CDA8AD8422E8CF7C00B1EAF8 /* AppDelegate.swift */,
-				55141EFB2C07B77500F56A68 /* MainView.swift */,
+				5550E6372C24A1DA008B5328 /* App */,
+				5550E6362C24A18C008B5328 /* Core */,
 				CDA8AD8B22E8CF7D00B1EAF8 /* Assets.xcassets */,
 				CDA8AD8D22E8CF7D00B1EAF8 /* LaunchScreen.storyboard */,
 				CDA8ADBB22E8CFC900B1EAF8 /* KiaMaps.entitlements */,

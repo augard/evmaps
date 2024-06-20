@@ -11,7 +11,7 @@ import Foundation
 enum TemperatureUnit: Int, Codable {
     case celsius = 0
     case fahrenheit = 1
-    
+
     var name: String {
         switch self {
         case .celsius:
@@ -43,7 +43,7 @@ enum DistanceUnit: Int, Codable {
     case km = 1
     case meter = 2
     case miles = 3
-    
+
     var unitLenght: UnitLength {
         switch self {
         case .feet:
@@ -63,7 +63,7 @@ enum TimeUnit: Int, Codable {
     case minute = 1
     case microseconds = 2
     case second = 3
-    
+
     var unitDuration: UnitDuration {
         switch self {
         case .hour:

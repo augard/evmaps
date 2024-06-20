@@ -15,17 +15,17 @@ struct SignInResponse: Decodable {
     let upgrade: Bool
     let integrated: Bool
     let deleteAccountLink: String
-    
+
     var code: String? {
         let pattern = "=([^\"]+)"
-        
+
         do {
             let regex = try NSRegularExpression(pattern: pattern, options: [])
-            
+
             let string = redirectUrl.absoluteString
             let nsString = string as NSString
             let results = regex.matches(in: string, options: [], range: NSRange(location: 0, length: nsString.length))
-            
+
             if let match = results.first, let range = Range(match.range(at: 1), in: string) {
                 return String(string[range]).replacingOccurrences(of: "&amp;", with: "&")
             }

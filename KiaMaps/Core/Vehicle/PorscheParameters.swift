@@ -11,11 +11,11 @@ import Intents
 
 enum PorscheParameters: VehicleParameters {
     case taycanGen1
-    
+
     var supportedChargingConnectors: [INCar.ChargingConnectorType] {
         [.mennekes, .ccs2]
     }
-    
+
     func maximumPower(for connector: INCar.ChargingConnectorType) -> Double? {
         if connector == .mennekes {
             return 11.0
@@ -25,15 +25,15 @@ enum PorscheParameters: VehicleParameters {
             return nil
         }
     }
-    
+
     var maximumDistance: Double {
         541
     }
-    
+
     var consumptionModelId: Int {
-        12582912
+        12_582_912
     }
-    
+
     var consumptionFormulaParameters: [String: Any] {
         [
             "vehicle_auxiliary_power_w": 669.9999809265137, // how much it lose from other things (electronics)?
@@ -47,18 +47,18 @@ enum PorscheParameters: VehicleParameters {
                 0.18310000896453857,
                 0.2052000045776367,
                 0.2266000032424927,
-                0.25840001106262206
+                0.25840001106262206,
             ],
             "vehicle_altitude_gain_consumption_wh_per_m": 8.345999908447265, // rekupera?
-            "vehicle_altitude_loss_consumption_wh_per_m": 6.972999572753906 // o kolik je narocnejsi jet nahoru?
+            "vehicle_altitude_loss_consumption_wh_per_m": 6.972999572753906, // o kolik je narocnejsi jet nahoru?
         ]
     }
-    
+
     var chargingModelId: Int {
-        12582916
+        12_582_916
     }
-    
-    func chargingFormulaParameters(maximumBatteryCapacity: Double, unit: UnitEnergy) -> [String: Any] {
+
+    func chargingFormulaParameters(maximumBatteryCapacity _: Double, unit _: UnitEnergy) -> [String: Any] {
         [
             "vehicle_energy_axis_wh": [
                 0,
@@ -101,7 +101,7 @@ enum PorscheParameters: VehicleParameters {
                 87450,
                 88400,
                 89350,
-                90250
+                90250,
             ],
             "energy_w_per_h": [
                 0,
@@ -124,29 +124,29 @@ enum PorscheParameters: VehicleParameters {
                 64950,
                 68750,
                 72750,
-                77050
+                77050,
             ],
             "vehicle_charge_axis_w": [
-                232000,
-                232000,
-                223000,
-                223000,
-                204000,
-                204000,
-                186000,
-                186000,
-                167000,
-                167000,
-                158000,
-                158000,
-                148000,
-                148000,
-                144000,
-                144000,
-                134000,
-                134000,
-                107000,
-                107000,
+                232_000,
+                232_000,
+                223_000,
+                223_000,
+                204_000,
+                204_000,
+                186_000,
+                186_000,
+                167_000,
+                167_000,
+                158_000,
+                158_000,
+                148_000,
+                148_000,
+                144_000,
+                144_000,
+                134_000,
+                134_000,
+                107_000,
+                107_000,
                 74000,
                 74000,
                 55000,
@@ -167,9 +167,9 @@ enum PorscheParameters: VehicleParameters {
                 0,
                 0,
                 0,
-                0
+                0,
             ],
-            "efficiency_factor": 0.8999999761581421
+            "efficiency_factor": 0.8999999761581421,
         ]
     }
 }

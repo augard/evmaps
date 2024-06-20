@@ -41,7 +41,7 @@ struct DateValue<Formatter: DecodeDateFormatter>: Codable {
     init(wrappedValue: Date) {
         self.wrappedValue = wrappedValue
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
 
@@ -49,9 +49,9 @@ struct DateValue<Formatter: DecodeDateFormatter>: Codable {
             guard let value = Formatter.formatter.date(from: string) else {
                 throw ParsingError.invalidString(string, decoder.codingPath)
             }
-            self.wrappedValue = value
+            wrappedValue = value
         } else {
-            self.wrappedValue = try container.decode(Date.self)
+            wrappedValue = try container.decode(Date.self)
         }
     }
 

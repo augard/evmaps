@@ -21,7 +21,7 @@ enum KiaParameters: String, VehicleParameters {
             return nil
         }
     }
-    
+
     var supportedChargingConnectors: [INCar.ChargingConnectorType] {
         [.mennekes, .ccs2]
     }
@@ -29,11 +29,11 @@ enum KiaParameters: String, VehicleParameters {
     var maximumDistance: Double {
         541
     }
-    
+
     var consumptionModelId: Int {
-        12582912
+        12_582_912
     }
-    
+
     var consumptionFormulaParameters: [String: Any] {
         [
             "vehicle_auxiliary_power_w": 669.9999809265137, // how much it lose from other things (electronics)?
@@ -47,25 +47,25 @@ enum KiaParameters: String, VehicleParameters {
                 0.18310000896453857,
                 0.2052000045776367,
                 0.2266000032424927,
-                0.25840001106262206
+                0.25840001106262206,
             ],
             "vehicle_altitude_gain_consumption_wh_per_m": 8.345999908447265, // rekupera?
-            "vehicle_altitude_loss_consumption_wh_per_m": 6.972999572753906 // o kolik je narocnejsi jet nahoru?
+            "vehicle_altitude_loss_consumption_wh_per_m": 6.972999572753906, // o kolik je narocnejsi jet nahoru?
         ]
     }
-    
+
     var chargingModelId: Int {
-        12582916
+        12_582_916
     }
-    
+
     func chargingFormulaParameters(maximumBatteryCapacity: Double, unit: UnitEnergy) -> [String: Any] {
         // in porsche data it don't look linear, but it's currently best what i can do
         let value = Int((Measurement<UnitEnergy>(value: maximumBatteryCapacity, unit: unit).converted(to: .kilowattHours) / 20).value * 1000)
         var energyWattPerHour: [Int] = []
-        for index in 0...20 {
+        for index in 0 ... 20 {
             energyWattPerHour.append(value * index)
         }
-        
+
         let energyAxisWH = [
             0,
             1450,
@@ -109,56 +109,56 @@ enum KiaParameters: String, VehicleParameters {
             95550,
             98000,
         ]
-        
+
         let energyAxisW = [
             50000,
-            205000,
-            217000,
-            221000,
-            221000,
-            221000,
-            223000,
-            223000,
-            224000,
-            224000,
-            225000,
-            225000,
-            226000,
-            226000,
-            227000,
-            227000,
-            233000,
-            233000,
-            233000,
-            233000,
-            196000,
-            186000,
-            189000,
-            189000,
-            185000,
-            185000,
-            190000,
-            190000,
-            184000,
-            184000,
-            169000,
-            169000,
-            158000,
-            158000,
-            122000,
-            122000,
+            205_000,
+            217_000,
+            221_000,
+            221_000,
+            221_000,
+            223_000,
+            223_000,
+            224_000,
+            224_000,
+            225_000,
+            225_000,
+            226_000,
+            226_000,
+            227_000,
+            227_000,
+            233_000,
+            233_000,
+            233_000,
+            233_000,
+            196_000,
+            186_000,
+            189_000,
+            189_000,
+            185_000,
+            185_000,
+            190_000,
+            190_000,
+            184_000,
+            184_000,
+            169_000,
+            169_000,
+            158_000,
+            158_000,
+            122_000,
+            122_000,
             63000,
             63000,
             40000,
             40000,
             12000,
         ]
-        
+
         return [
             "vehicle_energy_axis_wh": energyAxisWH,
             "vehicle_charge_axis_w": energyAxisW,
             "energy_w_per_h": energyWattPerHour,
-            "efficiency_factor": 2.2
+            "efficiency_factor": 2.2,
         ]
     }
 }

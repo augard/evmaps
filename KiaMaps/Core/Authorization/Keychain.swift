@@ -61,7 +61,7 @@ struct Keychain<Key: RawRepresentable> {
     private static var accessGroupId: String {
         AppConfiguration.accessGroupId
     }
-    
+
     static func store<Content: Codable>(value: Content?, path: Key) {
         if let value {
             do {
@@ -73,7 +73,7 @@ struct Keychain<Key: RawRepresentable> {
                     .valueData: encoded as NSData,
                     .accessible: KeychainSecurityKeys.firstUnlock.rawValue,
                     .synchronizable: kCFBooleanFalse as Any,
-                    //.accessGroup: accessGroupId,
+                    // .accessGroup: accessGroupId,
                 ]
                 let keychainQuery = nativeQuery.securityQuery
                 let deleteStatus = SecItemDelete(keychainQuery)
@@ -88,14 +88,14 @@ struct Keychain<Key: RawRepresentable> {
             removeVakue(at: path)
         }
     }
-    
+
     static func removeVakue(at path: Key) {
         let nativeQuery: [KeychainSecurityKeys: Any] = [
             .className: KeychainSecurityKeys.genericPassword.rawValue,
             .attributeService: path.rawValue,
             .attributeAccount: "local",
             .synchronizable: kCFBooleanFalse as Any,
-            //.accessGroup: accessGroupId,
+            // .accessGroup: accessGroupId,
         ]
         let deleteStatus = SecItemDelete(nativeQuery.securityQuery)
 
@@ -110,7 +110,7 @@ struct Keychain<Key: RawRepresentable> {
             .synchronizable: kCFBooleanFalse as Any,
             .matchLimit: KeychainSecurityKeys.matchLimitOne.rawValue,
             .returnData: kCFBooleanTrue as Any,
-            //.accessGroup: accessGroupId,
+            // .accessGroup: accessGroupId,
         ]
         var retrievedData: AnyObject?
         let status = SecItemCopyMatching(nativeQuery.securityQuery, &retrievedData)

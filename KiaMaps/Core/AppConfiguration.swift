@@ -17,6 +17,6 @@ enum AppConfiguration {
     static let apiConfiguration: ApiConfiguration = ApiBrand.kia.configuration(for: .europe)
     /// If nil it will choose first vehicle in list
     static let vehicleVin: String? = nil
-    
+
     static let accessGroupId = "com.porsche.one"
 }

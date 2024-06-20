@@ -1,5 +1,5 @@
 //
-//  App.swift
+//  ApiConfiguration.swift
 //  KiaMaps
 //
 //  Created by Lukas Foldyna on 31.05.2024.
@@ -12,7 +12,7 @@ enum ApiBrand: String {
     case kia
     case hyundai
     case genesis
-    
+
     func configuration(for region: ApiRegion) -> ApiConfiguration {
         switch self {
         case .kia, .hyundai, .genesis:
@@ -50,7 +50,7 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
     case kia
     case hyundai
     case genesis
-    
+
     var key: String {
         switch self {
         case .kia:
@@ -61,7 +61,7 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
             "genesis"
         }
     }
-    
+
     var name: String {
         switch self {
         case .kia:
@@ -72,7 +72,7 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
             "Genesis"
         }
     }
-    
+
     var port: Int {
         switch self {
         case .kia:
@@ -81,19 +81,19 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
             443
         }
     }
-    
+
     var serviceAgent: String {
         "okhttp/3.12.0"
     }
-    
+
     var userAgent: String {
         "EU_BlueLink/2.1.18 (com.kia.connect.eu; build:10560; iOS 17.5.1) Alamofire/5.8.0"
     }
-    
+
     var acceptHeader: String {
         "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
     }
-    
+
     var baseUrl: String {
         switch self {
         case .kia:
@@ -104,7 +104,7 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
             "https://prd-eu-ccapi.genesis.com"
         }
     }
-    
+
     var loginUrl: String {
         switch self {
         case .kia:
@@ -115,7 +115,7 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
             "https://accounts-eu.genesis.com"
         }
     }
-    
+
     var serviceId: String {
         switch self {
         case .kia:
@@ -126,7 +126,7 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
             "3020afa2-30ff-412a-aa51-d28fbe901e10"
         }
     }
-    
+
     var appId: String {
         switch self {
         case .kia:
@@ -137,11 +137,11 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
             "f11f2b86-e0e7-4851-90df-5600b01d8b70"
         }
     }
-    
+
     var senderId: Int {
-        199360397125
+        199_360_397_125
     }
-    
+
     var authClientId: String {
         switch self {
         case .kia:
@@ -152,7 +152,7 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
             "3020afa2-30ff-412a-aa51-d28fbe901e10"
         }
     }
-    
+
     var cfb: String {
         switch self {
         case .kia:
@@ -163,7 +163,7 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
             "RFtoRq/vDXJmRndoZaZQyYo3/qFLtVReW8P7utRPcc0ZxOzOELm9mexvviBk/qqIp4A="
         }
     }
-    
+
     var pushType: String {
         if self == .kia {
             "APNS"

@@ -15,7 +15,7 @@ enum ApiEndpoint: CustomStringConvertible {
         case spa
         case user
     }
-    
+
     case language
     case signIn
     case authorization
@@ -26,16 +26,17 @@ enum ApiEndpoint: CustomStringConvertible {
     case logout
     case notificationRegister
     case notificationRegisterWithDeviceId(UUID)
-    
+
     case userIntegrationInfo
     case userSession
     case userProfile
-    
+
     case vehicles
-    case vehicleStatus(UUID)
+    case refreshVehicle(UUID)
+    case refreshCCS2Vehicle(UUID)
     case vehicleCachedStatus(UUID)
     case vehicleCachedCCS2Status(UUID)
-    
+
     var path: (String, RelativeTo) {
         switch self {
         case .language:
@@ -48,11 +49,11 @@ enum ApiEndpoint: CustomStringConvertible {
             ("oauth2/token", .user)
         case .notificationRegister:
             ("notifications/register", .spa)
-        case .notificationRegisterWithDeviceId(let deviceId):
+        case let .notificationRegisterWithDeviceId(deviceId):
             ("notifications/\(deviceId.formatted)/register", .spa)
         case .loginPage:
             ("protocol/openid-connect/auth", .login)
-        case .loginAction(let query):
+        case let .loginAction(query):
             ("login-actions/authenticate\(query)", .login)
         case .loginRedirect:
             ("integration/redirect/login", .user)
@@ -66,15 +67,17 @@ enum ApiEndpoint: CustomStringConvertible {
             ("session", .user)
         case .vehicles:
             ("vehicles", .spa)
-        case .vehicleStatus(let vehicleId):
+        case let .refreshVehicle(vehicleId):
             ("vehicles/\(vehicleId.formatted)/status", .spa)
-        case .vehicleCachedStatus(let vehicleId):
+        case let .vehicleCachedStatus(vehicleId):
             ("vehicles/\(vehicleId.formatted)/status/latest", .spa)
-        case .vehicleCachedCCS2Status(let vehicleId):
+        case let .refreshCCS2Vehicle(vehicleId):
+            ("vehicles/\(vehicleId.formatted)/ccs2/carstatus", .spa)
+        case let .vehicleCachedCCS2Status(vehicleId):
             ("vehicles/\(vehicleId.formatted)/ccs2/carstatus/latest", .spa)
         }
     }
-    
+
     var description: String {
         switch self {
         case .language:
@@ -105,10 +108,12 @@ enum ApiEndpoint: CustomStringConvertible {
             "userProfile"
         case .vehicles:
             "vehicles"
-        case .vehicleStatus:
-            "vehicleStatus"
+        case .refreshVehicle:
+            "refreshVehicle"
         case .vehicleCachedStatus:
             "vehicleCachedStatus"
+        case .refreshCCS2Vehicle:
+            "refreshCCS2Vehicle"
         case .vehicleCachedCCS2Status:
             "vehicleCachedCCS2Status"
         }

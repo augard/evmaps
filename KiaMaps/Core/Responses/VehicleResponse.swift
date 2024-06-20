@@ -27,9 +27,9 @@ struct Vehicle: Decodable, Identifiable {
     let detailInfo: DetailInfo
     let protocolType: Int
     @BoolValue private(set) var ccuCCS2ProtocolSupport: Bool
-    
+
     var id: UUID { vehicleId }
-    
+
     enum CodingKeys: String, CodingKey {
         case vin
         case type
@@ -46,14 +46,14 @@ struct Vehicle: Decodable, Identifiable {
         case protocolType
         case ccuCCS2ProtocolSupport
     }
-    
+
     struct DetailInfo: Decodable {
         let bodyType: String
         let interiorColor: String
         let outsideColor: String
         let saleCarmdlCd: String
         let saleCarmdlEnName: String
-        
+
         enum CodingKeys: String, CodingKey {
             case bodyType
             case interiorColor = "inColor"

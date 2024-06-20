@@ -13,11 +13,11 @@ protocol VehicleParameters {
     var supportedChargingConnectors: [INCar.ChargingConnectorType] { get }
 
     func maximumPower(for connector: INCar.ChargingConnectorType) -> Double?
-    
+
     var maximumDistance: Double { get }
-    
+
     var consumptionModelId: Int { get }
-    
+
     // A dictionary mapping NSStrings to serializable objects (NSString, NSNumber, NSArray, NSDictionary, or NSNull) that contains the OEM provided parameters for the consumption model used to calculate the vehicle’s energy consumption as the user drives. The keys of this dictionary describe the parameters that fit into the consumpteion model of the electric vehicle. The values of this dictionary represent the parameter values. model_id is a mandatory key in this dictionary. */
     var consumptionFormulaParameters: [String: Any] { get }
 
@@ -25,7 +25,7 @@ protocol VehicleParameters {
 
     // A dictionary mapping NSStrings to serializable objects (NSString, NSNumber, NSArray, NSDictionary, or NSNull) that contains OEM provided parameters for the charging model that is used to calculate the duration of charging at a station. The keys of this dictionary describe the parameters that fit into the Charging model of the electric vehicle. The values of this dictionary represent the parameter values. model_id is a mandatory key in this dictionary.
     func chargingFormulaParameters(maximumBatteryCapacity: Double, unit: UnitEnergy) -> [String: Any]
-    
+
     // Sample data
     /*
      {
@@ -48,7 +48,7 @@ protocol VehicleParameters {
          },
          "model_id": 12582912
      }
-     
+
      {
          "vehicle_parameters": {
              "vehicle_energy_axis_wh": [

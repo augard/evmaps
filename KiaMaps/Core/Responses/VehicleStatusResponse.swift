@@ -9,13 +9,14 @@
 import Foundation
 
 // MARK: - ResMsg
+
 struct VehicleStatusResponse: Codable {
     let resultCode: String
     let serviceNumber: String
     let returnCode: String
     @DateValue<TimeIntervalDateFormatter> private(set) var lastUpdateTime: Date
     let state: State
-    
+
     struct State: Codable {
         let vehicle: VehicleStatus
 
@@ -34,6 +35,7 @@ struct VehicleStatusResponse: Codable {
 }
 
 // MARK: - Vehicle
+
 struct VehicleStatus: Codable {
     let body: Body
     let cabin: Cabin
@@ -69,13 +71,14 @@ struct VehicleStatus: Codable {
 }
 
 // MARK: - Body
+
 struct Body: Codable {
     let windshield: Windshield
     let hood: Hood
     let lights: Lights
     let sunroof: Sunroof
     let trunk: Trunk
-    
+
     struct Trunk: Codable {
         @BoolValue private(set) var trunkOpen: Bool
 
@@ -83,7 +86,7 @@ struct Body: Codable {
             case trunkOpen = "Open"
         }
     }
-    
+
     struct Sunroof: Codable {
         let glass: Trunk
 
@@ -95,7 +98,7 @@ struct Body: Codable {
     struct Windshield: Codable {
         let rear: WindshieldRear
         let front: WindshieldFront
-        
+
         struct WindshieldRear: Codable {
             let defog: RESTMode
 
@@ -103,13 +106,12 @@ struct Body: Codable {
                 case defog = "Defog"
             }
         }
-        
-        
+
         struct WindshieldFront: Codable {
             let heat: RESTMode
             let defog: RESTMode
             let washerFluid: WasherFluid
-            
+
             struct WasherFluid: Codable {
                 @BoolValue private(set) var levelLow: Bool
 
@@ -130,7 +132,7 @@ struct Body: Codable {
             case front = "Front"
         }
     }
-    
+
     struct Hood: Codable {
         @BoolValue private(set) var hoodOpen: Bool
         let frunk: Frunk
@@ -164,12 +166,12 @@ struct Lights: Codable {
     let rear: LightsRear
     let tailLamp: Hazard
     let hazard: Hazard
-    
+
     struct LightsFront: Codable {
         let headLamp: HeadLamp
         let frontLeft: FrontLight
         let frontRight: FrontLight
-        
+
         struct HeadLamp: Codable {
             let systemWarning: Int
 
@@ -177,12 +179,12 @@ struct Lights: Codable {
                 case systemWarning = "SystemWarning"
             }
         }
-        
+
         struct FrontLight: Codable {
             let low: Fluid
             let high: Fluid
             let turnSignal: TurnSignal
-            
+
             struct TurnSignal: Codable {
                 let warning: Int
                 let lampState: Int
@@ -192,7 +194,7 @@ struct Lights: Codable {
                     case lampState = "LampState"
                 }
             }
-            
+
             enum CodingKeys: String, CodingKey {
                 case low = "Low"
                 case high = "High"
@@ -206,7 +208,7 @@ struct Lights: Codable {
             case frontRight = "Right"
         }
     }
-    
+
     struct LightsRear: Codable {
         let rearLeft: RearLight
         let rearRight: RearLight
@@ -226,7 +228,7 @@ struct Lights: Codable {
             case turnSignal = "TurnSignal"
         }
     }
-    
+
     struct Hazard: Codable {
         @BoolValue private(set) var alert: Bool
 
@@ -291,7 +293,7 @@ struct Door: Codable {
             case driverOpen = "Open"
         }
     }
-    
+
     struct DoorRow1: Codable {
         let passenger: PlaceLock
         let driver: PlaceLock
@@ -301,7 +303,7 @@ struct Door: Codable {
             case driver = "Driver"
         }
     }
-    
+
     struct DoorRow2: Codable {
         let row2Left: PlaceLock
         let row2Right: PlaceLock
@@ -319,11 +321,12 @@ struct Door: Codable {
 }
 
 // MARK: - Hvac
+
 struct Hvac: Codable {
     let vent: Vent
     let row1: HVACRow1
     let temperature: HVACTemperature
-    
+
     struct Blower: Codable {
         let speedLevel: Int
 
@@ -334,11 +337,11 @@ struct Hvac: Codable {
 
     struct HVACRow1: Codable {
         let driver: Driver
-        
+
         struct Driver: Codable {
             let temperature: DriverTemperature
             let blower: Blower
-            
+
             struct DriverTemperature: Codable {
                 let value: String
                 let unit: Int
@@ -359,7 +362,7 @@ struct Hvac: Codable {
             case driver = "Driver"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case vent = "Vent"
         case row1 = "Row1"
@@ -368,6 +371,7 @@ struct Hvac: Codable {
 }
 
 // MARK: - HVACTemperature
+
 struct HVACTemperature: Codable {
     let rangeType: Int
 
@@ -377,10 +381,11 @@ struct HVACTemperature: Codable {
 }
 
 // MARK: - Vent
+
 struct Vent: Codable {
     let fineDust: FineDust
     let airCleaning: AirCleaning
-    
+
     struct FineDust: Codable {
         let level: Int
 
@@ -388,7 +393,7 @@ struct Vent: Codable {
             case level = "Level"
         }
     }
-    
+
     struct AirCleaning: Codable {
         let indicator: Int
         let symbolColor: Int
@@ -406,10 +411,11 @@ struct Vent: Codable {
 }
 
 // MARK: - Seat
+
 struct Seat: Codable {
     let row2: SeatRow2
     let row1: SeatRow1
-    
+
     struct PlaceClimate: Codable {
         let climate: RESTMode
 
@@ -427,7 +433,7 @@ struct Seat: Codable {
             case driver = "Driver"
         }
     }
-    
+
     struct SeatRow2: Codable {
         let row2Left: PlaceClimate
         let row2Right: PlaceClimate
@@ -437,7 +443,7 @@ struct Seat: Codable {
             case row2Right = "Right"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case row2 = "Row2"
         case row1 = "Row1"
@@ -445,6 +451,7 @@ struct Seat: Codable {
 }
 
 // MARK: - SteeringWheel
+
 struct SteeringWheel: Codable {
     let heat: Heat
 
@@ -454,10 +461,11 @@ struct SteeringWheel: Codable {
 }
 
 // MARK: - Heat
+
 struct Heat: Codable {
     let remoteControl: HeatRemoteControl
     @BoolValue private(set) var state: Bool
-    
+
     struct HeatRemoteControl: Codable {
         let step: Int
 
@@ -473,6 +481,7 @@ struct Heat: Codable {
 }
 
 // MARK: - Window
+
 struct Window: Codable {
     let row1: WindowRow1
     let row2: WindowRow2
@@ -484,6 +493,7 @@ struct Window: Codable {
 }
 
 // MARK: - WindowRow1
+
 struct WindowRow1: Codable {
     let driver: TentacledDriver
     let passenger: TentacledDriver
@@ -495,6 +505,7 @@ struct WindowRow1: Codable {
 }
 
 // MARK: - TentacledDriver
+
 struct TentacledDriver: Codable {
     let driverOpen: Int
     let openLevel: Int
@@ -506,6 +517,7 @@ struct TentacledDriver: Codable {
 }
 
 // MARK: - WindowRow2
+
 struct WindowRow2: Codable {
     let row2Left, row2Right: TentacledDriver
 
@@ -516,6 +528,7 @@ struct WindowRow2: Codable {
 }
 
 // MARK: - Chassis
+
 struct Chassis: Codable {
     let drivingMode: DrivingMode
     let axle: Axle
@@ -529,6 +542,7 @@ struct Chassis: Codable {
 }
 
 // MARK: - Axle
+
 struct Axle: Codable {
     let row1: Row
     let row2: Row
@@ -542,6 +556,7 @@ struct Axle: Codable {
 }
 
 // MARK: - Row
+
 struct Row: Codable {
     let rowLeft: Row1Left
     let rowRight: Row1Left
@@ -553,6 +568,7 @@ struct Row: Codable {
 }
 
 // MARK: - Row1Left
+
 struct Row1Left: Codable {
     let tire: LeftTire
 
@@ -562,6 +578,7 @@ struct Row1Left: Codable {
 }
 
 // MARK: - LeftTire
+
 struct LeftTire: Codable {
     @BoolValue private(set) var pressureLow: Bool
     let pressure: Int
@@ -573,6 +590,7 @@ struct LeftTire: Codable {
 }
 
 // MARK: - AxleTire
+
 struct AxleTire: Codable {
     @BoolValue private(set) var pressureLow: Bool
     let pressureUnit: Int
@@ -584,6 +602,7 @@ struct AxleTire: Codable {
 }
 
 // MARK: - Brake
+
 struct Brake: Codable {
     let fluid: Fluid
 
@@ -593,6 +612,7 @@ struct Brake: Codable {
 }
 
 // MARK: - DrivingMode
+
 struct DrivingMode: Codable {
     let state: String
 
@@ -602,6 +622,7 @@ struct DrivingMode: Codable {
 }
 
 // MARK: - ConnectedService
+
 struct ConnectedService: Codable {
     let ota: Ota
 
@@ -612,24 +633,25 @@ struct ConnectedService: Codable {
             case controllerStatus = "ControllerStatus"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case ota = "OTA"
     }
 }
 
 // MARK: - Drivetrain
+
 struct Drivetrain: Codable {
     let fuelSystem: FuelSystem
     let odometer: Double
     let transmission: Transmission
-    
+
     struct FuelSystem: Codable {
         let dte: FuelSystemDte
         let lowFuelWarning: Int
         let fuelLevel: Int
         let averageFuelEconomy: AverageFuelEconomy
-        
+
         struct FuelSystemDte: Codable {
             let unit: DistanceUnit
             let total: Int
@@ -639,7 +661,7 @@ struct Drivetrain: Codable {
                 case total = "Total"
             }
         }
-        
+
         struct AverageFuelEconomy: Codable {
             let drive: Double
             let afterRefuel: Double
@@ -661,7 +683,7 @@ struct Drivetrain: Codable {
             case averageFuelEconomy = "AverageFuelEconomy"
         }
     }
-    
+
     struct Transmission: Codable {
         let parkingPosition: Int
         let gearPosition: Int
@@ -680,43 +702,44 @@ struct Drivetrain: Codable {
 }
 
 // MARK: - Electronics
+
 struct Electronics: Codable {
     let battery: Battery
     let autoCut: AutoCut
     let fob: Fob
     let powerSupply: PowerSupply
-    
+
     struct Battery: Codable {
         let auxiliary: Auxiliary
         let level: Int
         let charging: BatteryCharging
         let powerStateAlert: PowerStateAlert
         let sensorReliability: Int
-        
+
         struct Auxiliary: Codable {
             @BoolValue private(set) var failWarning: Bool
-            
+
             enum CodingKeys: String, CodingKey {
                 case failWarning = "FailWarning"
             }
         }
-        
+
         struct BatteryCharging: Codable {
             let warningLevel: Int
-            
+
             enum CodingKeys: String, CodingKey {
                 case warningLevel = "WarningLevel"
             }
         }
-        
+
         struct PowerStateAlert: Codable {
             let classC: Int
-            
+
             enum CodingKeys: String, CodingKey {
                 case classC = "ClassC"
             }
         }
-        
+
         enum CodingKeys: String, CodingKey {
             case auxiliary = "Auxiliary"
             case level = "Level"
@@ -725,7 +748,7 @@ struct Electronics: Codable {
             case sensorReliability = "SensorReliability"
         }
     }
-    
+
     struct AutoCut: Codable {
         let powerMode: Int
         let batteryPreWarning: Int
@@ -737,21 +760,21 @@ struct Electronics: Codable {
             case deliveryMode = "DeliveryMode"
         }
     }
-    
+
     struct Fob: Codable {
-        @BoolValue private(set) var  lowBattery: Bool
-        
+        @BoolValue private(set) var lowBattery: Bool
+
         enum CodingKeys: String, CodingKey {
             case lowBattery = "LowBattery"
         }
     }
-    
+
     struct PowerSupply: Codable {
         let accessory: Int
         let ignition1: Int?
         let ignition2: Int?
         let ignition3: Int?
-        
+
         enum CodingKeys: String, CodingKey {
             case accessory = "Accessory"
             case ignition1 = "Ignition1"
@@ -759,7 +782,7 @@ struct Electronics: Codable {
             case ignition3 = "Ignition3"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case battery = "Battery"
         case autoCut = "AutoCut"
@@ -769,6 +792,7 @@ struct Electronics: Codable {
 }
 
 // MARK: - Green
+
 struct Green: Codable {
     @BoolValue private(set) var drivingReady: Bool
     let powerConsumption: PowerConsumption
@@ -796,10 +820,11 @@ struct Green: Codable {
 }
 
 // MARK: - BatteryManagement
+
 struct BatteryManagement: Codable {
     let soH: SoH
     let batteryRemain: BatteryRemain
-    @BoolValue private(set) var  batteryConditioning: Bool
+    @BoolValue private(set) var batteryConditioning: Bool
     let batteryPreCondition: BatteryPreCondition
     let batteryCapacity: BatteryCapacity
 
@@ -810,7 +835,7 @@ struct BatteryManagement: Codable {
             case ratio = "Ratio"
         }
     }
-    
+
     struct BatteryRemain: Codable {
         /// This value looks like it's lower than ratio, but ratio is value that is display in app
         let value: Double // 127324.8, kiloJoules
@@ -821,7 +846,7 @@ struct BatteryManagement: Codable {
             case ratio = "Ratio"
         }
     }
-    
+
     struct BatteryPreCondition: Codable {
         let status: Int
         let temperatureLevel: Int
@@ -831,7 +856,7 @@ struct BatteryManagement: Codable {
             case temperatureLevel = "TemperatureLevel"
         }
     }
-    
+
     struct BatteryCapacity: Codable {
         let value: Double // kiloJoules
 
@@ -839,7 +864,7 @@ struct BatteryManagement: Codable {
             case value = "Value"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case soH = "SoH"
         case batteryRemain = "BatteryRemain"
@@ -850,6 +875,7 @@ struct BatteryManagement: Codable {
 }
 
 // MARK: - ChargingDoor
+
 struct ChargingDoor: Codable {
     let state: Int
     let errorState: Int
@@ -861,6 +887,7 @@ struct ChargingDoor: Codable {
 }
 
 // MARK: - ChargingInformation
+
 struct ChargingInformation: Codable {
     let estimatedTime: EstimatedTime
     let expectedTime: ExpectedTime
@@ -871,7 +898,7 @@ struct ChargingInformation: Codable {
     let electricCurrentLevel: RESTMode
     let charging: Charging
     let targetSoC: TargetSoC
-    
+
     struct EstimatedTime: Codable {
         let iccb: Int // 1110, minutes, el-plug
         let standard: Int // 240, minuts, ac
@@ -903,15 +930,15 @@ struct ChargingInformation: Codable {
             case endMin = "EndMin"
         }
     }
-    
+
     struct Dte: Codable {
         let targetSoC: TargetSoC
-        
+
         enum CodingKeys: String, CodingKey {
             case targetSoC = "TargetSoC"
         }
     }
-    
+
     struct TargetSoC: Codable {
         let standard: Int // 80, %, ac
         let quick: Int // 100 %, dc
@@ -921,7 +948,7 @@ struct ChargingInformation: Codable {
             case quick = "Quick"
         }
     }
-    
+
     struct Charging: Codable {
         let remainTime: Double
         let remainTimeUnit: TimeUnit
@@ -931,7 +958,6 @@ struct ChargingInformation: Codable {
             case remainTimeUnit = "RemainTimeUnit"
         }
     }
-
 
     enum CodingKeys: String, CodingKey {
         case estimatedTime = "EstimatedTime"
@@ -947,6 +973,7 @@ struct ChargingInformation: Codable {
 }
 
 // MARK: - DrivingHistory
+
 struct DrivingHistory: Codable {
     let average: Double
     let unit: Int
@@ -958,6 +985,7 @@ struct DrivingHistory: Codable {
 }
 
 // MARK: - Electric
+
 struct Electric: Codable {
     let smartGrid: SmartGrid
 
@@ -981,20 +1009,21 @@ struct Electric: Codable {
                 case dischargeLimitation = "DischargeLimitation"
             }
         }
-        
+
         enum CodingKeys: String, CodingKey {
             case vehicleToLoad = "VehicleToLoad"
             case vehicleToGrid = "VehicleToGrid"
             case realTimePower = "RealTimePower"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case smartGrid = "SmartGrid"
     }
 }
 
 // MARK: - EnergyInformation
+
 struct EnergyInformation: Codable {
     let dte: EnergyInformationDte
 
@@ -1005,13 +1034,14 @@ struct EnergyInformation: Codable {
             case invalid = "Invalid"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case dte = "DTE"
     }
 }
 
 // MARK: - PlugAndCharge
+
 struct PlugAndCharge: Codable {
     let contractCertificate1: ContractCertificate1Class
     let contractCertificate2: ContractCertificate1Class
@@ -1047,7 +1077,7 @@ struct PlugAndCharge: Codable {
             case month = "Mon"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case contractCertificate1 = "ContractCertificate1"
         case contractCertificate2 = "ContractCertificate2"
@@ -1059,6 +1089,7 @@ struct PlugAndCharge: Codable {
 }
 
 // MARK: - PowerConsumption
+
 struct PowerConsumption: Codable {
     let prediction: Prediction
 
@@ -1069,13 +1100,14 @@ struct PowerConsumption: Codable {
             case climate = "Climate"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case prediction = "Prediction"
     }
 }
 
 // MARK: - Reservation
+
 struct Reservation: Codable {
     let departure: Departure
     let offPeakTime: OffPeakTime
@@ -1094,7 +1126,7 @@ struct Reservation: Codable {
             case climate2 = "Climate2"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case departure = "Departure"
         case offPeakTime = "OffPeakTime"
@@ -1102,8 +1134,8 @@ struct Reservation: Codable {
     }
 }
 
-
 // MARK: - Climate
+
 struct Climate: Codable {
     let activation: Int
     let temperatureHex: String
@@ -1121,6 +1153,7 @@ struct Climate: Codable {
 }
 
 // MARK: - Schedule
+
 struct Schedule: Codable {
     let hour: Int
     let minute: Int
@@ -1150,7 +1183,7 @@ struct Schedule: Codable {
     enum CodingKeys: String, CodingKey {
         case hour = "Hour"
         case minute = "Min"
-        
+
         case monday = "Mon"
         case tuesday = "Tue"
         case wensday = "Wed"
@@ -1159,13 +1192,14 @@ struct Schedule: Codable {
         case saturday = "Sat"
         case sunday = "Sun"
         case climate = "Climate"
-        
+
         case enable = "Enable"
         case activation = "Activation"
     }
 }
 
 // MARK: - OffPeakTime
+
 struct OffPeakTime: Codable {
     let startHour: Int
     let startMin: Int
@@ -1183,6 +1217,7 @@ struct OffPeakTime: Codable {
 }
 
 // MARK: - Location
+
 struct Location: Codable {
     @DateValue<TimeIntervalDateFormatter> private(set) var date: Date
     let offset: Int
@@ -1192,7 +1227,7 @@ struct Location: Codable {
     let geoCoord: GeoCoordinate
     let heading: Double
     let speed: Speed
-    
+
     struct TimeStamp: Codable {
         let day: Int
         let month: Int
@@ -1200,7 +1235,7 @@ struct Location: Codable {
         let hour: Int
         let minute: Int
         let seconds: Int
-        
+
         var toDate: Date? {
             var components = DateComponents()
             components.day = day
@@ -1221,7 +1256,7 @@ struct Location: Codable {
             case seconds = "Sec"
         }
     }
-    
+
     struct GeoCoordinate: Codable {
         let altitude: Double
         let latitude: Double
@@ -1235,7 +1270,7 @@ struct Location: Codable {
             case type = "Type"
         }
     }
-    
+
     struct Speed: Codable {
         let unit: SpeedUnit
         let value: Int
@@ -1259,6 +1294,7 @@ struct Location: Codable {
 }
 
 // MARK: - VehicleRemoteControl
+
 struct VehicleRemoteControl: Codable {
     @BoolValue private(set) var sleepMode: Bool
 
@@ -1268,13 +1304,14 @@ struct VehicleRemoteControl: Codable {
 }
 
 // MARK: - Service
+
 struct Service: Codable {
     let connectedCar: ConnectedCar
 
     struct ConnectedCar: Codable {
         let remoteControl: ConnectedCarRemoteControl
         let activeAlert: ActiveAlert
-        
+
         struct ConnectedCarRemoteControl: Codable {
             @BoolValue private(set) var available: Bool
             let waitingTime: TimeInterval
@@ -1284,7 +1321,7 @@ struct Service: Codable {
                 case waitingTime = "WaitingTime"
             }
         }
-        
+
         struct ActiveAlert: Codable {
             @BoolValue private(set) var available: Bool
 

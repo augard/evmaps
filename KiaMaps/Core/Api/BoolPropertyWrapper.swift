@@ -11,10 +11,10 @@ import Foundation
 @propertyWrapper
 struct BoolValue: Codable, Sendable {
     var wrappedValue = false
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        
+
         if let value = try? container.decode(Bool.self) {
             wrappedValue = value
         } else if let number = try? container.decode(Int.self), [0, 1].contains(number) {
@@ -23,7 +23,7 @@ struct BoolValue: Codable, Sendable {
             wrappedValue = try container.decode(Bool.self)
         }
     }
-    
+
     func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(wrappedValue)

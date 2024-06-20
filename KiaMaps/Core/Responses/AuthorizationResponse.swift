@@ -13,11 +13,11 @@ struct AuthorizationResponse: Decodable {
     let tokenType: TokenType
     let refreshToken: String
     let expiresIn: Int
-    
+
     enum TokenType: String, Codable {
         case bearer = "Bearer"
     }
-    
+
     private enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
         case tokenType = "token_type"

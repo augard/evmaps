@@ -9,7 +9,5 @@
 import Intents
 
 protocol Handler: AnyObject {
-    
     func canHandle(_ intent: INIntent) -> Bool
-    
 }
