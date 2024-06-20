@@ -20,6 +20,15 @@ enum TemperatureUnit: Int, Codable {
             "°F"
         }
     }
+    
+    var measuremntUnit: UnitTemperature {
+        switch self {
+        case .celsius:
+            .celsius
+        case .fahrenheit:
+            .fahrenheit
+        }
+    }
 }
 
 enum EconomyUnit: Int, Codable {
@@ -27,8 +36,25 @@ enum EconomyUnit: Int, Codable {
     case unknown1 = 1
     case unknown2 = 2
     case unknown3 = 3
-    case unknown4 = 4
-    case kwh = 5
+    case km1Kwh = 4
+    case km100Kwh = 5
+    
+    var unitTitle: String {
+        switch self {
+        case .unknown0:
+            return "unknown0"
+        case .unknown1:
+            return "unknown1"
+        case .unknown2:
+            return "unknown2"
+        case .unknown3:
+            return "unknown3"
+        case .km1Kwh:
+            return "km/kWh"
+        case .km100Kwh:
+            return "100 km/kWh"
+        }
+    }
 }
 
 enum SpeedUnit: Int, Codable {
@@ -40,17 +66,17 @@ enum SpeedUnit: Int, Codable {
 
 enum DistanceUnit: Int, Codable {
     case feet = 0
-    case km = 1
-    case meter = 2
+    case kilometers = 1
+    case meters = 2
     case miles = 3
 
-    var unitLenght: UnitLength {
+    var measuremntUnit: UnitLength {
         switch self {
         case .feet:
             return .feet
-        case .km:
+        case .kilometers:
             return .kilometers
-        case .meter:
+        case .meters:
             return .meters
         case .miles:
             return .miles

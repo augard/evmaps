@@ -40,12 +40,6 @@ struct MainView: View {
     @State var isSelectedVahicleExpanded = true
     @State var lastUpdateDate: Date?
 
-    private let percentNumberFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        return formatter
-    }()
-
     init(configuration: AppConfiguration.Type) {
         self.configuration = configuration
         api = Api(configuration: configuration.apiConfiguration)
@@ -104,7 +98,7 @@ struct MainView: View {
                 selectedVehicleView
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.grouped)
         .refreshable {
             await refreshData()
         }
@@ -122,62 +116,23 @@ struct MainView: View {
     var selectedVehicleView: some View {
         if let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus {
             DisclosureGroup("Selected vehicle", isExpanded: $isSelectedVahicleExpanded) {
-                vehicleRow(selectedVehicle)
-
-                VStack(alignment: .leading) {
-                    Image(systemName: "ev.charger")
-                    HStack {
-                        let value = selectedVehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio / 100
-                        VStack(alignment: .leading) {
-                            ProgressView(value: value) {
-                                Text("Charge: ") + Text(percentNumberFormatter.string(from: value as NSNumber) ?? "")
-                            }
-                        }
-                        Spacer()
-                    }
-                }
-
-                VStack(alignment: .leading) {
-                    Image(systemName: "minus.plus.and.fluid.batteryblock")
-                    HStack {
-                        let value = selectedVehicleStatus.state.vehicle.green.batteryManagement.soH.ratio / 100
-                        VStack(alignment: .leading) {
-                            ProgressView(value: value) {
-                                Text("SOH: ") + Text(percentNumberFormatter.string(from: value as NSNumber) ?? "")
-                            }
-                        }
-                        Spacer()
-                    }
-                }
-
-                VStack(alignment: .leading) {
-                    Image(systemName: "clock")
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text("Last update: ") + Text(selectedVehicleStatus.lastUpdateTime, style: .relative)
-                        }
-                        Spacer()
-                    }
-                }
+                VehicleStatusView(
+                    brand: api.configuration.name,
+                    vehicle: selectedVehicle,
+                    vehicleStatus: selectedVehicleStatus.state.vehicle,
+                    lastUpdateTime: selectedVehicleStatus.lastUpdateTime
+                )
             }
         }
     }
-
-    func vehicleRow(_ vehicle: Vehicle) -> some View {
-        VStack(alignment: .leading) {
-            Image(systemName: "car")
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(api.configuration.name + " - " + vehicle.nickname + " (" + vehicle.year + ")")
-
-                    Text("VIN: " + vehicle.vin)
-                }
-                Spacer()
-            }
+    
+    private func vehicleRow(_ vehicle: Vehicle) -> some View {
+        DataRowView(icon: .car, label: api.configuration.name + " - " + vehicle.nickname + " (" + vehicle.year + ")") {
+            Text("VIN: " + vehicle.vin)
         }
     }
 
-    func errorView(error: Error) -> some View {
+    private func errorView(error: Error) -> some View {
         HStack {
             Text(error.localizedDescription)
                 .font(.body)
@@ -185,7 +140,7 @@ struct MainView: View {
         }
     }
 
-    func loadData() async {
+    private func loadData() async {
         do {
             if let authorization = Authorization.authorization {
                 api.authorization = authorization
@@ -228,7 +183,7 @@ struct MainView: View {
         }
     }
 
-    func refreshData() async {
+    private func refreshData() async {
         do {
             guard let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus else { return }
 
@@ -253,11 +208,11 @@ struct MainView: View {
         }
     }
 
-    func login() {
+    private func login() {
         state = .loading
     }
 
-    func logout() async {
+    private func logout() async {
         try? await api.logout()
         Authorization.remove()
         state = .unauthorized

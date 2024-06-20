@@ -24,12 +24,15 @@
 		55536DAF2C0672BF0004ABCA /* Api.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55536DAE2C0672BF0004ABCA /* Api.swift */; };
 		556C7BD02C00C1D500E828AD /* CarListHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556C7BCF2C00C1D500E828AD /* CarListHandler.swift */; };
 		556C7BD22C00C35F00E828AD /* GetCarPowerLevelStatusHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556C7BD12C00C35F00E828AD /* GetCarPowerLevelStatusHandler.swift */; };
+		556CF8C62C2CC90300C15E1A /* VehicleStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556CF8C52C2CC90300C15E1A /* VehicleStatusView.swift */; };
 		557BEFB42C1B718200EA89C9 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */; };
 		557BEFB62C1C91BF00EA89C9 /* KiaParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177F82C1B02A700A0E60C /* KiaParameters.swift */; };
 		557BEFB72C1C91BF00EA89C9 /* VehicleParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177FA2C1B02DF00A0E60C /* VehicleParameters.swift */; };
 		557BEFB82C1C91BF00EA89C9 /* PorscheParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177F62C1B02A200A0E60C /* PorscheParameters.swift */; };
 		557BEFBA2C1C940100EA89C9 /* VehicleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557BEFB92C1C940100EA89C9 /* VehicleManager.swift */; };
 		557BEFBF2C1C99C100EA89C9 /* VehicleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557BEFB92C1C940100EA89C9 /* VehicleManager.swift */; };
+		55B5D5032C24B4CB00FFB458 /* DataRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B5D5022C24B4CB00FFB458 /* DataRowView.swift */; };
+		55B5D5042C24B58600FFB458 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */; };
 		55DE31642C11D24F001D7302 /* DatePropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31632C11D24E001D7302 /* DatePropertyWrapper.swift */; };
 		55DE31672C11D67C001D7302 /* BoolPropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31662C11D67C001D7302 /* BoolPropertyWrapper.swift */; };
 		55DE316A2C11E03A001D7302 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31692C11E03A001D7302 /* Keychain.swift */; };
@@ -115,8 +118,10 @@
 		55536DAE2C0672BF0004ABCA /* Api.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Api.swift; sourceTree = "<group>"; };
 		556C7BCF2C00C1D500E828AD /* CarListHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarListHandler.swift; sourceTree = "<group>"; };
 		556C7BD12C00C35F00E828AD /* GetCarPowerLevelStatusHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetCarPowerLevelStatusHandler.swift; sourceTree = "<group>"; };
+		556CF8C52C2CC90300C15E1A /* VehicleStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatusView.swift; sourceTree = "<group>"; };
 		557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
 		557BEFB92C1C940100EA89C9 /* VehicleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleManager.swift; sourceTree = "<group>"; };
+		55B5D5022C24B4CB00FFB458 /* DataRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataRowView.swift; sourceTree = "<group>"; };
 		55DE31632C11D24E001D7302 /* DatePropertyWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatePropertyWrapper.swift; sourceTree = "<group>"; };
 		55DE31662C11D67C001D7302 /* BoolPropertyWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoolPropertyWrapper.swift; sourceTree = "<group>"; };
 		55DE31682C11E003001D7302 /* KiaExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KiaExtension.entitlements; sourceTree = "<group>"; };
@@ -213,6 +218,7 @@
 				CDA8AD8422E8CF7C00B1EAF8 /* AppDelegate.swift */,
 				557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */,
 				55141EFB2C07B77500F56A68 /* MainView.swift */,
+				556CF8C52C2CC90300C15E1A /* VehicleStatusView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -220,6 +226,7 @@
 		5550E6382C24A1E4008B5328 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				55B5D5022C24B4CB00FFB458 /* DataRowView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -460,6 +467,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				55536DAF2C0672BF0004ABCA /* Api.swift in Sources */,
+				55B5D5032C24B4CB00FFB458 /* DataRowView.swift in Sources */,
 				553177F92C1B02A700A0E60C /* KiaParameters.swift in Sources */,
 				55141F1A2C0BB99500F56A68 /* VehicleStatusResponse.swift in Sources */,
 				553177F72C1B02A200A0E60C /* PorscheParameters.swift in Sources */,
@@ -474,6 +482,7 @@
 				55DE31642C11D24F001D7302 /* DatePropertyWrapper.swift in Sources */,
 				55141F102C0A2A0B00F56A68 /* NotificationRegistrationResponse.swift in Sources */,
 				55141F122C0A31B100F56A68 /* SignInResponse.swift in Sources */,
+				556CF8C62C2CC90300C15E1A /* VehicleStatusView.swift in Sources */,
 				CDA8AD8522E8CF7C00B1EAF8 /* AppDelegate.swift in Sources */,
 				557BEFB42C1B718200EA89C9 /* AppConfiguration.swift in Sources */,
 				55141F082C0A15D900F56A68 /* ApiConfiguration.swift in Sources */,
@@ -500,6 +509,7 @@
 				CD05A6F322E8E54500F93F50 /* Handler.swift in Sources */,
 				55DE31742C11E219001D7302 /* AuthorizationResponse.swift in Sources */,
 				557BEFB62C1C91BF00EA89C9 /* KiaParameters.swift in Sources */,
+				55B5D5042C24B58600FFB458 /* AppConfiguration.swift in Sources */,
 				557BEFB72C1C91BF00EA89C9 /* VehicleParameters.swift in Sources */,
 				557BEFB82C1C91BF00EA89C9 /* PorscheParameters.swift in Sources */,
 				55DE31752C11E219001D7302 /* ApiConfiguration.swift in Sources */,
