@@ -25,7 +25,6 @@
 		556C7BD02C00C1D500E828AD /* CarListHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556C7BCF2C00C1D500E828AD /* CarListHandler.swift */; };
 		556C7BD22C00C35F00E828AD /* GetCarPowerLevelStatusHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556C7BD12C00C35F00E828AD /* GetCarPowerLevelStatusHandler.swift */; };
 		557BEFB42C1B718200EA89C9 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */; };
-		557BEFB52C1B728100EA89C9 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */; };
 		557BEFB62C1C91BF00EA89C9 /* KiaParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177F82C1B02A700A0E60C /* KiaParameters.swift */; };
 		557BEFB72C1C91BF00EA89C9 /* VehicleParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177FA2C1B02DF00A0E60C /* VehicleParameters.swift */; };
 		557BEFB82C1C91BF00EA89C9 /* PorscheParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177F62C1B02A200A0E60C /* PorscheParameters.swift */; };
@@ -203,7 +202,6 @@
 				55141EFD2C085B9E00F56A68 /* Api */,
 				55DE31652C11D381001D7302 /* Responses */,
 				553177F52C1B029900A0E60C /* Vehicle */,
-				557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -213,6 +211,7 @@
 			children = (
 				5550E6382C24A1E4008B5328 /* Views */,
 				CDA8AD8422E8CF7C00B1EAF8 /* AppDelegate.swift */,
+				557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */,
 				55141EFB2C07B77500F56A68 /* MainView.swift */,
 			);
 			path = App;
@@ -498,7 +497,6 @@
 				55DE31712C11E215001D7302 /* DatePropertyWrapper.swift in Sources */,
 				55DE31722C11E215001D7302 /* ApiRequest.swift in Sources */,
 				55DE31732C11E215001D7302 /* ApiResponse.swift in Sources */,
-				557BEFB52C1B728100EA89C9 /* AppConfiguration.swift in Sources */,
 				CD05A6F322E8E54500F93F50 /* Handler.swift in Sources */,
 				55DE31742C11E219001D7302 /* AuthorizationResponse.swift in Sources */,
 				557BEFB62C1C91BF00EA89C9 /* KiaParameters.swift in Sources */,
