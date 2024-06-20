@@ -15,3 +15,6 @@ xcuserdata/
 
 **/*.playground/playground.xcworkspace/xcshareddata/*
 !**/*.playground/playground.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+# App Files
+KiaMaps/App/AppConfiguration.swift
