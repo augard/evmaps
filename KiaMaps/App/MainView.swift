@@ -124,56 +124,22 @@ struct MainView: View {
             DisclosureGroup("Selected vehicle", isExpanded: $isSelectedVahicleExpanded) {
                 vehicleRow(selectedVehicle)
 
-                VStack(alignment: .leading) {
-                    Image(systemName: "ev.charger")
-                    HStack {
-                        let value = selectedVehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio / 100
-                        VStack(alignment: .leading) {
-                            ProgressView(value: value) {
-                                Text("Charge: ") + Text(percentNumberFormatter.string(from: value as NSNumber) ?? "")
-                            }
-                        }
-                        Spacer()
-                    }
-                }
+                let value = selectedVehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio / 100
+                DataProgressRowView(icon: .charger, label: "Charge: " + (percentNumberFormatter.string(from: value as NSNumber) ?? ""), value: value)
+                
+                let sohValue = selectedVehicleStatus.state.vehicle.green.batteryManagement.soH.ratio / 100
+                DataProgressRowView(icon: .battery, label: "SOH: " + (percentNumberFormatter.string(from: sohValue as NSNumber) ?? ""), value: sohValue)
 
-                VStack(alignment: .leading) {
-                    Image(systemName: "minus.plus.and.fluid.batteryblock")
-                    HStack {
-                        let value = selectedVehicleStatus.state.vehicle.green.batteryManagement.soH.ratio / 100
-                        VStack(alignment: .leading) {
-                            ProgressView(value: value) {
-                                Text("SOH: ") + Text(percentNumberFormatter.string(from: value as NSNumber) ?? "")
-                            }
-                        }
-                        Spacer()
-                    }
-                }
-
-                VStack(alignment: .leading) {
-                    Image(systemName: "clock")
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text("Last update: ") + Text(selectedVehicleStatus.lastUpdateTime, style: .relative)
-                        }
-                        Spacer()
-                    }
+                DataRowView(icon: .clock, label: "Last Update") {
+                    Text(selectedVehicleStatus.lastUpdateTime, style: .relative)
                 }
             }
         }
     }
 
     func vehicleRow(_ vehicle: Vehicle) -> some View {
-        VStack(alignment: .leading) {
-            Image(systemName: "car")
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(api.configuration.name + " - " + vehicle.nickname + " (" + vehicle.year + ")")
-
-                    Text("VIN: " + vehicle.vin)
-                }
-                Spacer()
-            }
+        DataRowView(icon: .car, label: api.configuration.name + " - " + vehicle.nickname + " (" + vehicle.year + ")") {
+            Text("VIN: " + vehicle.vin)
         }
     }
 
