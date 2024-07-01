@@ -40,12 +40,6 @@ struct MainView: View {
     @State var isSelectedVahicleExpanded = true
     @State var lastUpdateDate: Date?
 
-    private let percentNumberFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        return formatter
-    }()
-
     init(configuration: AppConfiguration.Type) {
         self.configuration = configuration
         api = Api(configuration: configuration.apiConfiguration)
@@ -104,7 +98,7 @@ struct MainView: View {
                 selectedVehicleView
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.grouped)
         .refreshable {
             await refreshData()
         }
@@ -122,28 +116,23 @@ struct MainView: View {
     var selectedVehicleView: some View {
         if let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus {
             DisclosureGroup("Selected vehicle", isExpanded: $isSelectedVahicleExpanded) {
-                vehicleRow(selectedVehicle)
-
-                let value = selectedVehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio / 100
-                DataProgressRowView(icon: .charger, label: "Charge: " + (percentNumberFormatter.string(from: value as NSNumber) ?? ""), value: value)
-                
-                let sohValue = selectedVehicleStatus.state.vehicle.green.batteryManagement.soH.ratio / 100
-                DataProgressRowView(icon: .battery, label: "SOH: " + (percentNumberFormatter.string(from: sohValue as NSNumber) ?? ""), value: sohValue)
-
-                DataRowView(icon: .clock, label: "Last Update") {
-                    Text(selectedVehicleStatus.lastUpdateTime, style: .relative)
-                }
+                VehicleStatusView(
+                    brand: api.configuration.name,
+                    vehicle: selectedVehicle,
+                    vehicleStatus: selectedVehicleStatus.state.vehicle,
+                    lastUpdateTime: selectedVehicleStatus.lastUpdateTime
+                )
             }
         }
     }
-
-    func vehicleRow(_ vehicle: Vehicle) -> some View {
+    
+    private func vehicleRow(_ vehicle: Vehicle) -> some View {
         DataRowView(icon: .car, label: api.configuration.name + " - " + vehicle.nickname + " (" + vehicle.year + ")") {
             Text("VIN: " + vehicle.vin)
         }
     }
 
-    func errorView(error: Error) -> some View {
+    private func errorView(error: Error) -> some View {
         HStack {
             Text(error.localizedDescription)
                 .font(.body)
@@ -151,7 +140,7 @@ struct MainView: View {
         }
     }
 
-    func loadData() async {
+    private func loadData() async {
         do {
             if let authorization = Authorization.authorization {
                 api.authorization = authorization
@@ -194,7 +183,7 @@ struct MainView: View {
         }
     }
 
-    func refreshData() async {
+    private func refreshData() async {
         do {
             guard let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus else { return }
 
@@ -219,11 +208,11 @@ struct MainView: View {
         }
     }
 
-    func login() {
+    private func login() {
         state = .loading
     }
 
-    func logout() async {
+    private func logout() async {
         try? await api.logout()
         Authorization.remove()
         state = .unauthorized

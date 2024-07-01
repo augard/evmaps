@@ -10,9 +10,9 @@ import Foundation
 
 enum AppConfiguration {
     /// Your username to Kia/Hyunday/Genesis connect
-    static let username = ""
+    static let username = "lfoldyna@gmail.com"
     /// Your password to Kia/Hyunday/Genesis connect
-    static let password = ""
+    static let password = "Doily1-factor-flick!"
     /// Supported brands
     static let apiConfiguration: ApiConfiguration = ApiBrand.kia.configuration(for: .europe)
     /// If nil it will choose first vehicle in list

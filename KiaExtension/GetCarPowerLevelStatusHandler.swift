@@ -47,10 +47,10 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
         result.chargingFormulaArguments = chargingFormulaArguments(maximumBatteryCapacity: batteryCapacity, unit: .kilojoules)
 
         result.maximumDistance = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
-        result.distanceRemaining = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.unitLenght)
+        result.distanceRemaining = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.measuremntUnit)
 
         result.maximumDistanceElectric = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
-        result.distanceRemainingElectric = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.unitLenght)
+        result.distanceRemainingElectric = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.measuremntUnit)
 
         result.minimumBatteryCapacity = .init(value: 0, unit: .kilowattHours)
         result.currentBatteryCapacity = .init(value: batteryCapacity * 0.01 * Double(batteryRemain), unit: .kilojoules)
