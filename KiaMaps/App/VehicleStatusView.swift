@@ -45,7 +45,7 @@ struct VehicleStatusView: View {
             }
             
             DisclosureGroup("Green") {
-                let electronics = vehicleStatus.green
+                greenSection(green: vehicleStatus.green)
             }
             
             DisclosureGroup("Service") {
@@ -324,17 +324,159 @@ struct VehicleStatusView: View {
     @ViewBuilder
     func electronicsSection(electronics: VehicleElectronics) -> some View {
         Group {
-            Section("Battery") {
+            Section("Battery - V12") {
+                let value = Double(electronics.battery.level) / 100
+                DataProgressRowView(icon: .battery, label: "Charge: " + (percentNumberFormatter.string(from: value as NSNumber) ?? ""), value: value)
                 
+                DataStateRowView(icon: .batteryWarning, label: "Warning", value: electronics.battery.auxiliary.failWarning, kind: .fault)
+                
+                DataRowView(icon: .batteryWarning, label: "Warning Level At") {
+                    Text("\(electronics.battery.charging.warningLevel) %")
+                }
+                DataRowView(icon: .info, label: "Power State Alert - Class C") {
+                    Text("\(electronics.battery.powerStateAlert.classC)")
+                }
+                DataRowView(icon: .info, label: "Sensor Reliability") {
+                    Text("\(electronics.battery.sensorReliability)")
+                }
             }
             
             Section("Auto Cut") {
-                
+                DataRowView(icon: .info, label: "Power Mode") {
+                    Text("\(electronics.autoCut.powerMode)")
+                }
+                DataRowView(icon: .info, label: "Delivery Mode") {
+                    Text("\(electronics.autoCut.deliveryMode)")
+                }
+                DataStateRowView(icon: .warning, label: "Battery Pre Warning", value: electronics.autoCut.batteryPreWarning, kind: .fault)
             }
             
             DataStateRowView(icon: .key, label: "Key - Low Battery", value: electronics.fob.lowBattery, kind: .fault)
             
             Section("Power Supply") {
+                DataRowView(icon: .info, label: "Accessory") {
+                    Text("\(electronics.powerSupply.accessory)")
+                }
+                if let ignition1 = electronics.powerSupply.ignition1 {
+                    DataRowView(icon: .info, label: "Ignition 1") {
+                        Text("\(ignition1)")
+                    }
+                }
+                if let ignition2 = electronics.powerSupply.ignition2 {
+                    DataRowView(icon: .info, label: "Ignition 2") {
+                        Text("\(ignition2)")
+                    }
+                }
+                if let ignition3 = electronics.powerSupply.ignition3 {
+                    DataRowView(icon: .info, label: "Ignition 3") {
+                        Text("\(ignition3)")
+                    }
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    func greenSection(green: VehicleGreen) -> some View {
+        Group {
+            DataStateRowView(icon: .steering, label: "Driving Ready", value: green.drivingReady, kind: .fault)
+            
+            Section("Power Consumption") {
+                DataRowView(icon: .info, label: "Predication Climate") {
+                    Text("\(green.powerConsumption.prediction.climate)")
+                }
+            }
+            
+            Section("Battery Management") {
+                let value = green.batteryManagement.batteryRemain.ratio / 100
+                DataProgressRowView(icon: .charger, label: "Charge: " + (percentNumberFormatter.string(from: value as NSNumber) ?? ""), value: value)
+                DataEnergyRowView(label: "Charge", value: green.batteryManagement.batteryRemain.value)
+                
+                let sohValue = green.batteryManagement.soH.ratio / 100
+                DataProgressRowView(icon: .battery, label: "State of Health: " + (percentNumberFormatter.string(from: sohValue as NSNumber) ?? ""), value: sohValue)
+                
+                DataEnergyRowView(label: "Total", value: green.batteryManagement.batteryCapacity.value)
+                
+                DataStateRowView(icon: .info, label: "Battery Conditioning", value: green.batteryManagement.batteryConditioning, kind: .fault)
+                
+                DataRowView(icon: .info, label: "Battery Pre Condition - Status") {
+                    Text("\(green.batteryManagement.batteryPreCondition.status)")
+                }
+                DataRowView(icon: .temperature, label: "Battery Pre Condition - Temperature Level") {
+                    Text("\(green.batteryManagement.batteryPreCondition.temperatureLevel)")
+                }
+            }
+            
+            Section("Charging Information") {
+                let unit = green.chargingInformation.estimatedTime.unit
+                Group {
+                    DataTimeRowView(label: "ICCB", value: green.chargingInformation.estimatedTime.iccb, unit: unit)
+                    DataTimeRowView(label: "Standard", value: green.chargingInformation.estimatedTime.standard, unit: unit)
+                    DataTimeRowView(label: "Quick", value: green.chargingInformation.estimatedTime.standard, unit: unit)
+                    DataTimeRowView(label: "Charging Time", value: green.chargingInformation.charging.remainTime, unit: green.chargingInformation.charging.remainTimeUnit)
+                }
+                
+                let expectedTime = green.chargingInformation.expectedTime
+                DataRowView(icon: .info, label: "Expected Time - Start") {
+                    Text("Day: \(expectedTime.startHour), time: \(expectedTime.startHour):\(expectedTime.startMin)")
+                }
+                DataRowView(icon: .info, label: "Expected Time - End") {
+                    Text("Day: \(expectedTime.endDay), time: \(expectedTime.endHour):\(expectedTime.endMin)")
+                }
+                
+                Group {
+                    DataRowView(icon: .info, label: "DTE - Target SOC - Standard") {
+                        Text("\(green.chargingInformation.dte.targetSoC.standard)")
+                    }
+                    DataRowView(icon: .info, label: "DTE - Target SOC - Quick") {
+                        Text("\(green.chargingInformation.dte.targetSoC.quick)")
+                    }
+                    DataRowView(icon: .info, label: "Target SOC - Standard") {
+                        Text("\(green.chargingInformation.targetSoC.standard) %")
+                    }
+                    DataRowView(icon: .info, label: "Target SOC - Quick") {
+                        Text("\(green.chargingInformation.targetSoC.quick) %")
+                    }
+                }
+                
+                DataStateRowView(icon: .connector, label: "Connector Fasteining", value: green.chargingInformation.connectorFastening.state == 1)
+                
+                DataStateRowView(icon: .plug, label: "Electric Current Level", value: green.chargingInformation.electricCurrentLevel.state == 1)
+                
+                DataRowView(icon: .info, label: "Sequence Details") {
+                    Text("\(green.chargingInformation.sequenceDetails)")
+                }
+                DataRowView(icon: .info, label: "Sequence Subcode") {
+                    Text("\(green.chargingInformation.sequenceSubcode)")
+                }
+            }
+            
+            Section("Energy Information") {
+                
+            }
+            
+            Section("Electric") {
+                
+            }
+            
+            Section("Reservation") {
+                
+            }
+            
+            Section("Charging Door") {
+                DataRowView(icon: .info, label: "Status") {
+                    Text("\(green.chargingDoor.state)")
+                }
+                DataRowView(icon: .warning, label: "Error") {
+                    Text("\(green.chargingDoor.errorState)")
+                }
+            }
+            
+            Section("Plug & Charge") {
+                
+            }
+            
+            Section("Driving History") {
                 
             }
         }

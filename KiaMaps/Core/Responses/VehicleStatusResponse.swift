@@ -42,7 +42,7 @@ struct VehicleStatus: Codable {
     let chassis: VehicleChassis
     let drivetrain: VehicleDrivetrain
     let electronics: VehicleElectronics
-    let green: Green
+    let green: VehicleGreen
     let service: Service
     let remoteControl: RemoteControl
     let connectedService: ConnectedService
@@ -712,7 +712,7 @@ struct VehicleElectronics: Codable {
         }
 
         struct BatteryCharging: Codable {
-            @BoolValue private(set) var warningLevel: Bool
+            let warningLevel: Int
 
             enum CodingKeys: String, CodingKey {
                 case warningLevel = "WarningLevel"
@@ -738,7 +738,7 @@ struct VehicleElectronics: Codable {
 
     struct AutoCut: Codable {
         let powerMode: Int
-        let batteryPreWarning: Int
+        @BoolValue private(set) var batteryPreWarning: Bool
         let deliveryMode: Int
 
         enum CodingKeys: String, CodingKey {
@@ -780,17 +780,27 @@ struct VehicleElectronics: Codable {
 
 // MARK: - Green
 
-struct Green: Codable {
+struct VehicleGreen: Codable {
     @BoolValue private(set) var drivingReady: Bool
-    let powerConsumption: PowerConsumption
-    let batteryManagement: BatteryManagement
+    let powerConsumption: VehiclePowerConsumption
+    let batteryManagement: VehicleBatteryManagement
     let electric: Electric
-    let chargingInformation: ChargingInformation
+    let chargingInformation: VehicleChargingInformation
     let reservation: Reservation
     let energyInformation: EnergyInformation
     let chargingDoor: ChargingDoor
     let plugAndCharge: PlugAndCharge
     let drivingHistory: DrivingHistory
+    
+    struct ChargingDoor: Codable {
+        let state: Int
+        let errorState: Int
+
+        enum CodingKeys: String, CodingKey {
+            case state = "State"
+            case errorState = "ErrorState"
+        }
+    }
 
     enum CodingKeys: String, CodingKey {
         case drivingReady = "DrivingReady"
@@ -808,7 +818,7 @@ struct Green: Codable {
 
 // MARK: - BatteryManagement
 
-struct BatteryManagement: Codable {
+struct VehicleBatteryManagement: Codable {
     let soH: SoH
     let batteryRemain: BatteryRemain
     @BoolValue private(set) var batteryConditioning: Bool
@@ -861,21 +871,9 @@ struct BatteryManagement: Codable {
     }
 }
 
-// MARK: - ChargingDoor
-
-struct ChargingDoor: Codable {
-    let state: Int
-    let errorState: Int
-
-    enum CodingKeys: String, CodingKey {
-        case state = "State"
-        case errorState = "ErrorState"
-    }
-}
-
 // MARK: - ChargingInformation
 
-struct ChargingInformation: Codable {
+struct VehicleChargingInformation: Codable {
     let estimatedTime: EstimatedTime
     let expectedTime: ExpectedTime
     let dte: Dte
@@ -919,7 +917,7 @@ struct ChargingInformation: Codable {
     }
 
     struct Dte: Codable {
-        let targetSoC: TargetSoC
+        let targetSoC: TargetSoC // Not %
 
         enum CodingKeys: String, CodingKey {
             case targetSoC = "TargetSoC"
@@ -1075,9 +1073,9 @@ struct PlugAndCharge: Codable {
     }
 }
 
-// MARK: - PowerConsumption
+// MARK: - VehiclePowerConsumption
 
-struct PowerConsumption: Codable {
+struct VehiclePowerConsumption: Codable {
     let prediction: Prediction
 
     struct Prediction: Codable {

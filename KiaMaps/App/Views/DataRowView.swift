@@ -16,7 +16,13 @@ enum IconName: String {
     
     case charger = "ev.charger"
     case battery = "minus.plus.and.fluid.batteryblock"
+    case batteryWarning = "minus.plus.batteryblock.exclamationmark"
+    case batteryCharing = "bolt.batteryblock"
+    case connector = "ev.plug.dc.ccs2"
+    case plug = "powerplug"
+    
     case clock
+    
     case windshield = "windshield.front.and.wiper"
     case windshieldDefog = "windshield.front.and.heat.waves"
     case windshieldHeat = "heat.element.windshield"
@@ -229,7 +235,73 @@ struct DataEconomyRowView: View {
         self.icon = icon
         self.label = label
         let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
         self.value = (numberFormatter.string(from: value as NSNumber) ?? "") + " " + unit.unitTitle
+    }
+    
+    var body: some View {
+        DataRowView(icon: icon, label: label) {
+            Text(value)
+        }
+    }
+}
+
+struct DataEnergyRowView: View {
+    var icon: IconName
+    var label: String
+    var value: String
+    
+    init(
+        icon: IconName = .charger,
+        label: String = "Capacity",
+        value: Double
+    ) {
+        self.icon = icon
+        self.label = label
+        let measurement: Measurement<UnitEnergy> = .init(value: value, unit: .kilojoules)
+        let message = MeasurementFormatter()
+        message.unitOptions = .providedUnit
+        self.value = message.string(from: measurement.converted(to: .kilowattHours))
+    }
+    
+    var body: some View {
+        DataRowView(icon: icon, label: label) {
+            Text(value)
+        }
+    }
+}
+
+struct DataTimeRowView: View {
+    var icon: IconName
+    var label: String
+    var value: String
+    
+    init(
+        icon: IconName = .clock,
+        label: String,
+        value: Int,
+        unit: TimeUnit
+    ) {
+        self.icon = icon
+        self.label = label
+        let measurement: Measurement<UnitDuration> = .init(value: Double(value), unit: unit.unitDuration)
+        let message = MeasurementFormatter()
+        message.unitOptions = .providedUnit
+        self.value = message.string(from: measurement)
+    }
+    
+    init(
+        icon: IconName = .clock,
+        label: String,
+        value: Double,
+        unit: TimeUnit
+    ) {
+        self.icon = icon
+        self.label = label
+        let measurement: Measurement<UnitDuration> = .init(value: value, unit: unit.unitDuration)
+        let message = MeasurementFormatter()
+        message.unitOptions = .providedUnit
+        self.value = message.string(from: measurement)
     }
     
     var body: some View {
