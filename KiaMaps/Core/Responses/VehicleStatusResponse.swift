@@ -1260,7 +1260,7 @@ struct Location: Codable {
 
     struct Speed: Codable {
         let unit: SpeedUnit
-        let value: Int
+        let value: Double
 
         enum CodingKeys: String, CodingKey {
             case unit = "Unit"
