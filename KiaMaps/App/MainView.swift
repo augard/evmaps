@@ -132,11 +132,25 @@ struct MainView: View {
         }
     }
 
-    private func errorView(error: Error) -> some View {
-        HStack {
-            Text(error.localizedDescription)
-                .font(.body)
-                .multilineTextAlignment(.center)
+    func errorView(error: Error) -> some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text(error.localizedDescription)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+            }
+
+            Button(
+                action: {
+                    Task {
+                        state = .loading
+                        await loadData()
+                    }
+                },
+                label: {
+                    Text("Retry...")
+                }
+            )
         }
     }
 
