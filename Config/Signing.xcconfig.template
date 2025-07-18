@@ -1,0 +1,24 @@
+// Signing.xcconfig.template
+// Template for local signing configuration
+// 
+// USAGE:
+// 1. Copy this file to Signing.xcconfig in the same directory
+// 2. Update the values with your specific team ID and provisioning profile names
+// 3. Do NOT commit Signing.xcconfig to version control (it's in .gitignore)
+
+// TEAM ID Configuration
+// Find your Team ID at developer.apple.com under Membership
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+
+// Provisioning Profile Names
+// Replace with your actual provisioning profile names
+// These must match exactly what's shown in Xcode or developer portal
+PROVISIONING_PROFILE_SPECIFIER = Your Provisioning Profile Name
+EXTENSION_PROVISIONING_PROFILE_SPECIFIER = Your Provisioning Profile Name
+EXTENSION_UI_PROVISIONING_PROFILE_SPECIFIER = Your Provisioning Profile Name
+
+// Example for Porsche team:
+// DEVELOPMENT_TEAM = ABC123DEF4
+// PROVISIONING_PROFILE_SPECIFIER = Porsche Wildcard Development
+// EXTENSION_PROVISIONING_PROFILE_SPECIFIER = Porsche Wildcard Development
+// EXTENSION_UI_PROVISIONING_PROFILE_SPECIFIER = Porsche Wildcard Development

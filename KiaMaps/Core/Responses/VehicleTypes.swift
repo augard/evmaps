@@ -116,6 +116,11 @@ enum ChargerPlugType: Int, Codable {
     case acCharger120V = 2
 }
 
+enum ChargeDoorStatus: Int, Codable {
+    case open = 1
+    case closed = 2
+}
+
 enum VehicleType: String, Codable {
     case internalCombustionEngine = "GN"
     case hybrid = "HEV"

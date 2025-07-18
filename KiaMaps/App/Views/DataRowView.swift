@@ -13,7 +13,9 @@ enum IconName: String {
     case info = "info.circle"
     case warning = "exclamationmark.circle"
     case ready = "figure.run"
-    
+    case power = "bolt.fill"
+    case grid = "grid"
+
     case charger = "ev.charger"
     case battery = "minus.plus.and.fluid.batteryblock"
     case batteryWarning = "minus.plus.batteryblock.exclamationmark"
