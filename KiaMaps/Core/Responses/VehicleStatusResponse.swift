@@ -1048,7 +1048,7 @@ struct PlugAndCharge: Codable {
 
     struct Selection: Codable {
         let selectedCert: Int
-        @BoolValue private(set) var changeable: Bool
+        private(set) var changeable: Int
         let mode: Int
 
         enum CodingKeys: String, CodingKey {
