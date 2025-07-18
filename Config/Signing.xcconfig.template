@@ -1,4 +1,4 @@
-// Signing.xcconfig.template
+// Signing.xcconfig
 // Template for local signing configuration
 // 
 // USAGE:
@@ -7,18 +7,41 @@
 // 3. Do NOT commit Signing.xcconfig to version control (it's in .gitignore)
 
 // TEAM ID Configuration
-// Find your Team ID at developer.apple.com under Membership
+// Replace with your Apple Developer Team ID (found in developer.apple.com)
 DEVELOPMENT_TEAM = YOUR_TEAM_ID
 
+
+// Bundle ID Configuration
+// Base bundle identifier for the app
+PRODUCT_BUNDLE_IDENTIFIER_BASE = com.porsche
+
+// Main app bundle identifier
+PRODUCT_BUNDLE_IDENTIFIER = $(PRODUCT_BUNDLE_IDENTIFIER_BASE).kiamaps
+
+// Extension bundle identifiers
+EXTENSION_BUNDLE_IDENTIFIER = $(PRODUCT_BUNDLE_IDENTIFIER).extension
+EXTENSION_UI_BUNDLE_IDENTIFIER = $(PRODUCT_BUNDLE_IDENTIFIER).extension-ui
+
 // Provisioning Profile Names
-// Replace with your actual provisioning profile names
-// These must match exactly what's shown in Xcode or developer portal
+// Replace these with the exact names of your provisioning profiles from developer.apple.com
+// You can find these names in Xcode's preferences or on the developer portal
+
+// Main app provisioning profile
 PROVISIONING_PROFILE_SPECIFIER = Your Provisioning Profile Name
+
+
+// Extension provisioning profiles (can be the same wildcard profile)
 EXTENSION_PROVISIONING_PROFILE_SPECIFIER = Your Provisioning Profile Name
 EXTENSION_UI_PROVISIONING_PROFILE_SPECIFIER = Your Provisioning Profile Name
 
-// Example for Porsche team:
-// DEVELOPMENT_TEAM = ABC123DEF4
-// PROVISIONING_PROFILE_SPECIFIER = Porsche Wildcard Development
-// EXTENSION_PROVISIONING_PROFILE_SPECIFIER = Porsche Wildcard Development
-// EXTENSION_UI_PROVISIONING_PROFILE_SPECIFIER = Porsche Wildcard Development
+// Code Signing Identity
+// Usually "iPhone Developer" for development or "iPhone Distribution" for release
+CODE_SIGN_IDENTITY = iPhone Developer
+
+// Code Signing Style
+// Set to Manual since we're using specific provisioning profiles
+CODE_SIGN_STYLE = Manual
+
+// App Groups
+// Shared container for data between app and extensions
+APP_GROUP_IDENTIFIER = group.$(PRODUCT_BUNDLE_IDENTIFIER_BASE).kiamaps
