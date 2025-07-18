@@ -510,7 +510,7 @@ struct VehicleStatusView: View {
                 DataRowView(icon: .info, label: "Selected Certificate") {
                     Text("\(green.plugAndCharge.selection.selectedCert + 1)")
                 }
-                DataStateRowView(icon: .info, label: "Selected Certificate - Changeable", value: green.plugAndCharge.selection.changeable)
+                DataStateRowView(icon: .info, label: "Selected Certificate - Changeable", value: green.plugAndCharge.selection.changeable == 1)
                 DataRowView(icon: .info, label: "Selected Certificate - Mode") {
                     Text("\(green.plugAndCharge.selection.mode)")
                 }
