@@ -129,6 +129,8 @@
 		55DE317C2C11E3D4001D7302 /* KiaExtensionUI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KiaExtensionUI.entitlements; sourceTree = "<group>"; };
 		55DE31862C1348ED001D7302 /* Authorization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Authorization.swift; sourceTree = "<group>"; };
 		55FC13642C10B2DA00018709 /* VehicleTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleTypes.swift; sourceTree = "<group>"; };
+		8057CBEC2E2A93EE002BBB52 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+		8057CBED2E2A93EE002BBB52 /* Signing.xcconfig.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = Signing.xcconfig.template; sourceTree = "<group>"; };
 		CD05A6F022E8E4EA00F93F50 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		CD05A6F222E8E54500F93F50 /* Handler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Handler.swift; sourceTree = "<group>"; };
 		CD05A6F822E9018D00F93F50 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -254,10 +256,20 @@
 			path = Authorization;
 			sourceTree = "<group>";
 		};
+		8057CBEE2E2A93EE002BBB52 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				8057CBEC2E2A93EE002BBB52 /* Signing.xcconfig */,
+				8057CBED2E2A93EE002BBB52 /* Signing.xcconfig.template */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
 		CDA8AD7822E8CF7B00B1EAF8 = {
 			isa = PBXGroup;
 			children = (
 				CD05A6F822E9018D00F93F50 /* README.md */,
+				8057CBEE2E2A93EE002BBB52 /* Config */,
 				CDA8AD8322E8CF7B00B1EAF8 /* KiaMaps */,
 				CDA8AD9B22E8CF8700B1EAF8 /* KiaExtension */,
 				CDA8ADA722E8CF8700B1EAF8 /* KiaExtensionUI */,
@@ -579,6 +591,7 @@
 /* Begin XCBuildConfiguration section */
 		CDA8AD9122E8CF7D00B1EAF8 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8057CBEC2E2A93EE002BBB52 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -640,6 +653,7 @@
 		};
 		CDA8AD9222E8CF7D00B1EAF8 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8057CBEC2E2A93EE002BBB52 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -699,9 +713,6 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = KiaMaps/KiaMaps.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = N448G4S8S9;
 				INFOPLIST_FILE = KiaMaps/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -711,7 +722,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.porsche.one;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Test all";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -726,9 +736,6 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = KiaMaps/KiaMaps.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = N448G4S8S9;
 				INFOPLIST_FILE = KiaMaps/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -738,7 +745,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.porsche.one;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Test all";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -751,9 +757,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KiaExtensionUI/KiaExtensionUI.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = N448G4S8S9;
 				INFOPLIST_FILE = KiaExtensionUI/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -763,7 +766,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.porsche.one.KiaExtensionUI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Test all";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -774,9 +776,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KiaExtensionUI/KiaExtensionUI.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = N448G4S8S9;
 				INFOPLIST_FILE = KiaExtensionUI/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -786,7 +785,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.porsche.one.KiaExtensionUI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Test all";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -797,9 +795,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KiaExtension/KiaExtension.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = N448G4S8S9;
 				INFOPLIST_FILE = KiaExtension/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -809,7 +804,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.porsche.one.voltron-extension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Test all";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -820,9 +814,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KiaExtension/KiaExtension.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = N448G4S8S9;
 				INFOPLIST_FILE = KiaExtension/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -832,7 +823,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.porsche.one.voltron-extension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Test all";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

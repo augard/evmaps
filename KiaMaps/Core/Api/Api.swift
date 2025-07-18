@@ -107,6 +107,7 @@ private extension Api {
             "Sec-Fetch-Site": "same-site",
             "Sec-Fetch-Mode": "navigate",
             "Sec-Fetch-Dest": "document",
+            "Referer": "https://prd.eu-ccapi.\(configuration.key).com:8080"
         ]
         let body = try await provider.request(
             endpoint: .loginPage,
@@ -122,6 +123,7 @@ private extension Api {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Sec-Fetch-Site": "none",
             "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Dest": "document",
             "Origin": "null",
         ]
         let form: ApiRequest.Form = [
@@ -167,10 +169,8 @@ private extension Api {
     func authorization() async throws {
         let queryItems: [URLQueryItem] = [
             .init(name: "response_type", value: "code"),
-            .init(name: "state", value: "test"),
             .init(name: "client_id", value: configuration.serviceId),
-            .init(name: "redirect_uri", value: "\(configuration.baseUrl):\(configuration.port)/api/v1/user/oauth2/redirect"),
-            .init(name: "lang", value: "en"),
+            .init(name: "redirect_uri", value: "\(configuration.baseUrl):\(configuration.port)/api/v1/user/oauth2/redirect")
         ]
         let headers = [
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -282,7 +282,7 @@ private extension Api {
 
     func extractLoginUrlQuery(from htmlString: String) -> String? {
         // Define the regular expression pattern
-        let pattern = "eu-account\\.kia\\.com\\/auth\\/realms\\/eukiaidm\\/login-actions\\/authenticate?([^\"]+)"
+        let pattern = "eu-account\\.\(configuration.key)\\.com\\/auth\\/realms\\/eu\(configuration.key)idm\\/login-actions\\/authenticate?([^\"]+)"
 
         do {
             let regex = try NSRegularExpression(pattern: pattern, options: [])

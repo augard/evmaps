@@ -7,19 +7,26 @@
 //
 
 import SwiftUI
+import MapKit
 
 struct VehicleStatusView: View {
     let brand: String
     let vehicle: Vehicle
     let vehicleStatus: VehicleStatus
     let lastUpdateTime: Date
-    
+
     private let percentNumberFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .percent
         return formatter
     }()
-    
+
+    private let numberFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter
+    }()
+
     var body: some View {
         Group {
             mainSection(vehicle: vehicle, status: vehicleStatus, lastUpdateTime: lastUpdateTime)
@@ -49,15 +56,11 @@ struct VehicleStatusView: View {
             }
             
             DisclosureGroup("Service") {
-                let service = vehicleStatus.service
+                serviceSection(service: vehicleStatus.service, remoteControl: vehicleStatus.remoteControl)
             }
-            
-            DisclosureGroup("Remote Control") {
-                let remoteControl = vehicleStatus.remoteControl
-            }
-            
+
             DisclosureGroup("Location") {
-                let location = vehicleStatus.location
+                locationSection(location: vehicleStatus.location)
             }
         }
     }
@@ -450,19 +453,7 @@ struct VehicleStatusView: View {
                     Text("\(green.chargingInformation.sequenceSubcode)")
                 }
             }
-            
-            Section("Energy Information") {
-                
-            }
-            
-            Section("Electric") {
-                
-            }
-            
-            Section("Reservation") {
-                
-            }
-            
+
             Section("Charging Door") {
                 DataRowView(icon: .info, label: "Status") {
                     Text("\(green.chargingDoor.state)")
@@ -471,14 +462,125 @@ struct VehicleStatusView: View {
                     Text("\(green.chargingDoor.errorState)")
                 }
             }
-            
-            Section("Plug & Charge") {
-                
-            }
-            
+
+
             Section("Driving History") {
-                
+                DataRowView(icon: .info, label: "Avarge") {
+                    Text(numberFormatter.string(from: green.drivingHistory.average as NSNumber) ?? "")
+                }
             }
+            
+            Section("Electric - Smart Grid") {
+                DataRowView(icon: .grid, label: "Vehicle to Load - SOC") {
+                    Text("\(green.electric.smartGrid.vehicleToLoad.dischargeLimitation.soc) %")
+                }
+
+                DataRowView(icon: .clock, label: "Vehicle to Load - Remaining Time") {
+                    Text("\(green.electric.smartGrid.vehicleToLoad.dischargeLimitation.remainTime)")
+                }
+
+                DataRowView(icon: .grid, label: "Vehicle to Grid - Mode") {
+                    Text("\(green.electric.smartGrid.vehicleToGrid.mode)")
+                }
+
+                DataRowView(icon: .power, label: "Real Time Power") {
+                    Text(numberFormatter.string(from: green.electric.smartGrid.realTimePower as NSNumber) ?? "")
+                }
+            }
+
+            Section("Energy Information") {
+                DataRowView(icon: .info, label: "DTE - Invalid") {
+                    Text("\(green.energyInformation.dte.invalid)")
+                }
+            }
+
+            Section("Reservation") {
+                DataRowView(icon: .info, label: "Departure") {
+                    Text("TODO")
+                }
+                DataRowView(icon: .info, label: "Off Peak Time 1") {
+                    Text("TODO")
+                }
+                DataRowView(icon: .info, label: "Off Peak Time 2") {
+                    Text("TODO")
+                }
+            }
+
+            Section("Plug & Charge") {
+                DataRowView(icon: .info, label: "Selected Certificate") {
+                    Text("\(green.plugAndCharge.selection.selectedCert + 1)")
+                }
+                DataStateRowView(icon: .info, label: "Selected Certificate - Changeable", value: green.plugAndCharge.selection.changeable)
+                DataRowView(icon: .info, label: "Selected Certificate - Mode") {
+                    Text("\(green.plugAndCharge.selection.mode)")
+                }
+
+                DataRowView(icon: .info, label: "Certificate 1 - Company") {
+                    Text("\(green.plugAndCharge.contractCertificate1.company)")
+                }
+                DataRowView(icon: .info, label: "Certificate 1 - State") {
+                    Text("\(green.plugAndCharge.contractCertificate1.state)")
+                }
+
+                DataRowView(icon: .info, label: "Certificate 2 - Company") {
+                    Text("\(green.plugAndCharge.contractCertificate2.company)")
+                }
+                DataRowView(icon: .info, label: "Certificate 2 - State") {
+                    Text("\(green.plugAndCharge.contractCertificate2.state)")
+                }
+
+                DataRowView(icon: .info, label: "Certificate 3 - Company") {
+                    Text("\(green.plugAndCharge.contractCertificate3.company)")
+                }
+                DataRowView(icon: .info, label: "Certificate 3 - State") {
+                    Text("\(green.plugAndCharge.contractCertificate3.state)")
+                }
+
+                DataRowView(icon: .info, label: "Certificate 4 - Company") {
+                    Text("\(green.plugAndCharge.contractCertificate4.company)")
+                }
+                DataRowView(icon: .info, label: "Certificate 4 - State") {
+                    Text("\(green.plugAndCharge.contractCertificate4.state)")
+                }
+
+                DataRowView(icon: .info, label: "Certificate 5 - Company") {
+                    Text("\(green.plugAndCharge.contractCertificate5.company)")
+                }
+                DataRowView(icon: .info, label: "Certificate 5 - State") {
+                    Text("\(green.plugAndCharge.contractCertificate5.state)")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    func serviceSection(service: Service, remoteControl: VehicleStatus.RemoteControl) -> some View {
+        Group {
+            Section("Connected Car") {
+                DataStateRowView(icon: .update, label: "Remote Control - Available", value: service.connectedCar.remoteControl.available, kind: .fault)
+                DataRowView(icon: .clock, label: "Remote Control - Waiting Time") {
+                    Text(numberFormatter.string(from: service.connectedCar.remoteControl.waitingTime as NSNumber) ?? "")
+                }
+                DataStateRowView(icon: .update, label: "Remote Control - Sleep Mode", value: remoteControl.sleepMode, kind: .fault)
+                DataStateRowView(icon: .info, label: "Active Alert - Available", value: service.connectedCar.activeAlert.available, kind: .fault)
+            }
+        }
+    }
+
+    @ViewBuilder
+    func locationSection(location: Location) -> some View {
+        Group {
+            Section("Connected Car") {
+               
+            }
+
+            Map(initialPosition: .camera(.init(centerCoordinate: location.geoCoordinate.location.coordinate, distance: 500))) {
+                Marker(vehicle.nickname, systemImage: "bolt.car", coordinate: location.geoCoordinate.location.coordinate)
+                    .tint(.blue)
+            }
+            .mapStyle(.standard)
+            .mapControlVisibility(.hidden)
+            .frame(height: 400)
         }
     }
 }

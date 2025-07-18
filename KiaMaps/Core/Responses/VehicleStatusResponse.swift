@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CoreLocation
 
 // MARK: - ResMsg
 
@@ -793,7 +794,7 @@ struct VehicleGreen: Codable {
     let drivingHistory: DrivingHistory
     
     struct ChargingDoor: Codable {
-        let state: Int
+        let state: ChargeDoorStatus
         let errorState: Int
 
         enum CodingKeys: String, CodingKey {
@@ -961,7 +962,7 @@ struct VehicleChargingInformation: Codable {
 
 struct DrivingHistory: Codable {
     let average: Double
-    let unit: Int
+    let unit: DistanceUnit
 
     enum CodingKeys: String, CodingKey {
         case average = "Average"
@@ -980,7 +981,7 @@ struct Electric: Codable {
         let realTimePower: Double
 
         struct VehicleToGrid: Codable {
-            let mode: Int
+            @BoolValue private(set) var mode: Bool
 
             enum CodingKeys: String, CodingKey {
                 case mode = "Mode"
@@ -988,7 +989,17 @@ struct Electric: Codable {
         }
 
         struct VehicleToLoad: Codable {
-            let dischargeLimitation: [String: Int]
+            let dischargeLimitation: DischargeLimitation
+
+            struct DischargeLimitation: Codable {
+                var soc: Int
+                var remainTime: Int
+
+                enum CodingKeys: String, CodingKey {
+                    case soc = "SoC"
+                    case remainTime = "RemainTime"
+                }
+            }
 
             enum CodingKeys: String, CodingKey {
                 case dischargeLimitation = "DischargeLimitation"
@@ -1028,16 +1039,16 @@ struct EnergyInformation: Codable {
 // MARK: - PlugAndCharge
 
 struct PlugAndCharge: Codable {
-    let contractCertificate1: ContractCertificate1Class
-    let contractCertificate2: ContractCertificate1Class
-    let contractCertificate3: ContractCertificate1Class
-    let contractCertificate4: ContractCertificate1Class
-    let contractCertificate5: ContractCertificate1Class
-    let contractCertificate: ContractCertificate
+    let contractCertificate1: ContractCertificate
+    let contractCertificate2: ContractCertificate
+    let contractCertificate3: ContractCertificate
+    let contractCertificate4: ContractCertificate
+    let contractCertificate5: ContractCertificate
+    let selection: Selection
 
-    struct ContractCertificate: Codable {
+    struct Selection: Codable {
         let selectedCert: Int
-        let changeable: Int
+        @BoolValue private(set) var changeable: Bool
         let mode: Int
 
         enum CodingKeys: String, CodingKey {
@@ -1047,7 +1058,7 @@ struct PlugAndCharge: Codable {
         }
     }
 
-    struct ContractCertificate1Class: Codable {
+    struct ContractCertificate: Codable {
         let company: String
         let companyMask: Int
         let state: Int
@@ -1069,7 +1080,7 @@ struct PlugAndCharge: Codable {
         case contractCertificate3 = "ContractCertificate3"
         case contractCertificate4 = "ContractCertificate4"
         case contractCertificate5 = "ContractCertificate5"
-        case contractCertificate = "ContractCertificate"
+        case selection = "ContractCertificate"
     }
 }
 
@@ -1095,109 +1106,103 @@ struct VehiclePowerConsumption: Codable {
 
 struct Reservation: Codable {
     let departure: Departure
-    let offPeakTime: OffPeakTime
+    let offPeakTime1: OffPeakTime
     let offPeakTime2: OffPeakTime
 
     struct Departure: Codable {
         let schedule1: Schedule
         let schedule2: Schedule
-        let climate: Climate
+        let climate1: Climate
         let climate2: Climate
+
+        struct Schedule: Codable {
+            let hour: Int
+            let minute: Int
+            let monday: Int
+            let tuesday: Int
+            let wensday: Int
+            let thursday: Int
+            let friday: Int
+            let saturday: Int
+            let sunday: Int
+            let climate: Climate?
+            @BoolValue private(set) var enable: Bool
+            let activation: Int?
+
+            struct Climate: Codable {
+                @BoolValue private(set) var defrost: Bool
+                let temperatureHex: String
+                let temperature: String
+
+                enum CodingKeys: String, CodingKey {
+                    case defrost = "Defrost"
+                    case temperatureHex = "TemperatureHex"
+                    case temperature = "Temperature"
+                }
+            }
+
+            enum CodingKeys: String, CodingKey {
+                case hour = "Hour"
+                case minute = "Min"
+
+                case monday = "Mon"
+                case tuesday = "Tue"
+                case wensday = "Wed"
+                case thursday = "Thu"
+                case friday = "Fri"
+                case saturday = "Sat"
+                case sunday = "Sun"
+                case climate = "Climate"
+
+                case enable = "Enable"
+                case activation = "Activation"
+            }
+        }
+
+        struct Climate: Codable {
+            @BoolValue private(set) var activation: Bool
+            let temperatureHex: String
+            @BoolValue private(set) var defrost: Bool
+            let temperatureUnit: TemperatureUnit
+            let temperature: String
+
+            enum CodingKeys: String, CodingKey {
+                case activation = "Activation"
+                case temperatureHex = "TemperatureHex"
+                case defrost = "Defrost"
+                case temperatureUnit = "TemperatureUnit"
+                case temperature = "Temperature"
+            }
+        }
 
         enum CodingKeys: String, CodingKey {
             case schedule1 = "Schedule1"
             case schedule2 = "Schedule2"
-            case climate = "Climate"
+            case climate1 = "Climate"
             case climate2 = "Climate2"
+        }
+    }
+
+    struct OffPeakTime: Codable {
+        let startHour: Int
+        let startMin: Int
+        let endHour: Int
+        let endMin: Int
+        let mode: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case startHour = "StartHour"
+            case startMin = "StartMin"
+            case endHour = "EndHour"
+            case endMin = "EndMin"
+            case mode = "Mode"
         }
     }
 
     enum CodingKeys: String, CodingKey {
         case departure = "Departure"
-        case offPeakTime = "OffPeakTime"
+        case offPeakTime1 = "OffPeakTime"
         case offPeakTime2 = "OffPeakTime2"
-    }
-}
-
-// MARK: - Climate
-
-struct Climate: Codable {
-    let activation: Int
-    let temperatureHex: String
-    let defrost: Int
-    let temperatureUnit: TemperatureUnit
-    let temperature: String
-
-    enum CodingKeys: String, CodingKey {
-        case activation = "Activation"
-        case temperatureHex = "TemperatureHex"
-        case defrost = "Defrost"
-        case temperatureUnit = "TemperatureUnit"
-        case temperature = "Temperature"
-    }
-}
-
-// MARK: - Schedule
-
-struct Schedule: Codable {
-    let hour: Int
-    let minute: Int
-    let monday: Int
-    let tuesday: Int
-    let wensday: Int
-    let thursday: Int
-    let friday: Int
-    let saturday: Int
-    let sunday: Int
-    let climate: Schedule1Climate?
-    @BoolValue private(set) var enable: Bool
-    let activation: Int?
-
-    struct Schedule1Climate: Codable {
-        let defrost: Int
-        let temperatureHex: String
-        let temperature: String
-
-        enum CodingKeys: String, CodingKey {
-            case defrost = "Defrost"
-            case temperatureHex = "TemperatureHex"
-            case temperature = "Temperature"
-        }
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case hour = "Hour"
-        case minute = "Min"
-
-        case monday = "Mon"
-        case tuesday = "Tue"
-        case wensday = "Wed"
-        case thursday = "Thu"
-        case friday = "Fri"
-        case saturday = "Sat"
-        case sunday = "Sun"
-        case climate = "Climate"
-
-        case enable = "Enable"
-        case activation = "Activation"
-    }
-}
-
-// MARK: - OffPeakTime
-
-struct OffPeakTime: Codable {
-    let startHour: Int
-    let startMin: Int
-    let endHour: Int
-    let endMin: Int
-    let mode: Int?
-
-    enum CodingKeys: String, CodingKey {
-        case startHour = "StartHour"
-        case startMin = "StartMin"
-        case endHour = "EndHour"
-        case endMin = "EndMin"
-        case mode = "Mode"
     }
 }
 
@@ -1209,7 +1214,7 @@ struct Location: Codable {
     let servicestate: Int
     let timeStamp: TimeStamp
     let version: String
-    let geoCoord: GeoCoordinate
+    let geoCoordinate: GeoCoordinate
     let heading: Double
     let speed: Speed
 
@@ -1248,6 +1253,16 @@ struct Location: Codable {
         let longitude: Double
         let type: Int
 
+        var location: CLLocation {
+            .init(
+                coordinate: .init(latitude: latitude, longitude: longitude),
+                altitude: altitude,
+                horizontalAccuracy: 100,
+                verticalAccuracy: 100,
+                timestamp: .now
+            )
+        }
+
         enum CodingKeys: String, CodingKey {
             case altitude = "Altitude"
             case latitude = "Latitude"
@@ -1272,7 +1287,7 @@ struct Location: Codable {
         case servicestate = "Servicestate"
         case timeStamp = "TimeStamp"
         case version = "Version"
-        case geoCoord = "GeoCoord"
+        case geoCoordinate = "GeoCoord"
         case heading = "Heading"
         case speed = "Speed"
     }
