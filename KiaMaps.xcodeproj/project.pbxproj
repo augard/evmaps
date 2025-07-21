@@ -54,6 +54,8 @@
 		55DE31892C134B61001D7302 /* Authorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31862C1348ED001D7302 /* Authorization.swift */; };
 		55DE318A2C134B61001D7302 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31692C11E03A001D7302 /* Keychain.swift */; };
 		55FC13652C10B2DA00018709 /* VehicleTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55FC13642C10B2DA00018709 /* VehicleTypes.swift */; };
+		803D46992E2E9856003EFC10 /* TemperatureDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803D46982E2E9856003EFC10 /* TemperatureDial.swift */; };
+		803D469B2E2E9863003EFC10 /* VehicleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803D469A2E2E9863003EFC10 /* VehicleMapView.swift */; };
 		8057CBF52E2E5735002BBB52 /* KiaCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBEF2E2E5735002BBB52 /* KiaCard.swift */; };
 		8057CBF62E2E5735002BBB52 /* KiaDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBF22E2E5735002BBB52 /* KiaDesign.swift */; };
 		8057CBF72E2E5735002BBB52 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBF12E2E5735002BBB52 /* Colors.swift */; };
@@ -150,6 +152,8 @@
 		55DE31862C1348ED001D7302 /* Authorization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Authorization.swift; sourceTree = "<group>"; };
 		55FC13642C10B2DA00018709 /* VehicleTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleTypes.swift; sourceTree = "<group>"; };
 		803D467D2E2E7413003EFC10 /* KiaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KiaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		803D46982E2E9856003EFC10 /* TemperatureDial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureDial.swift; sourceTree = "<group>"; };
+		803D469A2E2E9863003EFC10 /* VehicleMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleMapView.swift; sourceTree = "<group>"; };
 		8057CBEC2E2A93EE002BBB52 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		8057CBED2E2A93EE002BBB52 /* Signing.xcconfig.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = Signing.xcconfig.template; sourceTree = "<group>"; };
 		8057CBEF2E2E5735002BBB52 /* KiaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaCard.swift; sourceTree = "<group>"; };
@@ -317,6 +321,7 @@
 		8057CBF02E2E5735002BBB52 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				803D46982E2E9856003EFC10 /* TemperatureDial.swift */,
 				8057CC0A2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift */,
 				8057CC002E2E5C25002BBB52 /* CircularBatteryView.swift */,
 				8057CBFC2E2E589E002BBB52 /* KiaSlider.swift */,
@@ -340,6 +345,7 @@
 		8057CBF42E2E5735002BBB52 /* Vehicle */ = {
 			isa = PBXGroup;
 			children = (
+				803D469A2E2E9863003EFC10 /* VehicleMapView.swift */,
 				8057CC082E2E5D34002BBB52 /* VehicleStatusModernView.swift */,
 				8057CC062E2E5D08002BBB52 /* QuickActionsView.swift */,
 				8057CC042E2E5CF8002BBB52 /* BatteryHeroView.swift */,
@@ -630,11 +636,13 @@
 				55DE31642C11D24F001D7302 /* DatePropertyWrapper.swift in Sources */,
 				8057CC092E2E5D34002BBB52 /* VehicleStatusModernView.swift in Sources */,
 				8057CC0B2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift in Sources */,
+				803D46992E2E9856003EFC10 /* TemperatureDial.swift in Sources */,
 				55141F102C0A2A0B00F56A68 /* NotificationRegistrationResponse.swift in Sources */,
 				8057CC012E2E5C25002BBB52 /* CircularBatteryView.swift in Sources */,
 				55141F122C0A31B100F56A68 /* SignInResponse.swift in Sources */,
 				556CF8C62C2CC90300C15E1A /* VehicleStatusView.swift in Sources */,
 				CDA8AD8522E8CF7C00B1EAF8 /* AppDelegate.swift in Sources */,
+				803D469B2E2E9863003EFC10 /* VehicleMapView.swift in Sources */,
 				8057CBFB2E2E57F4002BBB52 /* KiaButton.swift in Sources */,
 				557BEFB42C1B718200EA89C9 /* AppConfiguration.swift in Sources */,
 				55141F082C0A15D900F56A68 /* ApiConfiguration.swift in Sources */,

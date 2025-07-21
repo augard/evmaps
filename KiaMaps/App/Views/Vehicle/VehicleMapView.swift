@@ -1,0 +1,639 @@
+//
+//  VehicleMapView.swift
+//  KiaMaps
+//
+//  Created by Claude Code on 21.07.2025.
+//  Tesla-inspired map integration with custom vehicle annotations and charging stations
+//
+
+import SwiftUI
+import MapKit
+import CoreLocation
+
+/// Tesla-style map view with vehicle location and charging station integration
+struct VehicleMapView: View {
+    let vehicleStatus: VehicleStatus
+    let onChargingStationTap: ((ChargingStation) -> Void)?
+    let onVehicleTap: (() -> Void)?
+    
+    @StateObject private var locationManager = LocationManager()
+    @State private var region: MKCoordinateRegion
+    @State private var mapStyle: MapStyle = .standard
+    @State private var showingChargingStations = true
+    @State private var selectedAnnotation: MapAnnotation?
+    
+    // Mock charging stations for demo
+    @State private var chargingStations: [ChargingStation] = []
+    
+    init(
+        vehicleStatus: VehicleStatus,
+        onChargingStationTap: ((ChargingStation) -> Void)? = nil,
+        onVehicleTap: (() -> Void)? = nil
+    ) {
+        self.vehicleStatus = vehicleStatus
+        self.onChargingStationTap = onChargingStationTap
+        self.onVehicleTap = onVehicleTap
+        
+        // Initialize region around vehicle location
+        let vehicleCoordinate = CLLocationCoordinate2D(
+            latitude: vehicleStatus.location.geoCoordinate.latitude,
+            longitude: vehicleStatus.location.geoCoordinate.longitude
+        )
+        
+        self._region = State(initialValue: MKCoordinateRegion(
+            center: vehicleCoordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
+        ))
+    }
+    
+    var body: some View {
+        ZStack {
+            // Main Map
+            Map(coordinateRegion: $region)
+                .overlay(
+                    // Vehicle annotation overlay
+                    VehicleAnnotationView(
+                        batteryLevel: Double(vehicleStatus.green.batteryManagement.batteryRemain.ratio) / 100.0,
+                        isCharging: isVehicleCharging,
+                        heading: vehicleStatus.location.heading
+                    )
+                    .position(coordinateToScreenPosition(vehicleCoordinate))
+                    .scaleEffect(selectedAnnotation?.id == "vehicle" ? 1.3 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedAnnotation?.id)
+                    .onTapGesture {
+                        selectedAnnotation = MapAnnotation(id: "vehicle", coordinate: vehicleCoordinate, type: .vehicle)
+                        onVehicleTap?()
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    }
+                )
+                .overlay(
+                    // Charging station annotations overlay
+                    ForEach(showingChargingStations ? chargingStations : []) { station in
+                        ChargingStationAnnotationView(
+                            station: station,
+                            isSelected: selectedAnnotation?.id == station.id
+                        )
+                        .position(coordinateToScreenPosition(station.coordinate))
+                        .onTapGesture {
+                            selectedAnnotation = MapAnnotation(id: station.id, coordinate: station.coordinate, type: .chargingStation(station))
+                            onChargingStationTap?(station)
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }
+                    }
+                )
+            .onAppear {
+                loadNearbyChargingStations()
+            }
+            
+            // Map Controls Overlay
+            mapControlsOverlay
+            
+            // Selected Annotation Details
+            if let annotation = selectedAnnotation {
+                annotationDetailCard(for: annotation)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: KiaDesign.CornerRadius.large))
+    }
+    
+    // MARK: - Map Controls Overlay
+    
+    private var mapControlsOverlay: some View {
+        VStack {
+            HStack {
+                Spacer()
+                
+                VStack(spacing: KiaDesign.Spacing.small) {
+                    // Map Style Toggle
+                    KiaCompactCard(action: toggleMapStyle) {
+                        Image(systemName: "map.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(KiaDesign.Colors.textPrimary)
+                    }
+                    
+                    // Charging Stations Toggle
+                    KiaCompactCard(action: toggleChargingStations) {
+                        Image(systemName: "bolt.car.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(showingChargingStations ? KiaDesign.Colors.charging : KiaDesign.Colors.textSecondary)
+                    }
+                    
+                    // Center on Vehicle
+                    KiaCompactCard(action: centerOnVehicle) {
+                        Image(systemName: "location.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(KiaDesign.Colors.primary)
+                    }
+                }
+                .padding(KiaDesign.Spacing.medium)
+            }
+            
+            Spacer()
+        }
+    }
+    
+    // MARK: - Annotation Detail Card
+    
+    @ViewBuilder
+    private func annotationDetailCard(for annotation: MapAnnotation) -> some View {
+        VStack {
+            Spacer()
+            
+            KiaCard(elevation: .floating) {
+                switch annotation.type {
+                case .vehicle:
+                    vehicleDetailContent
+                case .chargingStation(let station):
+                    chargingStationDetailContent(station)
+                }
+            }
+            .padding(KiaDesign.Spacing.medium)
+            .transition(.asymmetric(
+                insertion: .move(edge: .bottom).combined(with: .opacity),
+                removal: .move(edge: .bottom).combined(with: .opacity)
+            ))
+            .onTapGesture {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    selectedAnnotation = nil
+                }
+            }
+        }
+    }
+    
+    private var vehicleDetailContent: some View {
+        VStack(spacing: KiaDesign.Spacing.medium) {
+            HStack {
+                Image(systemName: "car.fill")
+                    .font(.title2)
+                    .foregroundStyle(KiaDesign.Colors.primary)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("My EV9")
+                        .font(KiaDesign.Typography.bodyBold)
+                        .foregroundStyle(KiaDesign.Colors.textPrimary)
+                    
+                    Text("Current Location")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                }
+                
+                Spacer()
+                
+                Button("Dismiss") {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        selectedAnnotation = nil
+                    }
+                }
+                .font(KiaDesign.Typography.caption)
+                .foregroundStyle(KiaDesign.Colors.accent)
+            }
+            
+            HStack(spacing: KiaDesign.Spacing.large) {
+                VStack(spacing: 4) {
+                    Text("\(Int(Double(vehicleStatus.green.batteryManagement.batteryRemain.ratio)))%")
+                        .font(KiaDesign.Typography.body)
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                    
+                    Text("Battery")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                }
+                
+                Divider()
+                    .frame(height: 30)
+                
+                VStack(spacing: 4) {
+                    Text("\(Int(Double(vehicleStatus.green.batteryManagement.batteryRemain.ratio) * 3.5)) km")
+                        .font(KiaDesign.Typography.body)
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                    
+                    Text("Range")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                }
+                
+                Divider()
+                    .frame(height: 30)
+                
+                VStack(spacing: 4) {
+                    Text(isVehicleCharging ? "Charging" : "Parked")
+                        .font(KiaDesign.Typography.body)
+                        .fontWeight(.semibold)
+                    
+                    Text("Status")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                }
+            }
+        }
+    }
+    
+    private func chargingStationDetailContent(_ station: ChargingStation) -> some View {
+        VStack(spacing: KiaDesign.Spacing.medium) {
+            HStack {
+                Image(systemName: "bolt.car.fill")
+                    .font(.title2)
+                    .foregroundStyle(station.powerLevel.color)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(station.name)
+                        .font(KiaDesign.Typography.bodyBold)
+                        .foregroundStyle(KiaDesign.Colors.textPrimary)
+                    
+                    Text("\(String(format: "%.1f", station.distanceKm)) km away")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                }
+                
+                Spacer()
+                
+                Button("Dismiss") {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        selectedAnnotation = nil
+                    }
+                }
+                .font(KiaDesign.Typography.caption)
+                .foregroundStyle(KiaDesign.Colors.accent)
+            }
+            
+            HStack(spacing: KiaDesign.Spacing.large) {
+                VStack(spacing: 4) {
+                    Text("\(station.powerLevel.maxPower) kW")
+                        .font(KiaDesign.Typography.body)
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                    
+                    Text("Max Power")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                }
+                
+                Divider()
+                    .frame(height: 30)
+                
+                VStack(spacing: 4) {
+                    Text("\(station.availablePorts)/\(station.totalPorts)")
+                        .font(KiaDesign.Typography.body)
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                    
+                    Text("Available")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                }
+                
+                Divider()
+                    .frame(height: 30)
+                
+                VStack(spacing: 4) {
+                    Text(station.pricePerKwh, format: .currency(code: "USD"))
+                        .font(KiaDesign.Typography.body)
+                        .fontWeight(.semibold)
+                    
+                    Text("per kWh")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Helper Properties
+    
+    private var isVehicleCharging: Bool {
+        // Using heading as charging indicator placeholder
+        vehicleStatus.location.heading > 0
+    }
+    
+    private var vehicleCoordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(
+            latitude: vehicleStatus.location.geoCoordinate.latitude,
+            longitude: vehicleStatus.location.geoCoordinate.longitude
+        )
+    }
+    
+    private func coordinateToScreenPosition(_ coordinate: CLLocationCoordinate2D) -> CGPoint {
+        // Simple approximation - in a real app, you'd use proper coordinate conversion
+        let mapWidth: CGFloat = 400  // Approximate map width
+        let mapHeight: CGFloat = 400 // Approximate map height
+        
+        // Calculate relative position based on current map region
+        let deltaLat = coordinate.latitude - region.center.latitude
+        let deltaLon = coordinate.longitude - region.center.longitude
+        
+        let x = mapWidth/2 + (deltaLon / region.span.longitudeDelta) * mapWidth
+        let y = mapHeight/2 - (deltaLat / region.span.latitudeDelta) * mapHeight
+        
+        return CGPoint(x: x, y: y)
+    }
+    
+    // MARK: - Actions
+    
+    private func toggleMapStyle() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            // Simple toggle - just trigger a refresh
+            // In a real implementation, this would change the map style
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+    
+    private func toggleChargingStations() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            showingChargingStations.toggle()
+        }
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+    
+    private func centerOnVehicle() {
+        let vehicleCoordinate = CLLocationCoordinate2D(
+            latitude: vehicleStatus.location.geoCoordinate.latitude,
+            longitude: vehicleStatus.location.geoCoordinate.longitude
+        )
+        
+        withAnimation(.easeInOut(duration: 1.0)) {
+            region.center = vehicleCoordinate
+        }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+    }
+    
+    private func loadNearbyChargingStations() {
+        // Mock charging stations around vehicle location
+        let vehicleLocation = CLLocationCoordinate2D(
+            latitude: vehicleStatus.location.geoCoordinate.latitude,
+            longitude: vehicleStatus.location.geoCoordinate.longitude
+        )
+        
+        chargingStations = [
+            ChargingStation(
+                id: "station1",
+                name: "Tesla Supercharger",
+                coordinate: CLLocationCoordinate2D(
+                    latitude: vehicleLocation.latitude + 0.005,
+                    longitude: vehicleLocation.longitude + 0.008
+                ),
+                powerLevel: .superfast,
+                totalPorts: 8,
+                availablePorts: 3,
+                pricePerKwh: 0.45,
+                distanceKm: 1.2
+            ),
+            ChargingStation(
+                id: "station2",
+                name: "ChargePoint DC",
+                coordinate: CLLocationCoordinate2D(
+                    latitude: vehicleLocation.latitude - 0.003,
+                    longitude: vehicleLocation.longitude + 0.012
+                ),
+                powerLevel: .fast,
+                totalPorts: 4,
+                availablePorts: 2,
+                pricePerKwh: 0.38,
+                distanceKm: 2.1
+            ),
+            ChargingStation(
+                id: "station3",
+                name: "EVgo Fast Charging",
+                coordinate: CLLocationCoordinate2D(
+                    latitude: vehicleLocation.latitude + 0.008,
+                    longitude: vehicleLocation.longitude - 0.006
+                ),
+                powerLevel: .rapid,
+                totalPorts: 6,
+                availablePorts: 1,
+                pricePerKwh: 0.42,
+                distanceKm: 1.8
+            )
+        ]
+    }
+}
+
+// MARK: - Map Annotation Models
+
+struct MapAnnotation: Identifiable {
+    let id: String
+    let coordinate: CLLocationCoordinate2D
+    let type: AnnotationType
+    
+    enum AnnotationType {
+        case vehicle
+        case chargingStation(ChargingStation)
+    }
+}
+
+struct ChargingStation: Identifiable {
+    let id: String
+    let name: String
+    let coordinate: CLLocationCoordinate2D
+    let powerLevel: PowerLevel
+    let totalPorts: Int
+    let availablePorts: Int
+    let pricePerKwh: Double
+    let distanceKm: Double
+    
+    enum PowerLevel {
+        case slow      // AC charging (7-22 kW)
+        case fast      // DC fast charging (50-75 kW)
+        case rapid     // Rapid charging (100-150 kW)
+        case superfast // Ultra-rapid charging (150+ kW)
+        
+        var maxPower: Int {
+            switch self {
+            case .slow: return 22
+            case .fast: return 75
+            case .rapid: return 150
+            case .superfast: return 250
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .slow: return KiaDesign.Colors.textSecondary
+            case .fast: return KiaDesign.Colors.accent
+            case .rapid: return KiaDesign.Colors.primary
+            case .superfast: return KiaDesign.Colors.charging
+            }
+        }
+        
+        var displayName: String {
+            switch self {
+            case .slow: return "AC"
+            case .fast: return "Fast"
+            case .rapid: return "Rapid"
+            case .superfast: return "Ultra"
+            }
+        }
+    }
+}
+
+// MARK: - Vehicle Annotation View
+
+struct VehicleAnnotationView: View {
+    let batteryLevel: Double
+    let isCharging: Bool
+    let heading: Double
+    
+    @State private var pulseAnimation = false
+    
+    var body: some View {
+        ZStack {
+            // Outer glow for charging
+            if isCharging {
+                Circle()
+                    .fill(KiaDesign.Colors.charging.opacity(0.3))
+                    .frame(width: 60, height: 60)
+                    .scaleEffect(pulseAnimation ? 1.2 : 1.0)
+                    .opacity(pulseAnimation ? 0.3 : 0.6)
+                    .blur(radius: 2)
+            }
+            
+            // Main vehicle marker
+            Circle()
+                .fill(vehicleColor)
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Circle()
+                        .stroke(Color.white, lineWidth: 3)
+                )
+                .shadow(
+                    color: .black.opacity(0.2),
+                    radius: 4,
+                    y: 2
+                )
+            
+            // Vehicle icon
+            Image(systemName: "car.fill")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.white)
+                .rotationEffect(.degrees(heading))
+        }
+        .onAppear {
+            if isCharging {
+                withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                    pulseAnimation = true
+                }
+            }
+        }
+    }
+    
+    private var vehicleColor: Color {
+        if isCharging {
+            return KiaDesign.Colors.charging
+        } else if batteryLevel < 0.2 {
+            return KiaDesign.Colors.warning
+        } else {
+            return KiaDesign.Colors.primary
+        }
+    }
+}
+
+// MARK: - Charging Station Annotation View
+
+struct ChargingStationAnnotationView: View {
+    let station: ChargingStation
+    let isSelected: Bool
+    
+    var body: some View {
+        ZStack {
+            // Selection indicator
+            if isSelected {
+                Circle()
+                    .fill(station.powerLevel.color.opacity(0.3))
+                    .frame(width: 50, height: 50)
+            }
+            
+            // Main marker
+            RoundedRectangle(cornerRadius: 8)
+                .fill(station.powerLevel.color)
+                .frame(width: 32, height: 32)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.white, lineWidth: 2)
+                )
+                .shadow(
+                    color: .black.opacity(0.2),
+                    radius: 3,
+                    y: 2
+                )
+            
+            // Charging icon
+            Image(systemName: "bolt.fill")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white)
+            
+            // Availability indicator
+            if station.availablePorts == 0 {
+                Circle()
+                    .fill(KiaDesign.Colors.error)
+                    .frame(width: 12, height: 12)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white, lineWidth: 1)
+                    )
+                    .offset(x: 12, y: -12)
+            }
+        }
+        .scaleEffect(isSelected ? 1.2 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+    }
+}
+
+// MARK: - Location Manager
+
+class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    private let locationManager = CLLocationManager()
+    
+    @Published var currentLocation: CLLocation?
+    @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
+    
+    override init() {
+        super.init()
+        locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization()
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        currentLocation = locations.last
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        authorizationStatus = status
+        
+        if status == .authorizedWhenInUse || status == .authorizedAlways {
+            locationManager.startUpdatingLocation()
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview("Vehicle Map - Standard") {
+    VehicleMapView(
+        vehicleStatus: MockVehicleData.standard,
+        onChargingStationTap: { station in
+            print("Tapped charging station: \(station.name)")
+        },
+        onVehicleTap: {
+            print("Tapped vehicle")
+        }
+    )
+    .frame(height: 400)
+    .padding()
+    .background(KiaDesign.Colors.background)
+}
+
+#Preview("Vehicle Map - Charging") {
+    VehicleMapView(
+        vehicleStatus: MockVehicleData.charging,
+        onChargingStationTap: { station in
+            print("Tapped charging station: \(station.name)")
+        },
+        onVehicleTap: {
+            print("Tapped vehicle")
+        }
+    )
+    .frame(height: 400)
+    .padding()
+    .background(KiaDesign.Colors.background)
+}
