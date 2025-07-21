@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -82,6 +82,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		803D46812E2E7413003EFC10 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CDA8AD7922E8CF7B00B1EAF8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CDA8AD8022E8CF7B00B1EAF8;
+			remoteInfo = KiaMaps;
+		};
 		CDA8ADAE22E8CF8700B1EAF8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CDA8AD7922E8CF7B00B1EAF8 /* Project object */;
@@ -142,6 +149,7 @@
 		55DE317C2C11E3D4001D7302 /* KiaExtensionUI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KiaExtensionUI.entitlements; sourceTree = "<group>"; };
 		55DE31862C1348ED001D7302 /* Authorization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Authorization.swift; sourceTree = "<group>"; };
 		55FC13642C10B2DA00018709 /* VehicleTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleTypes.swift; sourceTree = "<group>"; };
+		803D467D2E2E7413003EFC10 /* KiaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KiaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8057CBEC2E2A93EE002BBB52 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		8057CBED2E2A93EE002BBB52 /* Signing.xcconfig.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = Signing.xcconfig.template; sourceTree = "<group>"; };
 		8057CBEF2E2E5735002BBB52 /* KiaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaCard.swift; sourceTree = "<group>"; };
@@ -176,7 +184,18 @@
 		CDA8ADBB22E8CFC900B1EAF8 /* KiaMaps.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KiaMaps.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		803D467E2E2E7413003EFC10 /* KiaTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = KiaTests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		803D467A2E2E7413003EFC10 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CDA8AD7E22E8CF7B00B1EAF8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -344,6 +363,7 @@
 				CDA8AD8322E8CF7B00B1EAF8 /* KiaMaps */,
 				CDA8AD9B22E8CF8700B1EAF8 /* KiaExtension */,
 				CDA8ADA722E8CF8700B1EAF8 /* KiaExtensionUI */,
+				803D467E2E2E7413003EFC10 /* KiaTests */,
 				CDA8ADA422E8CF8700B1EAF8 /* Frameworks */,
 				CDA8AD8222E8CF7B00B1EAF8 /* Products */,
 			);
@@ -355,6 +375,7 @@
 				CDA8AD8122E8CF7B00B1EAF8 /* KiaMaps.app */,
 				CDA8AD9A22E8CF8700B1EAF8 /* KiaExtension.appex */,
 				CDA8ADA322E8CF8700B1EAF8 /* KiaExtensionUI.appex */,
+				803D467D2E2E7413003EFC10 /* KiaTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -408,6 +429,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		803D467C2E2E7413003EFC10 /* KiaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 803D46852E2E7413003EFC10 /* Build configuration list for PBXNativeTarget "KiaTests" */;
+			buildPhases = (
+				803D46792E2E7413003EFC10 /* Sources */,
+				803D467A2E2E7413003EFC10 /* Frameworks */,
+				803D467B2E2E7413003EFC10 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				803D46822E2E7413003EFC10 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				803D467E2E2E7413003EFC10 /* KiaTests */,
+			);
+			name = KiaTests;
+			packageProductDependencies = (
+			);
+			productName = KiaTests;
+			productReference = 803D467D2E2E7413003EFC10 /* KiaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		CDA8AD8022E8CF7B00B1EAF8 /* KiaMaps */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CDA8AD9322E8CF7D00B1EAF8 /* Build configuration list for PBXNativeTarget "KiaMaps" */;
@@ -474,10 +518,14 @@
 		CDA8AD7922E8CF7B00B1EAF8 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1100;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1300;
 				ORGANIZATIONNAME = Apple;
 				TargetAttributes = {
+					803D467C2E2E7413003EFC10 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = CDA8AD8022E8CF7B00B1EAF8;
+					};
 					CDA8AD8022E8CF7B00B1EAF8 = {
 						CreatedOnToolsVersion = 11.0;
 					};
@@ -512,11 +560,19 @@
 				CDA8AD8022E8CF7B00B1EAF8 /* KiaMaps */,
 				CDA8AD9922E8CF8700B1EAF8 /* KiaExtension */,
 				CDA8ADA222E8CF8700B1EAF8 /* KiaExtensionUI */,
+				803D467C2E2E7413003EFC10 /* KiaTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		803D467B2E2E7413003EFC10 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CDA8AD7F22E8CF7B00B1EAF8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -545,6 +601,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		803D46792E2E7413003EFC10 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CDA8AD7D22E8CF7B00B1EAF8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -641,6 +704,11 @@
 			isa = PBXTargetDependency;
 			productRef = 55DE31842C11EC7F001D7302 /* KeychainAccess */;
 		};
+		803D46822E2E7413003EFC10 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CDA8AD8022E8CF7B00B1EAF8 /* KiaMaps */;
+			targetProxy = 803D46812E2E7413003EFC10 /* PBXContainerItemProxy */;
+		};
 		CDA8ADAF22E8CF8700B1EAF8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = CDA8ADA222E8CF8700B1EAF8 /* KiaExtensionUI */;
@@ -673,6 +741,69 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		803D46832E2E7413003EFC10 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = N448G4S8S9;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cz.arat.KiaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KiaMaps.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KiaMaps";
+				XROS_DEPLOYMENT_TARGET = 1.3;
+			};
+			name = Debug;
+		};
+		803D46842E2E7413003EFC10 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = N448G4S8S9;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cz.arat.KiaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KiaMaps.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KiaMaps";
+				XROS_DEPLOYMENT_TARGET = 1.3;
+			};
+			name = Release;
+		};
 		CDA8AD9122E8CF7D00B1EAF8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8057CBEC2E2A93EE002BBB52 /* Signing.xcconfig */;
@@ -918,6 +1049,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		803D46852E2E7413003EFC10 /* Build configuration list for PBXNativeTarget "KiaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				803D46832E2E7413003EFC10 /* Debug */,
+				803D46842E2E7413003EFC10 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		CDA8AD7C22E8CF7B00B1EAF8 /* Build configuration list for PBXProject "KiaMaps" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -13,14 +13,14 @@ struct MockVehicleData {
     
     // MARK: - Private JSON Factory
     
-    private static func createVehicleStatusJSON(
+    public static func createVehicleStatusJSON(
         batteryLevel: Int,
         isCharging: Bool,
         drivingReady: Bool,
         scenario: String
     ) -> String {
         let chargingHeading = isCharging ? "180" : "0"
-        let drivingReadyValue = drivingReady ? "1" : "0"
+        let drivingReadyValue = drivingReady ? 1 : 0
         let currentTime = String(Int(Date().timeIntervalSince1970))
         
         return """
@@ -52,365 +52,516 @@ struct MockVehicleData {
                 },
                 "Lights": {
                     "Front": {
+                        "HeadLamp": {
+                            "SystemWarning": 0
+                        },
                         "Left": {
-                            "TurnSignal": "0",
-                            "FogLamp": "0",
-                            "DippedBeam": "0",
-                            "MainBeam": "0",
-                            "PositionLamp": "0",
-                            "DRL": "1",
-                            "Fault": "0"
+                            "Low": {
+                                "Warning": 0
+                            },
+                            "High": {
+                                "Warning": 0
+                            },
+                            "TurnSignal": {
+                                "Warning": 0,
+                                "LampState": 0
+                            }
                         },
                         "Right": {
-                            "TurnSignal": "0",
-                            "FogLamp": "0",
-                            "DippedBeam": "0",
-                            "MainBeam": "0",
-                            "PositionLamp": "0",
-                            "DRL": "1",
-                            "Fault": "0"
+                            "Low": {
+                                "Warning": 0
+                            },
+                            "High": {
+                                "Warning": 0
+                            },
+                            "TurnSignal": {
+                                "Warning": 0,
+                                "LampState": 0
+                            }
                         }
+                    },
+                    "DischargeAlert": {
+                        "State": 0
                     },
                     "Rear": {
                         "Left": {
-                            "TurnSignal": "0",
-                            "BrakeLamp": "0",
-                            "PositionLamp": "0",
-                            "ReverseLamp": "0",
-                            "Fault": "0"
+                            "StopLamp": {
+                                "Warning": 0
+                            },
+                            "TurnSignal": {
+                                "Warning": 0
+                            }
                         },
                         "Right": {
-                            "TurnSignal": "0",
-                            "BrakeLamp": "0",
-                            "PositionLamp": "0",
-                            "ReverseLamp": "0",
-                            "Fault": "0"
+                            "StopLamp": {
+                                "Warning": 0
+                            },
+                            "TurnSignal": {
+                                "Warning": 0
+                            }
                         }
                     },
-                    "Hazard": "0",
-                    "InteriorLamp": "0"
+                    "TailLamp": {
+                        "Alert": 0
+                    },
+                    "Hazard": {
+                        "Alert": 0
+                    }
                 },
                 "Sunroof": {
-                    "Tilt": "0",
-                    "Slide": "0",
-                    "Fault": "0"
+                    "Glass": {
+                        "Open": 0
+                    }
                 },
                 "Trunk": {
-                    "Open": "0",
-                    "Fault": "0"
+                    "Open": 0
                 }
             },
             "Cabin": {
-                "RESTMode": {
-                    "Active": "0"
+                "RestMode": {
+                    "State": 0
                 },
                 "HVAC": {
-                    "AirConditioning": "\(scenario == "preconditioning" ? "1" : "0")",
-                    "Heater": "\(scenario == "preconditioning" ? "1" : "0")",
-                    "TemperatureDriver": \(scenario == "preconditioning" ? 22 : 20),
-                    "TemperaturePassenger": \(scenario == "preconditioning" ? 22 : 20),
-                    "FanSpeed": \(scenario == "preconditioning" ? 3 : 0),
-                    "VentilationMode": \(scenario == "preconditioning" ? 2 : 0),
-                    "Recirculation": "0",
-                    "FineDustMode": "\(scenario == "preconditioning" ? "1" : "0")",
-                    "AirCleaning": "\(scenario == "preconditioning" ? "1" : "0")",
-                    "AutoMode": "\(scenario == "preconditioning" ? "1" : "0")",
-                    "DualMode": "0"
+                    "Row1": {
+                        "Driver": {
+                            "Temperature": {
+                                "Value": "\(scenario == "preconditioning" ? "22" : "20")",
+                                "Unit": 0
+                            },
+                            "Blower": {
+                                "SpeedLevel": \(scenario == "preconditioning" ? 3 : 0)
+                            }
+                        }
+                    },
+                    "Vent": {
+                        "FineDust": {
+                            "Level": 1
+                        },
+                        "AirCleaning": {
+                            "Indicator": 0,
+                            "SymbolColor": 0
+                        }
+                    },
+                    "Temperature": {
+                        "RangeType": 0
+                    }
                 },
                 "Door": {
                     "Row1": {
                         "Driver": {
-                            "Open": "0",
-                            "Lock": "1",
-                            "Fault": "0"
+                            "Open": 0,
+                            "Lock": 1,
+                            "Fault": 0
                         },
                         "Passenger": {
-                            "Open": "0",
-                            "Lock": "1",
-                            "Fault": "0"
+                            "Open": 0,
+                            "Lock": 1,
+                            "Fault": 0
                         }
                     },
                     "Row2": {
                         "Left": {
-                            "Open": "0",
-                            "Lock": "1",
-                            "Fault": "0"
+                            "Open": 0,
+                            "Lock": 1,
+                            "Fault": 0
                         },
                         "Right": {
-                            "Open": "0",
-                            "Lock": "1",
-                            "Fault": "0"
+                            "Open": 0,
+                            "Lock": 1,
+                            "Fault": 0
                         }
                     }
                 },
                 "Seat": {
                     "Row1": {
                         "Driver": {
-                            "Heating": \(scenario == "preconditioning" ? 2 : 0),
-                            "Ventilation": 0
+                            "Climate": {
+                                "State": \(scenario == "preconditioning" ? 2 : 0)
+                            }
                         },
                         "Passenger": {
-                            "Heating": \(scenario == "preconditioning" ? 1 : 0),
-                            "Ventilation": 0
+                            "Climate": {
+                                "State": \(scenario == "preconditioning" ? 1 : 0)
+                            }
                         }
                     },
                     "Row2": {
                         "Left": {
-                            "Heating": 0,
-                            "Ventilation": 0
+                            "Climate": {
+                                "State": 0
+                            }
                         },
                         "Right": {
-                            "Heating": 0,
-                            "Ventilation": 0
+                            "Climate": {
+                                "State": 0
+                            }
                         }
                     }
                 },
                 "Window": {
                     "Row1": {
                         "Driver": {
-                            "Open": "0",
-                            "Fault": "0"
+                            "Open": 0,
+                            "OpenLevel": 0
                         },
                         "Passenger": {
-                            "Open": "0",
-                            "Fault": "0"
+                            "Open": 0,
+                            "OpenLevel": 0
                         }
                     },
                     "Row2": {
                         "Left": {
-                            "Open": "0",
-                            "Fault": "0"
+                            "Open": 0,
+                            "OpenLevel": 0
                         },
                         "Right": {
-                            "Open": "0",
-                            "Fault": "0"
+                            "Open": 0,
+                            "OpenLevel": 0
                         }
                     }
                 },
                 "SteeringWheel": {
-                    "Heating": "\(scenario == "preconditioning" ? "1" : "0")"
+                    "Heat": {
+                        "RemoteControl": {
+                            "Step": 0
+                        },
+                        "State": \(scenario == "preconditioning" ? 1 : 0)
+                    }
                 }
             },
             "Chassis": {
                 "DrivingMode": {
-                    "Current": "\(scenario == "fast_charging" ? "Sport" : "Eco")"
+                    "State": "\(scenario == "fast_charging" ? "Sport" : "Eco")"
                 },
                 "Axle": {
-                    "Front": {
+                    "Row1": {
                         "Left": {
-                            "Pressure": 32.0,
-                            "Temperature": 28.4,
-                            "Fault": "0"
+                            "Tire": {
+                                "PressureLow": 0,
+                                "Pressure": 32
+                            }
                         },
                         "Right": {
-                            "Pressure": \(scenario == "maintenance" ? 28.5 : 32.5),
-                            "Temperature": \(scenario == "maintenance" ? 31.2 : 28.9),
-                            "Fault": "\(scenario == "maintenance" ? "1" : "0")"
+                            "Tire": {
+                                "PressureLow": \(scenario == "maintenance" ? 1 : 0),
+                                "Pressure": \(scenario == "maintenance" ? 28 : 32)
+                            }
                         }
                     },
-                    "Rear": {
+                    "Row2": {
                         "Left": {
-                            "Pressure": 31.8,
-                            "Temperature": 27.8,
-                            "Fault": "0"
+                            "Tire": {
+                                "PressureLow": 0,
+                                "Pressure": 31
+                            }
                         },
                         "Right": {
-                            "Pressure": 32.2,
-                            "Temperature": 28.1,
-                            "Fault": "0"
+                            "Tire": {
+                                "PressureLow": 0,
+                                "Pressure": 32
+                            }
                         }
+                    },
+                    "Tire": {
+                        "PressureLow": \(scenario == "maintenance" ? 1 : 0),
+                        "PressureUnit": 1
                     }
                 },
                 "Brake": {
-                    "FluidLevel": \(scenario == "maintenance" ? 0.7 : 0.9),
-                    "WearFront": 2.4,
-                    "WearRear": 4.1
+                    "Fluid": {
+                        "Warning": \(scenario == "maintenance" ? 1 : 0)
+                    }
                 }
             },
             "Drivetrain": {
-                "Motor": {
-                    "Temperature": \(isCharging ? 35.2 : 28.4),
-                    "Power": \(isCharging ? -11.2 : 0.0),
-                    "Torque": 0.0
+                "FuelSystem": {
+                    "DTE": {
+                        "Unit": 1,
+                        "Total": \(batteryLevel * 4)
+                    },
+                    "LowFuelWarning": \(batteryLevel < 15 ? 1 : 0),
+                    "FuelLevel": \(batteryLevel),
+                    "AverageFuelEconomy": {
+                        "Drive": 4.2,
+                        "AfterRefuel": 4.0,
+                        "Accumulated": 4.1,
+                        "Unit": 4
+                    }
+                },
+                "Odometer": 12847.5,
+                "Transmission": {
+                    "ParkingPosition": 1,
+                    "GearPosition": 0
                 }
             },
             "Electronics": {
                 "Battery": {
-                    "Voltage": 12.8,
-                    "Level": \(max(50, min(100, batteryLevel + Int.random(in: -15...25)))),
-                    "Temperature": 22.1
+                    "Auxiliary": {
+                        "FailWarning": 0
+                    },
+                    "Level": \(batteryLevel),
+                    "Charging": {
+                        "WarningLevel": 0
+                    },
+                    "PowerStateAlert": {
+                        "ClassC": 0
+                    },
+                    "SensorReliability": 1
                 },
                 "AutoCut": {
-                    "Active": "\(batteryLevel < 15 ? "1" : "0")",
-                    "Threshold": 10.0
+                    "PowerMode": 1,
+                    "BatteryPreWarning": \(batteryLevel < 15 ? 1 : 0),
+                    "DeliveryMode": 0
                 },
-                "Fob": {
-                    "BatteryLevel": \(Int.random(in: 65...95)),
-                    "LastSeen": "\(currentTime)"
+                "FOB": {
+                    "LowBattery": 0
                 },
                 "PowerSupply": {
-                    "Ignition": "\(batteryLevel > 5 ? "Ready" : "Off")",
-                    "Accessory": "1"
+                    "Accessory": 1,
+                    "Ignition1": 0,
+                    "Ignition2": 0,
+                    "Ignition3": 0
                 }
             },
             "Green": {
-                "DrivingReady": "\(drivingReadyValue)",
+                "DrivingReady": \(drivingReadyValue),
                 "PowerConsumption": {
-                    "Current": \(isCharging ? -11.2 : 2.4),
-                    "Average": 4.2,
-                    "Instantaneous": \(isCharging ? -11.2 : 0.0)
+                    "Prediction": {
+                        "Climate": 2
+                    }
                 },
                 "BatteryManagement": {
+                    "SoH": {
+                        "Ratio": \(scenario == "maintenance" ? 94.2 : 97.8)
+                    },
                     "BatteryRemain": {
-                        "Ratio": \(batteryLevel),
-                        "Capacity": \(Double(batteryLevel) * 0.77),
-                        "Energy": \(Double(batteryLevel) * 2770.0)
+                        "Value": \(Double(batteryLevel) * 2770.0),
+                        "Ratio": \(Double(batteryLevel))
+                    },
+                    "BatteryConditioning": 0,
+                    "BatteryPreCondition": {
+                        "Status": 0,
+                        "TemperatureLevel": 1
                     },
                     "BatteryCapacity": {
-                        "Total": 77.4,
-                        "Usable": 74.2,
-                        "Degradation": \(scenario == "maintenance" ? 2.8 : 1.2)
-                    },
-                    "StateOfHealth": {
-                        "Percentage": \(scenario == "maintenance" ? 94.2 : 97.8),
-                        "Cycles": \(scenario == "maintenance" ? 1247 : 823)
-                    },
-                    "CellTemperature": {
-                        "Minimum": 21.5,
-                        "Maximum": 23.2,
-                        "Average": 22.4
+                        "Value": 277000.0
                     }
                 },
                 "Electric": {
-                    "SmartGridReady": "1",
-                    "VehicleToLoad": "0",
-                    "VehicleToGrid": "0"
+                    "SmartGrid": {
+                        "VehicleToLoad": {
+                            "DischargeLimitation": {
+                                "SoC": 20,
+                                "RemainTime": 0
+                            }
+                        },
+                        "VehicleToGrid": {
+                            "Mode": 0
+                        },
+                        "RealTimePower": \(isCharging ? 11.2 : 0.0)
+                    }
                 },
                 "ChargingInformation": {
-                    "ChargingTime": {
+                    "EstimatedTime": {
                         "ICCB": \(isCharging ? (100 - batteryLevel) * 8 : 0),
                         "Standard": \(isCharging ? (100 - batteryLevel) * 3 : 0),
-                        "Quick": \(isCharging ? Int(Double(100 - batteryLevel) * 0.6) : 0)
+                        "Quick": \(isCharging ? Int(Double(100 - batteryLevel) * 0.6) : 0),
+                        "Unit": 1
+                    },
+                    "ExpectedTime": {
+                        "StartDay": 0,
+                        "StartHour": 22,
+                        "StartMin": 0,
+                        "EndDay": 0,
+                        "EndHour": 6,
+                        "EndMin": 0
+                    },
+                    "DTE": {
+                        "TargetSoC": {
+                            "Standard": 80,
+                            "Quick": 90
+                        }
+                    },
+                    "ConnectorFastening": {
+                        "State": \(isCharging ? 1 : 0)
+                    },
+                    "SequenceDetails": 0,
+                    "SequenceSubcode": 0,
+                    "ElectricCurrentLevel": {
+                        "State": \(isCharging ? 2 : 0)
+                    },
+                    "Charging": {
+                        "RemainTime": \(isCharging ? Double((100 - batteryLevel) * 3) : 0.0),
+                        "RemainTimeUnit": 1
                     },
                     "TargetSoC": {
-                        "AC": 80,
-                        "DC": 90
-                    },
-                    "CurrentPower": \(isCharging ? 11.0 : 0.0),
-                    "Voltage": \(isCharging ? 238.4 : 0.0),
-                    "Current": \(isCharging ? 46.2 : 0.0),
-                    "Temperature": \(isCharging ? 24.8 : 20.2)
+                        "Standard": 80,
+                        "Quick": 90
+                    }
                 },
                 "Reservation": {
-                    "Active": "\(scenario == "charging" || scenario == "preconditioning" ? "1" : "0")",
-                    "DepartureTime": "\(currentTime)",
-                    "TargetSoC": 80,
-                    "ClimateControl": "\(scenario == "charging" || scenario == "preconditioning" ? "1" : "0")",
-                    "TargetTemperature": 22.0
+                    "Departure": {
+                        "Schedule1": {
+                            "Hour": 6,
+                            "Min": 30,
+                            "Mon": 1,
+                            "Tue": 1,
+                            "Wed": 1,
+                            "Thu": 1,
+                            "Fri": 1,
+                            "Sat": 0,
+                            "Sun": 0,
+                            "Climate": {
+                                "Defrost": 0,
+                                "TemperatureHex": "16",
+                                "Temperature": "22"
+                            },
+                            "Enable": \(scenario == "charging" || scenario == "preconditioning" ? 1 : 0),
+                            "Activation": 0
+                        },
+                        "Schedule2": {
+                            "Hour": 0,
+                            "Min": 0,
+                            "Mon": 0,
+                            "Tue": 0,
+                            "Wed": 0,
+                            "Thu": 0,
+                            "Fri": 0,
+                            "Sat": 0,
+                            "Sun": 0,
+                            "Enable": 0
+                        },
+                        "Climate": {
+                            "Activation": \(scenario == "preconditioning" ? 1 : 0),
+                            "TemperatureHex": "16",
+                            "Defrost": 0,
+                            "TemperatureUnit": 0,
+                            "Temperature": "22"
+                        },
+                        "Climate2": {
+                            "Activation": 0,
+                            "TemperatureHex": "16",
+                            "Defrost": 0,
+                            "TemperatureUnit": 0,
+                            "Temperature": "22"
+                        }
+                    },
+                    "OffPeakTime": {
+                        "StartHour": 23,
+                        "StartMin": 0,
+                        "EndHour": 6,
+                        "EndMin": 0,
+                        "Mode": 1
+                    },
+                    "OffPeakTime2": {
+                        "StartHour": 0,
+                        "StartMin": 0,
+                        "EndHour": 0,
+                        "EndMin": 0
+                    }
                 },
                 "EnergyInformation": {
-                    "Consumption": {
-                        "Total": \(Double(batteryLevel) * 0.8),
-                        "Climate": \(scenario == "preconditioning" ? 2.4 : 0.8),
-                        "Driving": \(Double(batteryLevel) * 0.6),
-                        "Electronics": 0.2
-                    },
-                    "Regeneration": {
-                        "Total": \(Double(batteryLevel) * 0.1),
-                        "Braking": \(Double(batteryLevel) * 0.08),
-                        "Coasting": \(Double(batteryLevel) * 0.02)
+                    "DTE": {
+                        "Invalid": 0
                     }
                 },
                 "ChargingDoor": {
-                    "Status": \(isCharging ? 1 : 2),
-                    "Fault": "0"
+                    "State": \(isCharging ? 1 : 2),
+                    "ErrorState": 0
                 },
                 "PlugAndCharge": {
-                    "Certificates": \(isCharging ? 3 : 2),
-                    "LastUpdate": "\(Int(Date().timeIntervalSince1970) - 3600)"
+                    "ContractCertificate1": {
+                        "Company": "Company1",
+                        "CompanyMask": 0,
+                        "State": 1,
+                        "Year": 2024,
+                        "Mon": 12
+                    },
+                    "ContractCertificate2": {
+                        "Company": "Company2",
+                        "CompanyMask": 0,
+                        "State": 0,
+                        "Year": 0,
+                        "Mon": 0
+                    },
+                    "ContractCertificate3": {
+                        "Company": "Company3",
+                        "CompanyMask": 0,
+                        "State": 0,
+                        "Year": 0,
+                        "Mon": 0
+                    },
+                    "ContractCertificate4": {
+                        "Company": "Company4",
+                        "CompanyMask": 0,
+                        "State": 0,
+                        "Year": 0,
+                        "Mon": 0
+                    },
+                    "ContractCertificate5": {
+                        "Company": "Company5",
+                        "CompanyMask": 0,
+                        "State": 0,
+                        "Year": 0,
+                        "Mon": 0
+                    },
+                    "ContractCertificate": {
+                        "SelectedCert": 1,
+                        "Changeable": 1,
+                        "Mode": 1
+                    }
                 },
                 "DrivingHistory": {
-                    "TotalDistance": 12847.5,
-                    "TotalTime": 186.3,
-                    "AverageSpeed": 68.9,
-                    "AverageConsumption": 4.2
+                    "Average": 4.2,
+                    "Unit": 1
                 }
             },
             "Service": {
-                "Connectivity": {
-                    "Status": "Connected",
-                    "Strength": 4,
-                    "Carrier": "Kia Connect"
-                },
-                "Subscription": {
-                    "Active": "1",
-                    "ExpiryDate": "\(Int(Date().addingTimeInterval(63072000).timeIntervalSince1970))",
-                    "Plan": "Premium"
+                "ConnectedCar": {
+                    "RemoteControl": {
+                        "Available": 1,
+                        "WaitingTime": 30
+                    },
+                    "ActiveAlert": {
+                        "Available": 1
+                    }
                 }
             },
             "RemoteControl": {
-                "Engine": {
-                    "Available": "1",
-                    "Active": "0",
-                    "Duration": 10
-                },
-                "Climate": {
-                    "Available": "1",
-                    "Active": "0",
-                    "TargetTemperature": 22.0
-                },
-                "Lock": {
-                    "Available": "1",
-                    "Locked": "1"
-                },
-                "Lights": {
-                    "Available": "1",
-                    "Active": "0"
-                },
-                "Horn": {
-                    "Available": "1",
-                    "Active": "0"
-                }
+                "SleepMode": 0
             },
             "ConnectedService": {
-                "MapUpdates": {
-                    "Available": "1",
-                    "LastUpdate": "\(Int(Date().addingTimeInterval(-604800).timeIntervalSince1970))",
-                    "Version": "2024.1"
-                },
-                "VoiceRecognition": {
-                    "Available": "1",
-                    "Language": "en-US"
-                },
-                "OverTheAirUpdates": {
-                    "Available": "1",
-                    "PendingUpdates": 0,
-                    "LastCheck": "\(Int(Date().addingTimeInterval(-21600).timeIntervalSince1970))"
+                "OTA": {
+                    "ControllerStatus": 1
                 }
             },
-            "DrivingReady": "\(drivingReadyValue)",
+            "DrivingReady": \(drivingReadyValue),
             "Version": "24.1.0",
             "Date": "\(currentTime)",
             "Offset": "+00:00",
             "Location": {
                 "Date": "\(currentTime)",
                 "Offset": 0,
-                "ServiceState": 1,
+                "Servicestate": 1,
                 "TimeStamp": {
-                    "Seconds": \(Int(Date().timeIntervalSince1970)),
-                    "Milliseconds": \(Int(Date().timeIntervalSince1970 * 1000) % 1000)
+                    "Day": 21,
+                    "Hour": 15,
+                    "Mon": 7,
+                    "Year": 2025,
+                    "Min": 30,
+                    "Sec": 0
                 },
                 "Version": "1.0",
-                "GeoCoordinate": {
+                "GeoCoord": {
+                    "Altitude": \(getAltitude(for: scenario)),
                     "Latitude": \(getLatitude(for: scenario)),
                     "Longitude": \(getLongitude(for: scenario)),
-                    "Altitude": \(getAltitude(for: scenario)),
-                    "Accuracy": 3.2
+                    "Type": 1
                 },
                 "Heading": \(chargingHeading),
                 "Speed": {
-                    "Value": \(isCharging ? 0 : Int.random(in: 0...50)),
-                    "Unit": 1
+                    "Unit": 1,
+                    "Value": \(isCharging ? 0 : Double.random(in: 0...50))
                 }
             }
         }
@@ -568,15 +719,27 @@ extension MockVehicleData {
     static let mockVehicle: Vehicle = {
         let jsonString = """
         {
-            "VIN": "KNDC14CXPPH000123",
-            "VehicleId": "MOCK001",
-            "VehicleType": "EV",
-            "VehicleName": "My EV9",
-            "VehicleImage": null,
-            "Year": "2024",
-            "Make": "Kia",
-            "Model": "EV9",
-            "Trim": "GT-Line"
+            "vin": "KNDC14CXPPH000123",
+            "type": "EV",
+            "vehicleId": "12345678-1234-1234-1234-123456789012",
+            "vehicleName": "Kia - EV9 GT",
+            "nickname": "My EV9",
+            "tmuNum": "1234",
+            "year": "2024",
+            "regDate": 123,
+            "master": true,
+            "carShare": 0,
+            "personalFlag": "",
+            "detailInfo": {
+                "bodyType": "SUV",
+                "inColor": "",
+                "outColor": "",
+                "saleCarmdlCd": "John Doe",
+                "saleCarmdlEnNm": "EV9"
+            },
+            "protocolType": 1,
+            "ccuCCS2ProtocolSupport": 1
+            
         }
         """
         
