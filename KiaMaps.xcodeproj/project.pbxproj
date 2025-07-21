@@ -61,6 +61,12 @@
 		8057CBFB2E2E57F4002BBB52 /* KiaButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBFA2E2E57F4002BBB52 /* KiaButton.swift */; };
 		8057CBFE2E2E589E002BBB52 /* KiaSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBFC2E2E589E002BBB52 /* KiaSlider.swift */; };
 		8057CBFF2E2E589E002BBB52 /* KiaStatusIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBFD2E2E589E002BBB52 /* KiaStatusIndicator.swift */; };
+		8057CC012E2E5C25002BBB52 /* CircularBatteryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC002E2E5C25002BBB52 /* CircularBatteryView.swift */; };
+		8057CC052E2E5CF8002BBB52 /* BatteryHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC042E2E5CF8002BBB52 /* BatteryHeroView.swift */; };
+		8057CC072E2E5D08002BBB52 /* QuickActionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC062E2E5D08002BBB52 /* QuickActionsView.swift */; };
+		8057CC092E2E5D34002BBB52 /* VehicleStatusModernView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC082E2E5D34002BBB52 /* VehicleStatusModernView.swift */; };
+		8057CC0B2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC0A2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift */; };
+		8057CC112E2E6379002BBB52 /* MockVehicleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC0F2E2E6379002BBB52 /* MockVehicleData.swift */; };
 		CD05A6F122E8E4EA00F93F50 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD05A6F022E8E4EA00F93F50 /* MapKit.framework */; };
 		CD05A6F322E8E54500F93F50 /* Handler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD05A6F222E8E54500F93F50 /* Handler.swift */; };
 		CD05A6F922E9018D00F93F50 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = CD05A6F822E9018D00F93F50 /* README.md */; };
@@ -145,6 +151,12 @@
 		8057CBFA2E2E57F4002BBB52 /* KiaButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaButton.swift; sourceTree = "<group>"; };
 		8057CBFC2E2E589E002BBB52 /* KiaSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaSlider.swift; sourceTree = "<group>"; };
 		8057CBFD2E2E589E002BBB52 /* KiaStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaStatusIndicator.swift; sourceTree = "<group>"; };
+		8057CC002E2E5C25002BBB52 /* CircularBatteryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularBatteryView.swift; sourceTree = "<group>"; };
+		8057CC042E2E5CF8002BBB52 /* BatteryHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryHeroView.swift; sourceTree = "<group>"; };
+		8057CC062E2E5D08002BBB52 /* QuickActionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsView.swift; sourceTree = "<group>"; };
+		8057CC082E2E5D34002BBB52 /* VehicleStatusModernView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatusModernView.swift; sourceTree = "<group>"; };
+		8057CC0A2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleSilhouetteView.swift; sourceTree = "<group>"; };
+		8057CC0F2E2E6379002BBB52 /* MockVehicleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockVehicleData.swift; sourceTree = "<group>"; };
 		CD05A6F022E8E4EA00F93F50 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		CD05A6F222E8E54500F93F50 /* Handler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Handler.swift; sourceTree = "<group>"; };
 		CD05A6F822E9018D00F93F50 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -231,6 +243,7 @@
 			isa = PBXGroup;
 			children = (
 				5550E6382C24A1E4008B5328 /* Views */,
+				8057CC102E2E6379002BBB52 /* Mock */,
 				CDA8AD8422E8CF7C00B1EAF8 /* AppDelegate.swift */,
 				557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */,
 				55141EFB2C07B77500F56A68 /* MainView.swift */,
@@ -285,6 +298,8 @@
 		8057CBF02E2E5735002BBB52 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				8057CC0A2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift */,
+				8057CC002E2E5C25002BBB52 /* CircularBatteryView.swift */,
 				8057CBFC2E2E589E002BBB52 /* KiaSlider.swift */,
 				8057CBFD2E2E589E002BBB52 /* KiaStatusIndicator.swift */,
 				8057CBFA2E2E57F4002BBB52 /* KiaButton.swift */,
@@ -306,8 +321,19 @@
 		8057CBF42E2E5735002BBB52 /* Vehicle */ = {
 			isa = PBXGroup;
 			children = (
+				8057CC082E2E5D34002BBB52 /* VehicleStatusModernView.swift */,
+				8057CC062E2E5D08002BBB52 /* QuickActionsView.swift */,
+				8057CC042E2E5CF8002BBB52 /* BatteryHeroView.swift */,
 			);
 			path = Vehicle;
+			sourceTree = "<group>";
+		};
+		8057CC102E2E6379002BBB52 /* Mock */ = {
+			isa = PBXGroup;
+			children = (
+				8057CC0F2E2E6379002BBB52 /* MockVehicleData.swift */,
+			);
+			path = Mock;
 			sourceTree = "<group>";
 		};
 		CDA8AD7822E8CF7B00B1EAF8 = {
@@ -537,14 +563,19 @@
 				8057CBF92E2E57BF002BBB52 /* KiaProgressBar.swift in Sources */,
 				55141EFF2C085BAB00F56A68 /* AuthorizationResponse.swift in Sources */,
 				55DE31672C11D67C001D7302 /* BoolPropertyWrapper.swift in Sources */,
+				8057CC072E2E5D08002BBB52 /* QuickActionsView.swift in Sources */,
 				55DE31642C11D24F001D7302 /* DatePropertyWrapper.swift in Sources */,
+				8057CC092E2E5D34002BBB52 /* VehicleStatusModernView.swift in Sources */,
+				8057CC0B2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift in Sources */,
 				55141F102C0A2A0B00F56A68 /* NotificationRegistrationResponse.swift in Sources */,
+				8057CC012E2E5C25002BBB52 /* CircularBatteryView.swift in Sources */,
 				55141F122C0A31B100F56A68 /* SignInResponse.swift in Sources */,
 				556CF8C62C2CC90300C15E1A /* VehicleStatusView.swift in Sources */,
 				CDA8AD8522E8CF7C00B1EAF8 /* AppDelegate.swift in Sources */,
 				8057CBFB2E2E57F4002BBB52 /* KiaButton.swift in Sources */,
 				557BEFB42C1B718200EA89C9 /* AppConfiguration.swift in Sources */,
 				55141F082C0A15D900F56A68 /* ApiConfiguration.swift in Sources */,
+				8057CC112E2E6379002BBB52 /* MockVehicleData.swift in Sources */,
 				55141F162C0A63CD00F56A68 /* UserIntegrationResponse.swift in Sources */,
 				8057CBF52E2E5735002BBB52 /* KiaCard.swift in Sources */,
 				8057CBF62E2E5735002BBB52 /* KiaDesign.swift in Sources */,
@@ -553,6 +584,7 @@
 				8057CBFF2E2E589E002BBB52 /* KiaStatusIndicator.swift in Sources */,
 				55DE31872C1348ED001D7302 /* Authorization.swift in Sources */,
 				55141F0C2C0A28D600F56A68 /* ApiResponse.swift in Sources */,
+				8057CC052E2E5CF8002BBB52 /* BatteryHeroView.swift in Sources */,
 				55141F0A2C0A16D300F56A68 /* ApiRequest.swift in Sources */,
 				557BEFBA2C1C940100EA89C9 /* VehicleManager.swift in Sources */,
 			);

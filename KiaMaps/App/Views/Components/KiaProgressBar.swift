@@ -293,6 +293,10 @@ struct KiaSegmentedProgressBar: View {
 // MARK: - Preview
 
 #Preview("Progress Bar Variants") {
+    let standardBattery = MockVehicleData.batteryLevel(from: MockVehicleData.standard)
+    let chargingBattery = MockVehicleData.batteryLevel(from: MockVehicleData.charging)
+    let lowBattery = MockVehicleData.batteryLevel(from: MockVehicleData.lowBattery)
+    
     ScrollView {
         VStack(spacing: KiaDesign.Spacing.xl) {
             // Battery progress bars
@@ -300,11 +304,11 @@ struct KiaSegmentedProgressBar: View {
                 Text("Battery Progress Bars")
                     .font(KiaDesign.Typography.title2)
                 
-                KiaProgressBar(value: 0.85, style: .battery, showPercentage: true)
+                KiaProgressBar(value: standardBattery, style: .battery, showPercentage: true)
                 
-                KiaProgressBar(value: 0.45, style: .charging, showPercentage: true)
+                KiaProgressBar(value: chargingBattery, style: .charging, showPercentage: true)
                 
-                KiaProgressBar(value: 0.25, style: .temperature, showPercentage: true)
+                KiaProgressBar(value: 0.72, style: .temperature, showPercentage: true)
             }
             
             Divider()
@@ -316,13 +320,13 @@ struct KiaSegmentedProgressBar: View {
                 
                 HStack(spacing: KiaDesign.Spacing.xl) {
                     KiaCircularProgressBar(
-                        value: 0.82,
+                        value: standardBattery,
                         size: 100,
                         style: .battery
                     )
                     
                     KiaCircularProgressBar(
-                        value: 0.65,
+                        value: chargingBattery,
                         size: 100,
                         style: .charging
                     )
@@ -331,18 +335,16 @@ struct KiaSegmentedProgressBar: View {
             
             Divider()
             
-            // Segmented progress
+            // Segmented progress - Real battery scenarios
             VStack(spacing: KiaDesign.Spacing.medium) {
-                Text("Segmented Progress")
+                Text("Battery Level Scenarios")
                     .font(KiaDesign.Typography.title2)
                 
                 KiaSegmentedProgressBar(
                     segments: [
-                        .init(value: 1.0, color: KiaDesign.Colors.Battery.full),
-                        .init(value: 0.8, color: KiaDesign.Colors.Battery.good),
-                        .init(value: 0.6, color: KiaDesign.Colors.Battery.medium),
-                        .init(value: 0.3, color: KiaDesign.Colors.Battery.low),
-                        .init(value: 0.1, color: KiaDesign.Colors.Battery.critical)
+                        .init(value: standardBattery, color: KiaDesign.Colors.success, label: "Standard"),
+                        .init(value: chargingBattery, color: KiaDesign.Colors.primary, label: "Charging"),
+                        .init(value: lowBattery, color: KiaDesign.Colors.warning, label: "Low")
                     ]
                 )
             }
