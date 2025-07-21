@@ -66,6 +66,8 @@ enum IconName: String {
     case key = "key"
     
     case update = "cloud"
+    case compass = "location.north"
+    case speedometer = "speedometer"
 }
 
 struct DataRowView<Content: View>: View {

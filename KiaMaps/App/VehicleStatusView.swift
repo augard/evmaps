@@ -99,6 +99,8 @@ struct VehicleStatusView: View {
                 DataStateRowView(icon: .windshieldDefog, label: "Defog", value: body.windshield.front.defog.state)
                 
                 DataStateRowView(icon: .windshieldHeat, label: "Heat", value: body.windshield.front.heat.state)
+                
+                DataStateRowView(icon: .warning, label: "Washer Fluid Low", value: body.windshield.front.washerFluid.levelLow, kind: .fault)
             }
             
             Section("Windshield - Rear") {
@@ -206,9 +208,9 @@ struct VehicleStatusView: View {
                 DataStateRowView(icon: !row2.right.lock ? .doorLocked : .doorUnlocked, label: "Row 2 - Right", value: !row2.right.lock, kind: .lock)
 
                 DataStateRowView(icon: .doorFrontLeft, label: "Row 1 - Driver", value: !row1.driver.open, kind: .door)
-                DataStateRowView(icon: .doorFrontRight, label: "Row 1 - Passanger", value: !row1.driver.open, kind: .lock)
-                DataStateRowView(icon: .doorRearLeft, label: "Row 2 - Left", value: !row1.driver.open, kind: .door)
-                DataStateRowView(icon: .doorRearRight, label: "Row 2 - Right", value: !row1.driver.open, kind: .door)
+                DataStateRowView(icon: .doorFrontRight, label: "Row 1 - Passanger", value: !row1.passenger.open, kind: .door)
+                DataStateRowView(icon: .doorRearLeft, label: "Row 2 - Left", value: !row2.left.open, kind: .door)
+                DataStateRowView(icon: .doorRearRight, label: "Row 2 - Right", value: !row2.right.open, kind: .door)
             }
 
             Section("Seat") {
@@ -287,10 +289,10 @@ struct VehicleStatusView: View {
                     Text("\(row2.right.tire.pressure)")
                 }
                 
-                DataStateRowView(icon: .tirePressure, label: "Row 1 - Driver - Pressure Low", value: row1.left.tire.pressureLow)
-                DataStateRowView(icon: .tirePressure, label: "Row 1 - Passanger - Pressure Low", value: row1.left.tire.pressureLow)
-                DataStateRowView(icon: .tirePressure, label: "Row 2 - Left - Pressure Low", value: row2.left.tire.pressureLow)
-                DataStateRowView(icon: .tirePressure, label: "Row 2 - Right - Pressure Low", value: row2.left.tire.pressureLow)
+                DataStateRowView(icon: .tirePressure, label: "Row 1 - Driver - Pressure Low", value: row1.left.tire.pressureLow, kind: .fault)
+                DataStateRowView(icon: .tirePressure, label: "Row 1 - Passanger - Pressure Low", value: row1.right.tire.pressureLow, kind: .fault)
+                DataStateRowView(icon: .tirePressure, label: "Row 2 - Left - Pressure Low", value: row2.left.tire.pressureLow, kind: .fault)
+                DataStateRowView(icon: .tirePressure, label: "Row 2 - Right - Pressure Low", value: row2.right.tire.pressureLow, kind: .fault)
             }
             
             Section("Brake") {
@@ -456,10 +458,10 @@ struct VehicleStatusView: View {
 
             Section("Charging Door") {
                 DataRowView(icon: .info, label: "Status") {
-                    Text("\(green.chargingDoor.state)")
+                    Text(green.chargingDoor.state == .open ? "Open" : "Closed")
                 }
-                DataRowView(icon: .warning, label: "Error") {
-                    Text("\(green.chargingDoor.errorState)")
+                DataRowView(icon: .warning, label: "Error State") {
+                    Text(String(green.chargingDoor.errorState))
                 }
             }
 
@@ -480,7 +482,7 @@ struct VehicleStatusView: View {
                 }
 
                 DataRowView(icon: .grid, label: "Vehicle to Grid - Mode") {
-                    Text("\(green.electric.smartGrid.vehicleToGrid.mode)")
+                    Text(String(green.electric.smartGrid.vehicleToGrid.mode))
                 }
 
                 DataRowView(icon: .power, label: "Real Time Power") {
@@ -495,15 +497,8 @@ struct VehicleStatusView: View {
             }
 
             Section("Reservation") {
-                DataRowView(icon: .info, label: "Departure") {
-                    Text("TODO")
-                }
-                DataRowView(icon: .info, label: "Off Peak Time 1") {
-                    Text("TODO")
-                }
-                DataRowView(icon: .info, label: "Off Peak Time 2") {
-                    Text("TODO")
-                }
+                reservationDepartureSection(departure: green.reservation.departure)
+                reservationOffPeakSection(offPeak1: green.reservation.offPeakTime1, offPeak2: green.reservation.offPeakTime2)
             }
 
             Section("Plug & Charge") {
@@ -570,8 +565,24 @@ struct VehicleStatusView: View {
     @ViewBuilder
     func locationSection(location: Location) -> some View {
         Group {
-            Section("Connected Car") {
-               
+            Section("Vehicle Position") {
+                DataRowView(icon: .info, label: "Latitude") {
+                    Text(String(format: "%.6f", location.geoCoordinate.latitude))
+                }
+                DataRowView(icon: .info, label: "Longitude") {
+                    Text(String(format: "%.6f", location.geoCoordinate.longitude))
+                }
+                DataRowView(icon: .compass, label: "Heading") {
+                    Text("\(location.heading)°")
+                }
+                DataRowView(icon: .speedometer, label: "Speed") {
+                    Text("\(location.speed.value) \(location.speed.unit == .km ? "km/h" : "mph")")
+                }
+                if let timestamp = location.timeStamp.toDate {
+                    DataRowView(icon: .clock, label: "Timestamp") {
+                        Text(timestamp, style: .time)
+                    }
+                }
             }
 
             Map(initialPosition: .camera(.init(centerCoordinate: location.geoCoordinate.location.coordinate, distance: 500))) {
@@ -582,5 +593,83 @@ struct VehicleStatusView: View {
             .mapControlVisibility(.hidden)
             .frame(height: 400)
         }
+    }
+    
+    // MARK: - Reservation Helper Methods
+    
+    @ViewBuilder
+    private func reservationDepartureSection(departure: Reservation.Departure) -> some View {
+        Group {
+            Section("Departure Schedule 1") {
+                DataRowView(icon: .clock, label: "Time") {
+                    Text(String(format: "%02d:%02d", departure.schedule1.hour, departure.schedule1.minute))
+                }
+                DataRowView(icon: .info, label: "Days") {
+                    Text(formatWeekdays(schedule: departure.schedule1))
+                }
+                DataRowView(icon: .temperature, label: "Climate Temperature") {
+                    Text("\(departure.climate1.temperature)")
+                }
+                DataStateRowView(icon: .windshieldDefog, label: "Climate Defrost", value: departure.climate1.defrost)
+            }
+            
+            Section("Departure Schedule 2") {
+                DataRowView(icon: .clock, label: "Time") {
+                    Text(String(format: "%02d:%02d", departure.schedule2.hour, departure.schedule2.minute))
+                }
+                DataRowView(icon: .info, label: "Days") {
+                    Text(formatWeekdays(schedule: departure.schedule2))
+                }
+                DataRowView(icon: .temperature, label: "Climate Temperature") {
+                    Text("\(departure.climate2.temperature)")
+                }
+                DataStateRowView(icon: .windshieldDefog, label: "Climate Defrost", value: departure.climate2.defrost)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func reservationOffPeakSection(offPeak1: Reservation.OffPeakTime, offPeak2: Reservation.OffPeakTime) -> some View {
+        Group {
+            Section("Off-Peak Charging 1") {
+                DataRowView(icon: .clock, label: "Start Time") {
+                    Text(String(format: "%02d:%02d", offPeak1.startHour, offPeak1.startMin))
+                }
+                DataRowView(icon: .clock, label: "End Time") {
+                    Text(String(format: "%02d:%02d", offPeak1.endHour, offPeak1.endMin))
+                }
+                DataRowView(icon: .info, label: "Days") {
+                    Text(formatWeekdays(offPeak: offPeak1))
+                }
+            }
+            
+            Section("Off-Peak Charging 2") {
+                DataRowView(icon: .clock, label: "Start Time") {
+                    Text(String(format: "%02d:%02d", offPeak2.startHour, offPeak2.startMin))
+                }
+                DataRowView(icon: .clock, label: "End Time") {
+                    Text(String(format: "%02d:%02d", offPeak2.endHour, offPeak2.endMin))
+                }
+                DataRowView(icon: .info, label: "Days") {
+                    Text(formatWeekdays(offPeak: offPeak2))
+                }
+            }
+        }
+    }
+    
+    private func formatWeekdays(schedule: Reservation.Departure.Schedule) -> String {
+        var days: [String] = []
+        if schedule.monday == 1 { days.append("Mon") }
+        if schedule.tuesday == 1 { days.append("Tue") }
+        if schedule.wensday == 1 { days.append("Wed") }
+        if schedule.thursday == 1 { days.append("Thu") }
+        if schedule.friday == 1 { days.append("Fri") }
+        if schedule.saturday == 1 { days.append("Sat") }
+        if schedule.sunday == 1 { days.append("Sun") }
+        return days.isEmpty ? "None" : days.joined(separator: ", ")
+    }
+    
+    private func formatWeekdays(offPeak: Reservation.OffPeakTime) -> String {
+        return "See vehicle app for schedule details"
     }
 }

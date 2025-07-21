@@ -200,4 +200,3 @@ protocol VehicleParameters {
          "model_id": 12582916
      }
      */
-}
