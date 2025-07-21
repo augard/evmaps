@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import CoreLocation
 
 /// Tesla-style charging animation with realistic timing and visual feedback
 struct ChargingAnimationView: View {
@@ -40,7 +41,7 @@ struct ChargingAnimationView: View {
         .onDisappear {
             stopAnimations()
         }
-        .onChange(of: chargingSession.status) { _, newStatus in
+        .onChange(of: chargingSession.status) { newStatus in
             if newStatus == .completed || newStatus == .stopped {
                 stopAnimations()
             }
@@ -225,8 +226,8 @@ struct ChargingAnimationView: View {
             KiaProgressBar(
                 value: chargingSession.currentBatteryLevel,
                 style: .charging,
-                showPercentage: false,
-                animationDuration: 1.0
+                animationDuration: 1.0,
+                showPercentage: false
             )
             
             // Charging curve visualization
@@ -400,7 +401,7 @@ struct ChargingSession: Identifiable {
     var currentCost: Double
     var status: ChargingStatus
     
-    enum ChargingStatus {
+    enum ChargingStatus: Equatable {
         case preparing
         case active
         case paused

@@ -73,7 +73,7 @@ struct SwipeNavigationView<Content: View>: View {
         .padding(.horizontal, KiaDesign.Spacing.large)
     }
     
-    private func pageIndicatorDot(for index: Int, page: NavigationPage) -> VStack<TupleView<(some View, some View)>> {
+    private func pageIndicatorDot(for index: Int, page: NavigationPage) -> some View {
         VStack(spacing: 4) {
             // Icon indicator
             Image(systemName: page.icon)
@@ -103,11 +103,11 @@ struct SwipeNavigationView<Content: View>: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         }
         
-        dragOffset = value.translation.x
+        dragOffset = value.translation.width
         
         // Provide haptic feedback when crossing threshold
         let threshold = pageWidth * 0.3
-        if abs(dragOffset) > threshold && abs(value.predictedEndTranslation.x) > threshold * 1.5 {
+        if abs(dragOffset) > threshold && abs(value.predictedEndTranslation.width) > threshold * 1.5 {
             let direction = dragOffset > 0 ? -1 : 1
             let targetIndex = currentIndex + direction
             
@@ -120,8 +120,8 @@ struct SwipeNavigationView<Content: View>: View {
     private func handleDragEnded(_ value: DragGesture.Value) {
         isDragging = false
         
-        let dragDistance = value.translation.x
-        let dragVelocity = value.predictedEndTranslation.x
+        let dragDistance = value.translation.width
+        let dragVelocity = value.predictedEndTranslation.width
         
         // Determine if swipe should trigger page change
         let shouldChangePage = abs(dragDistance) > dragThreshold || abs(dragVelocity) > pageWidth * 0.5
@@ -512,7 +512,7 @@ struct LoadingStateView: View {
         ZStack {
             // Empty circle
             Circle()
-                .stroke(KiaDesign.Colors.textTertiary.opacity(0.3), lineWidth: 2, dash: [8, 4])
+                .stroke(KiaDesign.Colors.textTertiary.opacity(0.3), style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
                 .frame(width: 80, height: 80)
             
             // Empty icon

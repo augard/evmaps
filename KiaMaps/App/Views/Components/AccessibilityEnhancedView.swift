@@ -40,7 +40,7 @@ struct AccessibleKiaButton: View {
         hapticFeedback: UIImpactFeedbackGenerator.FeedbackStyle = .light,
         accessibilityLabel: String? = nil,
         accessibilityHint: String? = nil,
-        accessibilityTraits: AccessibilityTraits = [.button],
+        accessibilityTraits: AccessibilityTraits = [.isButton],
         action: @escaping () -> Void
     ) {
         self.title = title
@@ -89,15 +89,16 @@ struct AccessibleKiaButton: View {
             onRelease: { isPressed = false }
         )
         .accessibilityLabel(accessibilityLabel ?? title)
-        .accessibilityHint(accessibilityHint)
-        .accessibilityTraits(isEnabled ? accessibilityTraits : [accessibilityTraits, .notEnabled])
-        .accessibilityAddTraits(isPressed ? [.isSelected] : [])
+        .accessibilityHint(accessibilityHint ?? "")
+        .accessibilityAddTraits(accessibilityTraits)
+        .accessibilityAddTraits(isEnabled ? [] : [.allowsDirectInteraction])
+        .accessibilityAddTraits(isPressed ? [] : [])
     }
     
     // MARK: - Dynamic Scaling
     
     private var minTouchTarget: CGFloat {
-        max(44, scaledVerticalPadding * 2 + scaledFont.lineHeight)
+        max(44, scaledVerticalPadding * 2 + 20)
     }
     
     private var scaledSpacing: CGFloat {
@@ -111,6 +112,7 @@ struct AccessibleKiaButton: View {
             case .small: return 14
             case .medium: return 16
             case .large: return 18
+            case .extraLarge: return 20
             }
         }()
         return baseSize * dynamicTypeMultiplier
@@ -122,6 +124,7 @@ struct AccessibleKiaButton: View {
             case .small: return 14
             case .medium: return 16
             case .large: return 18
+            case .extraLarge: return 20
             }
         }()
         return .system(size: baseSize * dynamicTypeMultiplier, weight: .semibold)
@@ -133,6 +136,7 @@ struct AccessibleKiaButton: View {
             case .small: return 16
             case .medium: return 20
             case .large: return 24
+            case .extraLarge: return 32
             }
         }()
         return basePadding * dynamicTypeMultiplier
@@ -144,6 +148,7 @@ struct AccessibleKiaButton: View {
             case .small: return 8
             case .medium: return 12
             case .large: return 16
+            case .extraLarge: return 20
             }
         }()
         return basePadding * dynamicTypeMultiplier
@@ -176,10 +181,14 @@ struct AccessibleKiaButton: View {
                 return KiaDesign.Colors.primary
             case .secondary:
                 return KiaDesign.Colors.cardBackground
+            case .tertiary:
+                return .clear
             case .destructive:
                 return KiaDesign.Colors.error
             case .success:
                 return KiaDesign.Colors.success
+            case .custom(let background, _, _):
+                return background
             }
         }()
         
@@ -197,6 +206,10 @@ struct AccessibleKiaButton: View {
             return .white
         case .secondary:
             return KiaDesign.Colors.textPrimary
+        case .tertiary:
+            return KiaDesign.Colors.accent
+        case .custom(_, let foreground, _):
+            return foreground
         }
     }
     
@@ -205,6 +218,7 @@ struct AccessibleKiaButton: View {
         case .small: return 8
         case .medium: return 12
         case .large: return 16
+        case .extraLarge: return 20
         }
     }
     
@@ -233,7 +247,7 @@ struct AccessibleProgressBar: View {
     
     init(
         value: Double,
-        style: KiaProgressBar.Style = .standard,
+        style: KiaProgressBar.Style = .battery,
         showPercentage: Bool = true,
         animationDuration: Double = 0.5,
         accessibilityLabel: String? = nil
@@ -283,7 +297,7 @@ struct AccessibleProgressBar: View {
                         )
                     
                     // Animated highlight (for charging)
-                    if style == .charging && animatedValue > 0 {
+                    if case .charging = style, animatedValue > 0 {
                         chargingHighlight(width: geometry.size.width)
                     }
                 }
@@ -299,7 +313,7 @@ struct AccessibleProgressBar: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
         .accessibilityValue("\(Int(value * 100)) percent")
-        .accessibilityTraits(.updatesFrequently)
+        .accessibilityAddTraits(.updatesFrequently)
     }
     
     // MARK: - Dynamic Scaling
@@ -338,14 +352,14 @@ struct AccessibleProgressBar: View {
     
     private var progressColor: Color {
         switch style {
-        case .standard:
-            return KiaDesign.Colors.primary
-        case .charging:
-            return KiaDesign.Colors.charging
         case .battery:
             return batteryColor
+        case .charging:
+            return KiaDesign.Colors.charging
         case .temperature:
             return KiaDesign.Colors.Climate.auto
+        case .custom(_, let backgroundColor):
+            return backgroundColor
         }
     }
     
@@ -586,25 +600,7 @@ private extension View {
 }
 
 // MARK: - Color Extensions for Accessibility
-
-private extension Color {
-    func lighter(by percentage: CGFloat) -> Color {
-        return self.opacity(1.0 - percentage * 0.3)
-    }
-    
-    func darker(by percentage: CGFloat) -> Color {
-        let uiColor = UIColor(self)
-        var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
-        uiColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
-        
-        return Color(
-            hue: Double(hue),
-            saturation: Double(saturation),
-            brightness: Double(max(brightness * (1.0 - percentage), 0.0)),
-            opacity: Double(alpha)
-        )
-    }
-}
+// Note: Color extensions are defined in Colors.swift
 
 // MARK: - Dynamic Type Size Extension
 

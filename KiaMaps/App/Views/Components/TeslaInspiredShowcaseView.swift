@@ -15,7 +15,7 @@ struct TeslaInspiredShowcaseView: View {
     @StateObject private var themeManager = ThemeManager()
     @State private var selectedPageIndex = 0
     @State private var isRefreshing = false
-    @State private var loadingState: LoadingState = .visible
+    @State private var loadingState: LoadingState = .loading
     
     // Sample data states
     @State private var batteryLevel: Double = 0.78
@@ -84,7 +84,7 @@ struct TeslaInspiredShowcaseView: View {
     
     @ViewBuilder
     private func pageContent(for page: NavigationPage, isActive: Bool) -> some View {
-        StateTransitionView(state: isActive ? .visible : .hidden) {
+        StateTransitionView(state: isActive ? .loading : .hidden) {
             switch page.id {
             case "overview":
                 overviewPage
@@ -130,7 +130,7 @@ struct TeslaInspiredShowcaseView: View {
     }
     
     private var heroSection: some View {
-        ThemedKiaCard(elevation: .elevated) {
+        ThemedKiaCard(elevation: .high) {
             VStack(spacing: KiaDesign.Spacing.xl) {
                 // Large circular battery indicator
                 ZStack {
@@ -295,7 +295,9 @@ struct TeslaInspiredShowcaseView: View {
                 BatteryHeroView(
                     batteryLevel: batteryLevel,
                     range: "\(Int(batteryLevel * 350)) km",
-                    isCharging: isCharging
+                    isCharging: isCharging,
+                    estimatedTimeToFull: isCharging ? "45 min" : nil,
+                    chargingPower: isCharging ? "150 kW" : nil
                 )
                 
                 // Charging session (if charging)
@@ -531,7 +533,7 @@ struct TeslaInspiredShowcaseView: View {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                loadingState = .visible
+                loadingState = .loading
                 // Simulate battery update
                 batteryLevel = Double.random(in: 0.6...0.9)
             }
@@ -654,7 +656,7 @@ private struct PerformanceMetric: View {
             
             AccessibleProgressBar(
                 value: value,
-                style: .standard,
+                style: .battery,
                 showPercentage: false,
                 accessibilityLabel: title
             )
@@ -714,7 +716,7 @@ private struct BatteryHealthMetric: View {
             
             AccessibleProgressBar(
                 value: percentage,
-                style: .standard,
+                style: .battery,
                 showPercentage: false,
                 accessibilityLabel: title
             )

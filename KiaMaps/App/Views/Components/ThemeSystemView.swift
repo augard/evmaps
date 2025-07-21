@@ -186,13 +186,13 @@ extension KiaDesign.Colors {
 struct ThemedKiaCard<Content: View>: View {
     let content: Content
     let action: (() -> Void)?
-    let elevation: KiaCard.Elevation
+    let elevation: KiaCard<Content>.Elevation
     
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeManager: ThemeManager
     
     init(
-        elevation: KiaCard.Elevation = .standard,
+        elevation: KiaCard<Content>.Elevation = .medium,
         action: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) {
@@ -245,18 +245,20 @@ struct ThemedKiaCard<Content: View>: View {
     
     private var shadowRadius: CGFloat {
         switch elevation {
-        case .none: return 0
-        case .standard: return themeManager.enableHighContrast ? 2 : 8
-        case .elevated: return themeManager.enableHighContrast ? 4 : 16
+        case .flat: return 0
+        case .low: return themeManager.enableHighContrast ? 1 : 4
+        case .medium: return themeManager.enableHighContrast ? 2 : 8
+        case .high: return themeManager.enableHighContrast ? 4 : 16
         case .floating: return themeManager.enableHighContrast ? 6 : 24
         }
     }
     
     private var shadowOffset: CGFloat {
         switch elevation {
-        case .none: return 0
-        case .standard: return 2
-        case .elevated: return 4
+        case .flat: return 0
+        case .low: return 1
+        case .medium: return 2
+        case .high: return 4
         case .floating: return 8
         }
     }
@@ -548,7 +550,7 @@ struct ThemeEnvironmentModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environmentObject(themeManager)
-            .environment(\.colorScheme, effectiveColorScheme)
+            .environment(\.colorScheme, effectiveColorScheme ?? .light)
     }
     
     private var effectiveColorScheme: ColorScheme? {

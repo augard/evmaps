@@ -7,72 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		55141EFC2C07B77500F56A68 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141EFB2C07B77500F56A68 /* MainView.swift */; };
-		55141EFF2C085BAB00F56A68 /* AuthorizationResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141EFE2C085BAB00F56A68 /* AuthorizationResponse.swift */; };
-		55141F062C0A15BE00F56A68 /* ApiEndpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F052C0A15BE00F56A68 /* ApiEndpoints.swift */; };
-		55141F082C0A15D900F56A68 /* ApiConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F072C0A15D900F56A68 /* ApiConfiguration.swift */; };
-		55141F0A2C0A16D300F56A68 /* ApiRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F092C0A16D300F56A68 /* ApiRequest.swift */; };
-		55141F0C2C0A28D600F56A68 /* ApiResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F0B2C0A28D600F56A68 /* ApiResponse.swift */; };
-		55141F0E2C0A29C200F56A68 /* VehicleResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F0D2C0A29C200F56A68 /* VehicleResponse.swift */; };
-		55141F102C0A2A0B00F56A68 /* NotificationRegistrationResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F0F2C0A2A0B00F56A68 /* NotificationRegistrationResponse.swift */; };
-		55141F122C0A31B100F56A68 /* SignInResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F112C0A31B100F56A68 /* SignInResponse.swift */; };
-		55141F162C0A63CD00F56A68 /* UserIntegrationResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F152C0A63CD00F56A68 /* UserIntegrationResponse.swift */; };
-		55141F1A2C0BB99500F56A68 /* VehicleStatusResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F192C0BB99500F56A68 /* VehicleStatusResponse.swift */; };
-		553177F72C1B02A200A0E60C /* PorscheParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177F62C1B02A200A0E60C /* PorscheParameters.swift */; };
-		553177F92C1B02A700A0E60C /* KiaParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177F82C1B02A700A0E60C /* KiaParameters.swift */; };
-		553177FB2C1B02DF00A0E60C /* VehicleParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177FA2C1B02DF00A0E60C /* VehicleParameters.swift */; };
-		55536DAF2C0672BF0004ABCA /* Api.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55536DAE2C0672BF0004ABCA /* Api.swift */; };
 		556C7BD02C00C1D500E828AD /* CarListHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556C7BCF2C00C1D500E828AD /* CarListHandler.swift */; };
 		556C7BD22C00C35F00E828AD /* GetCarPowerLevelStatusHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556C7BD12C00C35F00E828AD /* GetCarPowerLevelStatusHandler.swift */; };
-		556CF8C62C2CC90300C15E1A /* VehicleStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556CF8C52C2CC90300C15E1A /* VehicleStatusView.swift */; };
-		557BEFB42C1B718200EA89C9 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */; };
-		557BEFB62C1C91BF00EA89C9 /* KiaParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177F82C1B02A700A0E60C /* KiaParameters.swift */; };
-		557BEFB72C1C91BF00EA89C9 /* VehicleParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177FA2C1B02DF00A0E60C /* VehicleParameters.swift */; };
-		557BEFB82C1C91BF00EA89C9 /* PorscheParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553177F62C1B02A200A0E60C /* PorscheParameters.swift */; };
-		557BEFBA2C1C940100EA89C9 /* VehicleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557BEFB92C1C940100EA89C9 /* VehicleManager.swift */; };
-		557BEFBF2C1C99C100EA89C9 /* VehicleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557BEFB92C1C940100EA89C9 /* VehicleManager.swift */; };
-		55B5D5032C24B4CB00FFB458 /* DataRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B5D5022C24B4CB00FFB458 /* DataRowView.swift */; };
-		55B5D5042C24B58600FFB458 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */; };
-		55DE31642C11D24F001D7302 /* DatePropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31632C11D24E001D7302 /* DatePropertyWrapper.swift */; };
-		55DE31672C11D67C001D7302 /* BoolPropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31662C11D67C001D7302 /* BoolPropertyWrapper.swift */; };
-		55DE316A2C11E03A001D7302 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31692C11E03A001D7302 /* Keychain.swift */; };
-		55DE316E2C11E215001D7302 /* Api.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55536DAE2C0672BF0004ABCA /* Api.swift */; };
-		55DE316F2C11E215001D7302 /* BoolPropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31662C11D67C001D7302 /* BoolPropertyWrapper.swift */; };
-		55DE31702C11E215001D7302 /* ApiEndpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F052C0A15BE00F56A68 /* ApiEndpoints.swift */; };
-		55DE31712C11E215001D7302 /* DatePropertyWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31632C11D24E001D7302 /* DatePropertyWrapper.swift */; };
-		55DE31722C11E215001D7302 /* ApiRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F092C0A16D300F56A68 /* ApiRequest.swift */; };
-		55DE31732C11E215001D7302 /* ApiResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F0B2C0A28D600F56A68 /* ApiResponse.swift */; };
-		55DE31742C11E219001D7302 /* AuthorizationResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141EFE2C085BAB00F56A68 /* AuthorizationResponse.swift */; };
-		55DE31752C11E219001D7302 /* ApiConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F072C0A15D900F56A68 /* ApiConfiguration.swift */; };
-		55DE31762C11E219001D7302 /* VehicleTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55FC13642C10B2DA00018709 /* VehicleTypes.swift */; };
-		55DE31772C11E219001D7302 /* VehicleStatusResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F192C0BB99500F56A68 /* VehicleStatusResponse.swift */; };
-		55DE31782C11E219001D7302 /* VehicleResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F0D2C0A29C200F56A68 /* VehicleResponse.swift */; };
-		55DE31792C11E219001D7302 /* NotificationRegistrationResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F0F2C0A2A0B00F56A68 /* NotificationRegistrationResponse.swift */; };
-		55DE317A2C11E219001D7302 /* UserIntegrationResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F152C0A63CD00F56A68 /* UserIntegrationResponse.swift */; };
-		55DE317B2C11E219001D7302 /* SignInResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55141F112C0A31B100F56A68 /* SignInResponse.swift */; };
-		55DE31872C1348ED001D7302 /* Authorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31862C1348ED001D7302 /* Authorization.swift */; };
-		55DE31892C134B61001D7302 /* Authorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31862C1348ED001D7302 /* Authorization.swift */; };
-		55DE318A2C134B61001D7302 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE31692C11E03A001D7302 /* Keychain.swift */; };
-		55FC13652C10B2DA00018709 /* VehicleTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55FC13642C10B2DA00018709 /* VehicleTypes.swift */; };
-		803D46992E2E9856003EFC10 /* TemperatureDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803D46982E2E9856003EFC10 /* TemperatureDial.swift */; };
-		803D469B2E2E9863003EFC10 /* VehicleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803D469A2E2E9863003EFC10 /* VehicleMapView.swift */; };
-		8057CBF52E2E5735002BBB52 /* KiaCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBEF2E2E5735002BBB52 /* KiaCard.swift */; };
-		8057CBF62E2E5735002BBB52 /* KiaDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBF22E2E5735002BBB52 /* KiaDesign.swift */; };
-		8057CBF72E2E5735002BBB52 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBF12E2E5735002BBB52 /* Colors.swift */; };
-		8057CBF92E2E57BF002BBB52 /* KiaProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBF82E2E57BF002BBB52 /* KiaProgressBar.swift */; };
-		8057CBFB2E2E57F4002BBB52 /* KiaButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBFA2E2E57F4002BBB52 /* KiaButton.swift */; };
-		8057CBFE2E2E589E002BBB52 /* KiaSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBFC2E2E589E002BBB52 /* KiaSlider.swift */; };
-		8057CBFF2E2E589E002BBB52 /* KiaStatusIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CBFD2E2E589E002BBB52 /* KiaStatusIndicator.swift */; };
-		8057CC012E2E5C25002BBB52 /* CircularBatteryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC002E2E5C25002BBB52 /* CircularBatteryView.swift */; };
-		8057CC052E2E5CF8002BBB52 /* BatteryHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC042E2E5CF8002BBB52 /* BatteryHeroView.swift */; };
-		8057CC072E2E5D08002BBB52 /* QuickActionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC062E2E5D08002BBB52 /* QuickActionsView.swift */; };
-		8057CC092E2E5D34002BBB52 /* VehicleStatusModernView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC082E2E5D34002BBB52 /* VehicleStatusModernView.swift */; };
-		8057CC0B2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC0A2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift */; };
-		8057CC112E2E6379002BBB52 /* MockVehicleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8057CC0F2E2E6379002BBB52 /* MockVehicleData.swift */; };
 		CD05A6F122E8E4EA00F93F50 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD05A6F022E8E4EA00F93F50 /* MapKit.framework */; };
 		CD05A6F322E8E54500F93F50 /* Handler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD05A6F222E8E54500F93F50 /* Handler.swift */; };
 		CD05A6F922E9018D00F93F50 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = CD05A6F822E9018D00F93F50 /* README.md */; };
-		CDA8AD8522E8CF7C00B1EAF8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDA8AD8422E8CF7C00B1EAF8 /* AppDelegate.swift */; };
 		CDA8AD8C22E8CF7D00B1EAF8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CDA8AD8B22E8CF7D00B1EAF8 /* Assets.xcassets */; };
 		CDA8AD8F22E8CF7D00B1EAF8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CDA8AD8D22E8CF7D00B1EAF8 /* LaunchScreen.storyboard */; };
 		CDA8AD9D22E8CF8700B1EAF8 /* IntentHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDA8AD9C22E8CF8700B1EAF8 /* IntentHandler.swift */; };
@@ -123,57 +62,17 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		55141EFB2C07B77500F56A68 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
-		55141EFE2C085BAB00F56A68 /* AuthorizationResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthorizationResponse.swift; sourceTree = "<group>"; };
-		55141F052C0A15BE00F56A68 /* ApiEndpoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiEndpoints.swift; sourceTree = "<group>"; };
-		55141F072C0A15D900F56A68 /* ApiConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiConfiguration.swift; sourceTree = "<group>"; };
-		55141F092C0A16D300F56A68 /* ApiRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRequest.swift; sourceTree = "<group>"; };
-		55141F0B2C0A28D600F56A68 /* ApiResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiResponse.swift; sourceTree = "<group>"; };
-		55141F0D2C0A29C200F56A68 /* VehicleResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleResponse.swift; sourceTree = "<group>"; };
-		55141F0F2C0A2A0B00F56A68 /* NotificationRegistrationResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationRegistrationResponse.swift; sourceTree = "<group>"; };
-		55141F112C0A31B100F56A68 /* SignInResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInResponse.swift; sourceTree = "<group>"; };
-		55141F152C0A63CD00F56A68 /* UserIntegrationResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserIntegrationResponse.swift; sourceTree = "<group>"; };
-		55141F192C0BB99500F56A68 /* VehicleStatusResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatusResponse.swift; sourceTree = "<group>"; };
-		553177F62C1B02A200A0E60C /* PorscheParameters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PorscheParameters.swift; sourceTree = "<group>"; };
-		553177F82C1B02A700A0E60C /* KiaParameters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaParameters.swift; sourceTree = "<group>"; };
-		553177FA2C1B02DF00A0E60C /* VehicleParameters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleParameters.swift; sourceTree = "<group>"; };
-		55536DAE2C0672BF0004ABCA /* Api.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Api.swift; sourceTree = "<group>"; };
 		556C7BCF2C00C1D500E828AD /* CarListHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarListHandler.swift; sourceTree = "<group>"; };
 		556C7BD12C00C35F00E828AD /* GetCarPowerLevelStatusHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetCarPowerLevelStatusHandler.swift; sourceTree = "<group>"; };
-		556CF8C52C2CC90300C15E1A /* VehicleStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatusView.swift; sourceTree = "<group>"; };
-		557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
-		557BEFB92C1C940100EA89C9 /* VehicleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleManager.swift; sourceTree = "<group>"; };
-		55B5D5022C24B4CB00FFB458 /* DataRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataRowView.swift; sourceTree = "<group>"; };
-		55DE31632C11D24E001D7302 /* DatePropertyWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatePropertyWrapper.swift; sourceTree = "<group>"; };
-		55DE31662C11D67C001D7302 /* BoolPropertyWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoolPropertyWrapper.swift; sourceTree = "<group>"; };
 		55DE31682C11E003001D7302 /* KiaExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KiaExtension.entitlements; sourceTree = "<group>"; };
-		55DE31692C11E03A001D7302 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		55DE317C2C11E3D4001D7302 /* KiaExtensionUI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KiaExtensionUI.entitlements; sourceTree = "<group>"; };
-		55DE31862C1348ED001D7302 /* Authorization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Authorization.swift; sourceTree = "<group>"; };
-		55FC13642C10B2DA00018709 /* VehicleTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleTypes.swift; sourceTree = "<group>"; };
 		803D467D2E2E7413003EFC10 /* KiaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KiaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		803D46982E2E9856003EFC10 /* TemperatureDial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureDial.swift; sourceTree = "<group>"; };
-		803D469A2E2E9863003EFC10 /* VehicleMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleMapView.swift; sourceTree = "<group>"; };
 		8057CBEC2E2A93EE002BBB52 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		8057CBED2E2A93EE002BBB52 /* Signing.xcconfig.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = Signing.xcconfig.template; sourceTree = "<group>"; };
-		8057CBEF2E2E5735002BBB52 /* KiaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaCard.swift; sourceTree = "<group>"; };
-		8057CBF12E2E5735002BBB52 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
-		8057CBF22E2E5735002BBB52 /* KiaDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaDesign.swift; sourceTree = "<group>"; };
-		8057CBF82E2E57BF002BBB52 /* KiaProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaProgressBar.swift; sourceTree = "<group>"; };
-		8057CBFA2E2E57F4002BBB52 /* KiaButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaButton.swift; sourceTree = "<group>"; };
-		8057CBFC2E2E589E002BBB52 /* KiaSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaSlider.swift; sourceTree = "<group>"; };
-		8057CBFD2E2E589E002BBB52 /* KiaStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiaStatusIndicator.swift; sourceTree = "<group>"; };
-		8057CC002E2E5C25002BBB52 /* CircularBatteryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularBatteryView.swift; sourceTree = "<group>"; };
-		8057CC042E2E5CF8002BBB52 /* BatteryHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryHeroView.swift; sourceTree = "<group>"; };
-		8057CC062E2E5D08002BBB52 /* QuickActionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsView.swift; sourceTree = "<group>"; };
-		8057CC082E2E5D34002BBB52 /* VehicleStatusModernView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatusModernView.swift; sourceTree = "<group>"; };
-		8057CC0A2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleSilhouetteView.swift; sourceTree = "<group>"; };
-		8057CC0F2E2E6379002BBB52 /* MockVehicleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockVehicleData.swift; sourceTree = "<group>"; };
 		CD05A6F022E8E4EA00F93F50 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		CD05A6F222E8E54500F93F50 /* Handler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Handler.swift; sourceTree = "<group>"; };
 		CD05A6F822E9018D00F93F50 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		CDA8AD8122E8CF7B00B1EAF8 /* KiaMaps.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KiaMaps.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		CDA8AD8422E8CF7C00B1EAF8 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		CDA8AD8B22E8CF7D00B1EAF8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CDA8AD8E22E8CF7D00B1EAF8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		CDA8AD9022E8CF7D00B1EAF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -188,8 +87,27 @@
 		CDA8ADBB22E8CFC900B1EAF8 /* KiaMaps.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KiaMaps.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		80D82EAB2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppConfiguration.swift,
+			);
+			target = CDA8AD9922E8CF8700B1EAF8 /* KiaExtension */;
+		};
+		80D82EAC2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppConfiguration.swift,
+			);
+			target = CDA8ADA222E8CF8700B1EAF8 /* KiaExtensionUI */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		803D467E2E2E7413003EFC10 /* KiaTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = KiaTests; sourceTree = "<group>"; };
+		80D82E3A2E2EB44C008CE0E7 /* App */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (80D82EAB2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 80D82EAC2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = App; sourceTree = "<group>"; };
+		80D82E6C2E2EB457008CE0E7 /* Core */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Core; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -226,89 +144,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		55141EFD2C085B9E00F56A68 /* Api */ = {
-			isa = PBXGroup;
-			children = (
-				55536DAE2C0672BF0004ABCA /* Api.swift */,
-				55141F072C0A15D900F56A68 /* ApiConfiguration.swift */,
-				55141F092C0A16D300F56A68 /* ApiRequest.swift */,
-				55141F0B2C0A28D600F56A68 /* ApiResponse.swift */,
-				55141F052C0A15BE00F56A68 /* ApiEndpoints.swift */,
-				55DE31632C11D24E001D7302 /* DatePropertyWrapper.swift */,
-				55DE31662C11D67C001D7302 /* BoolPropertyWrapper.swift */,
-			);
-			path = Api;
-			sourceTree = "<group>";
-		};
-		553177F52C1B029900A0E60C /* Vehicle */ = {
-			isa = PBXGroup;
-			children = (
-				553177F62C1B02A200A0E60C /* PorscheParameters.swift */,
-				553177F82C1B02A700A0E60C /* KiaParameters.swift */,
-				553177FA2C1B02DF00A0E60C /* VehicleParameters.swift */,
-				557BEFB92C1C940100EA89C9 /* VehicleManager.swift */,
-			);
-			path = Vehicle;
-			sourceTree = "<group>";
-		};
-		5550E6362C24A18C008B5328 /* Core */ = {
-			isa = PBXGroup;
-			children = (
-				55DE31882C1348F1001D7302 /* Authorization */,
-				55141EFD2C085B9E00F56A68 /* Api */,
-				55DE31652C11D381001D7302 /* Responses */,
-				553177F52C1B029900A0E60C /* Vehicle */,
-			);
-			path = Core;
-			sourceTree = "<group>";
-		};
-		5550E6372C24A1DA008B5328 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				5550E6382C24A1E4008B5328 /* Views */,
-				8057CC102E2E6379002BBB52 /* Mock */,
-				CDA8AD8422E8CF7C00B1EAF8 /* AppDelegate.swift */,
-				557BEFB32C1B718200EA89C9 /* AppConfiguration.swift */,
-				55141EFB2C07B77500F56A68 /* MainView.swift */,
-				556CF8C52C2CC90300C15E1A /* VehicleStatusView.swift */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		5550E6382C24A1E4008B5328 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				8057CBF02E2E5735002BBB52 /* Components */,
-				8057CBF32E2E5735002BBB52 /* Design */,
-				8057CBF42E2E5735002BBB52 /* Vehicle */,
-				55B5D5022C24B4CB00FFB458 /* DataRowView.swift */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		55DE31652C11D381001D7302 /* Responses */ = {
-			isa = PBXGroup;
-			children = (
-				55141EFE2C085BAB00F56A68 /* AuthorizationResponse.swift */,
-				55141F0F2C0A2A0B00F56A68 /* NotificationRegistrationResponse.swift */,
-				55141F0D2C0A29C200F56A68 /* VehicleResponse.swift */,
-				55141F192C0BB99500F56A68 /* VehicleStatusResponse.swift */,
-				55FC13642C10B2DA00018709 /* VehicleTypes.swift */,
-				55141F112C0A31B100F56A68 /* SignInResponse.swift */,
-				55141F152C0A63CD00F56A68 /* UserIntegrationResponse.swift */,
-			);
-			path = Responses;
-			sourceTree = "<group>";
-		};
-		55DE31882C1348F1001D7302 /* Authorization */ = {
-			isa = PBXGroup;
-			children = (
-				55DE31862C1348ED001D7302 /* Authorization.swift */,
-				55DE31692C11E03A001D7302 /* Keychain.swift */,
-			);
-			path = Authorization;
-			sourceTree = "<group>";
-		};
 		8057CBEE2E2A93EE002BBB52 /* Config */ = {
 			isa = PBXGroup;
 			children = (
@@ -316,49 +151,6 @@
 				8057CBED2E2A93EE002BBB52 /* Signing.xcconfig.template */,
 			);
 			path = Config;
-			sourceTree = "<group>";
-		};
-		8057CBF02E2E5735002BBB52 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				803D46982E2E9856003EFC10 /* TemperatureDial.swift */,
-				8057CC0A2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift */,
-				8057CC002E2E5C25002BBB52 /* CircularBatteryView.swift */,
-				8057CBFC2E2E589E002BBB52 /* KiaSlider.swift */,
-				8057CBFD2E2E589E002BBB52 /* KiaStatusIndicator.swift */,
-				8057CBFA2E2E57F4002BBB52 /* KiaButton.swift */,
-				8057CBF82E2E57BF002BBB52 /* KiaProgressBar.swift */,
-				8057CBEF2E2E5735002BBB52 /* KiaCard.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		8057CBF32E2E5735002BBB52 /* Design */ = {
-			isa = PBXGroup;
-			children = (
-				8057CBF12E2E5735002BBB52 /* Colors.swift */,
-				8057CBF22E2E5735002BBB52 /* KiaDesign.swift */,
-			);
-			path = Design;
-			sourceTree = "<group>";
-		};
-		8057CBF42E2E5735002BBB52 /* Vehicle */ = {
-			isa = PBXGroup;
-			children = (
-				803D469A2E2E9863003EFC10 /* VehicleMapView.swift */,
-				8057CC082E2E5D34002BBB52 /* VehicleStatusModernView.swift */,
-				8057CC062E2E5D08002BBB52 /* QuickActionsView.swift */,
-				8057CC042E2E5CF8002BBB52 /* BatteryHeroView.swift */,
-			);
-			path = Vehicle;
-			sourceTree = "<group>";
-		};
-		8057CC102E2E6379002BBB52 /* Mock */ = {
-			isa = PBXGroup;
-			children = (
-				8057CC0F2E2E6379002BBB52 /* MockVehicleData.swift */,
-			);
-			path = Mock;
 			sourceTree = "<group>";
 		};
 		CDA8AD7822E8CF7B00B1EAF8 = {
@@ -389,8 +181,8 @@
 		CDA8AD8322E8CF7B00B1EAF8 /* KiaMaps */ = {
 			isa = PBXGroup;
 			children = (
-				5550E6372C24A1DA008B5328 /* App */,
-				5550E6362C24A18C008B5328 /* Core */,
+				80D82E3A2E2EB44C008CE0E7 /* App */,
+				80D82E6C2E2EB457008CE0E7 /* Core */,
 				CDA8AD8B22E8CF7D00B1EAF8 /* Assets.xcassets */,
 				CDA8AD8D22E8CF7D00B1EAF8 /* LaunchScreen.storyboard */,
 				CDA8ADBB22E8CFC900B1EAF8 /* KiaMaps.entitlements */,
@@ -474,6 +266,10 @@
 				CDA8ADAF22E8CF8700B1EAF8 /* PBXTargetDependency */,
 				CDA8ADB222E8CF8700B1EAF8 /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (
+				80D82E3A2E2EB44C008CE0E7 /* App */,
+				80D82E6C2E2EB457008CE0E7 /* Core */,
+			);
 			name = KiaMaps;
 			packageProductDependencies = (
 			);
@@ -494,6 +290,9 @@
 			dependencies = (
 				55DE31852C11EC7F001D7302 /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (
+				80D82E6C2E2EB457008CE0E7 /* Core */,
+			);
 			name = KiaExtension;
 			packageProductDependencies = (
 			);
@@ -512,6 +311,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				80D82E6C2E2EB457008CE0E7 /* Core */,
 			);
 			name = KiaExtensionUI;
 			productName = rideUI;
@@ -618,46 +420,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				55536DAF2C0672BF0004ABCA /* Api.swift in Sources */,
-				55B5D5032C24B4CB00FFB458 /* DataRowView.swift in Sources */,
-				553177F92C1B02A700A0E60C /* KiaParameters.swift in Sources */,
-				55141F1A2C0BB99500F56A68 /* VehicleStatusResponse.swift in Sources */,
-				553177F72C1B02A200A0E60C /* PorscheParameters.swift in Sources */,
-				55141F062C0A15BE00F56A68 /* ApiEndpoints.swift in Sources */,
-				55FC13652C10B2DA00018709 /* VehicleTypes.swift in Sources */,
-				55DE316A2C11E03A001D7302 /* Keychain.swift in Sources */,
-				55141EFC2C07B77500F56A68 /* MainView.swift in Sources */,
-				553177FB2C1B02DF00A0E60C /* VehicleParameters.swift in Sources */,
-				55141F0E2C0A29C200F56A68 /* VehicleResponse.swift in Sources */,
-				8057CBF92E2E57BF002BBB52 /* KiaProgressBar.swift in Sources */,
-				55141EFF2C085BAB00F56A68 /* AuthorizationResponse.swift in Sources */,
-				55DE31672C11D67C001D7302 /* BoolPropertyWrapper.swift in Sources */,
-				8057CC072E2E5D08002BBB52 /* QuickActionsView.swift in Sources */,
-				55DE31642C11D24F001D7302 /* DatePropertyWrapper.swift in Sources */,
-				8057CC092E2E5D34002BBB52 /* VehicleStatusModernView.swift in Sources */,
-				8057CC0B2E2E5FD1002BBB52 /* VehicleSilhouetteView.swift in Sources */,
-				803D46992E2E9856003EFC10 /* TemperatureDial.swift in Sources */,
-				55141F102C0A2A0B00F56A68 /* NotificationRegistrationResponse.swift in Sources */,
-				8057CC012E2E5C25002BBB52 /* CircularBatteryView.swift in Sources */,
-				55141F122C0A31B100F56A68 /* SignInResponse.swift in Sources */,
-				556CF8C62C2CC90300C15E1A /* VehicleStatusView.swift in Sources */,
-				CDA8AD8522E8CF7C00B1EAF8 /* AppDelegate.swift in Sources */,
-				803D469B2E2E9863003EFC10 /* VehicleMapView.swift in Sources */,
-				8057CBFB2E2E57F4002BBB52 /* KiaButton.swift in Sources */,
-				557BEFB42C1B718200EA89C9 /* AppConfiguration.swift in Sources */,
-				55141F082C0A15D900F56A68 /* ApiConfiguration.swift in Sources */,
-				8057CC112E2E6379002BBB52 /* MockVehicleData.swift in Sources */,
-				55141F162C0A63CD00F56A68 /* UserIntegrationResponse.swift in Sources */,
-				8057CBF52E2E5735002BBB52 /* KiaCard.swift in Sources */,
-				8057CBF62E2E5735002BBB52 /* KiaDesign.swift in Sources */,
-				8057CBF72E2E5735002BBB52 /* Colors.swift in Sources */,
-				8057CBFE2E2E589E002BBB52 /* KiaSlider.swift in Sources */,
-				8057CBFF2E2E589E002BBB52 /* KiaStatusIndicator.swift in Sources */,
-				55DE31872C1348ED001D7302 /* Authorization.swift in Sources */,
-				55141F0C2C0A28D600F56A68 /* ApiResponse.swift in Sources */,
-				8057CC052E2E5CF8002BBB52 /* BatteryHeroView.swift in Sources */,
-				55141F0A2C0A16D300F56A68 /* ApiRequest.swift in Sources */,
-				557BEFBA2C1C940100EA89C9 /* VehicleManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -667,28 +429,7 @@
 			files = (
 				CDA8AD9D22E8CF8700B1EAF8 /* IntentHandler.swift in Sources */,
 				556C7BD22C00C35F00E828AD /* GetCarPowerLevelStatusHandler.swift in Sources */,
-				55DE316E2C11E215001D7302 /* Api.swift in Sources */,
-				55DE316F2C11E215001D7302 /* BoolPropertyWrapper.swift in Sources */,
-				55DE31702C11E215001D7302 /* ApiEndpoints.swift in Sources */,
-				55DE31712C11E215001D7302 /* DatePropertyWrapper.swift in Sources */,
-				55DE31722C11E215001D7302 /* ApiRequest.swift in Sources */,
-				55DE31732C11E215001D7302 /* ApiResponse.swift in Sources */,
 				CD05A6F322E8E54500F93F50 /* Handler.swift in Sources */,
-				55DE31742C11E219001D7302 /* AuthorizationResponse.swift in Sources */,
-				557BEFB62C1C91BF00EA89C9 /* KiaParameters.swift in Sources */,
-				55B5D5042C24B58600FFB458 /* AppConfiguration.swift in Sources */,
-				557BEFB72C1C91BF00EA89C9 /* VehicleParameters.swift in Sources */,
-				557BEFB82C1C91BF00EA89C9 /* PorscheParameters.swift in Sources */,
-				55DE31752C11E219001D7302 /* ApiConfiguration.swift in Sources */,
-				55DE31762C11E219001D7302 /* VehicleTypes.swift in Sources */,
-				55DE31772C11E219001D7302 /* VehicleStatusResponse.swift in Sources */,
-				55DE31782C11E219001D7302 /* VehicleResponse.swift in Sources */,
-				557BEFBF2C1C99C100EA89C9 /* VehicleManager.swift in Sources */,
-				55DE31792C11E219001D7302 /* NotificationRegistrationResponse.swift in Sources */,
-				55DE317A2C11E219001D7302 /* UserIntegrationResponse.swift in Sources */,
-				55DE317B2C11E219001D7302 /* SignInResponse.swift in Sources */,
-				55DE31892C134B61001D7302 /* Authorization.swift in Sources */,
-				55DE318A2C134B61001D7302 /* Keychain.swift in Sources */,
 				556C7BD02C00C1D500E828AD /* CarListHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -761,7 +502,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				MARKETING_VERSION = 1.0;
@@ -793,7 +534,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				MARKETING_VERSION = 1.0;
