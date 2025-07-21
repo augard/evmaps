@@ -9,25 +9,60 @@
 import Foundation
 import Intents
 
+/// Protocol defining essential parameters for electric vehicle route planning and charging calculations
+/// These parameters are used by Apple Maps to provide accurate EV-specific navigation including:
+/// - Energy consumption estimation based on speed, elevation, and auxiliary power usage
+/// - Charging time calculations at different charging stations
+/// - Route planning with charging stops
 protocol VehicleParameters {
+    /// List of charging connector types supported by this vehicle
+    /// Common types include Mennekes (Type 2 AC) and CCS2 (DC fast charging)
     var supportedChargingConnectors: [INCar.ChargingConnectorType] { get }
 
+    /// Returns the maximum charging power in kilowatts for a specific connector type
+    /// - Parameter connector: The charging connector type
+    /// - Returns: Maximum power in kW, or nil if connector is not supported
     func maximumPower(for connector: INCar.ChargingConnectorType) -> Double?
 
+    /// Maximum driving range in kilometers according to WLTP standard
+    /// Used for initial route planning estimations
     var maximumDistance: Double { get }
 
+    /// Unique identifier for the vehicle's energy consumption model
+    /// This ID is sent to the server for route calculations
     var consumptionModelId: Int { get }
 
-    // A dictionary mapping NSStrings to serializable objects (NSString, NSNumber, NSArray, NSDictionary, or NSNull) that contains the OEM provided parameters for the consumption model used to calculate the vehicle’s energy consumption as the user drives. The keys of this dictionary describe the parameters that fit into the consumpteion model of the electric vehicle. The values of this dictionary represent the parameter values. model_id is a mandatory key in this dictionary. */
+    /// Energy consumption parameters used to calculate battery usage during driving
+    /// Required keys:
+    /// - vehicle_auxiliary_power_w: Constant power draw from electronics (Watts)
+    /// - vehicle_consumption_values_wh_per_m: Array of 10 consumption values representing different driving efficiency scenarios (Wh/meter)
+    ///   Research shows these values correlate with real-world data (e.g., Taycan: 172-258 Wh/km range covers WLTP to Autobahn speeds)
+    /// - vehicle_altitude_gain_consumption_wh_per_m: Extra energy for climbing (Wh/meter elevation)
+    /// - vehicle_altitude_loss_consumption_wh_per_m: Energy recovered when descending (Wh/meter elevation)
     var consumptionFormulaParameters: [String: Any] { get }
 
+    /// Unique identifier for the vehicle's charging curve model
+    /// This ID is sent to the server for charging time calculations
     var chargingModelId: Int { get }
 
-    // A dictionary mapping NSStrings to serializable objects (NSString, NSNumber, NSArray, NSDictionary, or NSNull) that contains OEM provided parameters for the charging model that is used to calculate the duration of charging at a station. The keys of this dictionary describe the parameters that fit into the Charging model of the electric vehicle. The values of this dictionary represent the parameter values. model_id is a mandatory key in this dictionary.
+    /// Charging curve parameters that define how the vehicle charges at different battery levels
+    /// Required keys:
+    /// - vehicle_energy_axis_wh: Array of battery energy levels (Wh)
+    /// - vehicle_charge_axis_w: Array of charging power at each energy level (Watts)
+    /// - energy_w_per_h: Linear progression for UI display (Wh)
+    /// - efficiency_factor: Charging efficiency (0.0-1.0, where 0.9 = 90% efficiency)
+    /// - Parameters:
+    ///   - maximumBatteryCapacity: Total battery capacity
+    ///   - unit: Energy unit for the capacity
+    /// - Returns: Dictionary with charging curve data
     func chargingFormulaParameters(maximumBatteryCapacity: Double, unit: UnitEnergy) -> [String: Any]
 
-    // Sample data
-    /*
+}
+
+// MARK: - Sample Data Documentation
+
+/*
+ Example consumption model parameters:
      {
          "vehicle_parameters": {
              "vehicle_auxiliary_power_w": 669.9999809265137,

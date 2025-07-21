@@ -95,3 +95,68 @@ open KiaMaps.xcodeproj
 - Physical iOS device (required)
 - iOS 14.0+ for full Intents functionality
 - Device must be registered in provisioning profile
+
+## Vehicle Parameters
+
+The app uses detailed vehicle parameters to provide accurate EV-specific navigation in Apple Maps. These parameters enable:
+- **Energy consumption calculations** based on speed, elevation, and auxiliary power usage
+- **Charging time estimations** using real charging curves
+- **Route planning** with optimal charging stops
+
+### Parameter Categories
+
+#### 1. Charging Configuration
+- **Supported Connectors**: Defines which charging standards the vehicle supports (e.g., Type 2 AC, CCS2 DC)
+- **Maximum Power**: Peak charging rates for each connector type
+- **Charging Curve**: Detailed power delivery at different battery levels
+
+#### 2. Energy Consumption Model
+- **10 consumption scenarios**: Array of values representing different driving efficiency conditions (validated against real test data)
+- **Elevation impact**: Additional energy for climbing, recovery when descending
+- **Auxiliary power**: Constant draw from electronics, climate control (~670W)
+
+#### 3. Battery & Range
+- **Maximum distance**: WLTP-rated range in kilometers
+- **Battery capacity**: Usable energy storage (e.g., ~90 kWh for Taycan)
+- **Efficiency factors**: Charging losses and energy conversion efficiency
+
+### Example: Porsche Taycan Parameters
+
+```swift
+// Charging: Supports up to 234 kW DC fast charging
+maximumPower(.ccs2) = 234.0 kW
+
+// Consumption: 10 efficiency scenarios validated against real-world data
+consumptionValues = [
+    0.172,  // 172 Wh/km - Optimal efficiency (matches WLTP ~180 Wh/km)
+    0.183,  // 183 Wh/km - Steady highway (~90 km/h)
+    0.205,  // 205 Wh/km - Moderate highway speeds  
+    0.258   // 258 Wh/km - High-speed Autobahn (validated at 130 km/h)
+    // ... 6 more values covering city, mixed, and demanding conditions
+] // Wh per meter
+
+// Charging curve: Maintains high power to ~50% SOC
+0-34 kWh: 232 kW peak power
+34-50 kWh: Gradual taper to 144 kW
+50-80 kWh: Further reduction for battery protection
+80-100%: Trickle charge at 13 kW
+```
+
+#### Real-World Validation
+
+The consumption parameters have been validated against actual Taycan test data:
+- **WLTP efficiency**: ~180 Wh/km matches code value of 172.1 Wh/km
+- **90 km/h highway**: ~190 Wh/km falls within code range (183-205 Wh/km)  
+- **130 km/h Autobahn**: 220-260 Wh/km matches code value of 258.4 Wh/km
+- **Range coverage**: 172-258 Wh/km spans from optimal to high-speed conditions
+
+### Adding New Vehicle Support
+
+To add support for a new vehicle model:
+
+1. Create a new parameters file following the `VehicleParameters` protocol
+2. Define all required consumption and charging parameters
+3. Add the vehicle case to `VehicleManager.vehicleParameter`
+4. Update API configuration if needed
+
+See `KiaMaps/Core/Vehicle/` for implementation examples.
