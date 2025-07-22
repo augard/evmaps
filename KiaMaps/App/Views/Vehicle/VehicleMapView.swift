@@ -12,7 +12,7 @@ import CoreLocation
 
 /// Tesla-style map view with vehicle location and charging station integration
 struct VehicleMapView: View {
-    let vehicleStatus: VehicleStatus
+    let vehicleStatus: VehicleStatusResponse
     let onChargingStationTap: ((ChargingStation) -> Void)?
     let onVehicleTap: (() -> Void)?
     
@@ -38,7 +38,7 @@ struct VehicleMapView: View {
     @State private var chargingStations: [ChargingStation] = []
     
     init(
-        vehicleStatus: VehicleStatus,
+        vehicleStatus: VehicleStatusResponse,
         onChargingStationTap: ((ChargingStation) -> Void)? = nil,
         onVehicleTap: (() -> Void)? = nil
     ) {
@@ -48,8 +48,8 @@ struct VehicleMapView: View {
         
         // Initialize region around vehicle location
         let vehicleCoordinate = CLLocationCoordinate2D(
-            latitude: vehicleStatus.location.geoCoordinate.latitude,
-            longitude: vehicleStatus.location.geoCoordinate.longitude
+            latitude: vehicleStatus.state.vehicle.location.geoCoordinate.latitude,
+            longitude: vehicleStatus.state.vehicle.location.geoCoordinate.longitude
         )
         
         self._region = State(initialValue: MKCoordinateRegion(
@@ -66,9 +66,9 @@ struct VehicleMapView: View {
                 .overlay(
                     // Vehicle annotation overlay
                     VehicleAnnotationView(
-                        batteryLevel: Double(vehicleStatus.green.batteryManagement.batteryRemain.ratio) / 100.0,
+                        batteryLevel: Double(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio) / 100.0,
                         isCharging: isVehicleCharging,
-                        heading: vehicleStatus.location.heading
+                        heading: vehicleStatus.state.vehicle.location.heading
                     )
                     .position(coordinateToScreenPosition(vehicleCoordinate))
                     .scaleEffect(selectedAnnotation?.id == "vehicle" ? 1.3 : 1.0)
@@ -209,7 +209,7 @@ struct VehicleMapView: View {
             
             HStack(spacing: KiaDesign.Spacing.large) {
                 VStack(spacing: 4) {
-                    Text("\(Int(Double(vehicleStatus.green.batteryManagement.batteryRemain.ratio)))%")
+                    Text("\(Int(Double(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio)))%")
                         .font(KiaDesign.Typography.body)
                         .fontWeight(.semibold)
                         .monospacedDigit()
@@ -223,7 +223,7 @@ struct VehicleMapView: View {
                     .frame(height: 30)
                 
                 VStack(spacing: 4) {
-                    Text("\(Int(Double(vehicleStatus.green.batteryManagement.batteryRemain.ratio) * 3.5)) km")
+                    Text("\(Int(Double(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio) * 3.5)) km")
                         .font(KiaDesign.Typography.body)
                         .fontWeight(.semibold)
                         .monospacedDigit()
@@ -323,13 +323,13 @@ struct VehicleMapView: View {
     
     private var isVehicleCharging: Bool {
         // Using heading as charging indicator placeholder
-        vehicleStatus.location.heading > 0
+        vehicleStatus.state.vehicle.location.heading > 0
     }
     
     private var vehicleCoordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(
-            latitude: vehicleStatus.location.geoCoordinate.latitude,
-            longitude: vehicleStatus.location.geoCoordinate.longitude
+            latitude: vehicleStatus.state.vehicle.location.geoCoordinate.latitude,
+            longitude: vehicleStatus.state.vehicle.location.geoCoordinate.longitude
         )
     }
     
@@ -373,8 +373,8 @@ struct VehicleMapView: View {
     
     private func centerOnVehicle() {
         let vehicleCoordinate = CLLocationCoordinate2D(
-            latitude: vehicleStatus.location.geoCoordinate.latitude,
-            longitude: vehicleStatus.location.geoCoordinate.longitude
+            latitude: vehicleStatus.state.vehicle.location.geoCoordinate.latitude,
+            longitude: vehicleStatus.state.vehicle.location.geoCoordinate.longitude
         )
         
         withAnimation(.easeInOut(duration: 1.0)) {
@@ -386,8 +386,8 @@ struct VehicleMapView: View {
     private func loadNearbyChargingStations() {
         // Mock charging stations around vehicle location
         let vehicleLocation = CLLocationCoordinate2D(
-            latitude: vehicleStatus.location.geoCoordinate.latitude,
-            longitude: vehicleStatus.location.geoCoordinate.longitude
+            latitude: vehicleStatus.state.vehicle.location.geoCoordinate.latitude,
+            longitude: vehicleStatus.state.vehicle.location.geoCoordinate.longitude
         )
         
         chargingStations = [
@@ -636,7 +636,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
 #Preview("Vehicle Map - Standard") {
     VehicleMapView(
-        vehicleStatus: MockVehicleData.standard,
+        vehicleStatus: MockVehicleData.standardResponse,
         onChargingStationTap: { station in
             print("Tapped charging station: \(station.name)")
         },
@@ -651,7 +651,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
 #Preview("Vehicle Map - Charging") {
     VehicleMapView(
-        vehicleStatus: MockVehicleData.charging,
+        vehicleStatus: MockVehicleData.chargingResponse,
         onChargingStationTap: { station in
             print("Tapped charging station: \(station.name)")
         },

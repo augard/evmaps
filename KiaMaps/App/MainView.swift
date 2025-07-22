@@ -69,14 +69,12 @@ struct MainView: View {
                                     .foregroundStyle(KiaDesign.Colors.primary)
                             }
                         }
-
-                        ToolbarItem(id: "logout", placement: .topBarTrailing) {
-                            Button("Logout", action: {
-                                Task {
-                                    await logout()
-                                }
-                            })
-                            .foregroundStyle(KiaDesign.Colors.error)
+                        
+                        // Enhanced vehicle status in toolbar when vehicle is selected
+                        if selectedVehicle != nil, let selectedVehicleStatus = selectedVehicleStatus {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                vehicleStatusIcons(status: selectedVehicleStatus)
+                            }
                         }
                     })
             case let .error(error):
@@ -162,6 +160,67 @@ struct MainView: View {
         .refreshable {
             await refreshData()
         }
+    }
+    
+    // MARK: - Vehicle Status Icons (for toolbar)
+    
+    private func vehicleStatusIcons(status: VehicleStatusResponse) -> some View {
+        HStack(spacing: KiaDesign.Spacing.small) {
+            // Last update indicator
+            VStack(spacing: 2) {
+                Image(systemName: "clock.fill")
+                    .font(.caption2)
+                    .foregroundStyle(KiaDesign.Colors.textTertiary)
+                
+                Text(timeAgoString(from: status.lastUpdateTime))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(KiaDesign.Colors.textTertiary)
+            }
+            
+            // Battery status
+            let batteryLevel = status.state.vehicle.green.batteryManagement.batteryRemain.ratio
+            VStack(spacing: 2) {
+                if batteryLevel > 80 {
+                    Image(systemName: "battery.100percent")
+                        .font(.caption)
+                        .foregroundStyle(KiaDesign.Colors.success)
+                } else if batteryLevel < 20 {
+                    Image(systemName: "battery.25")
+                        .font(.caption)
+                        .foregroundStyle(KiaDesign.Colors.warning)
+                } else {
+                    Image(systemName: "battery.75")
+                        .font(.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                }
+                
+                Text("\(Int(batteryLevel))%")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(KiaDesign.Colors.textSecondary)
+            }
+            
+            // Charging status (if applicable)
+            if status.state.vehicle.location.heading > 0 {
+                VStack(spacing: 2) {
+                    Image(systemName: "bolt.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(KiaDesign.Colors.charging)
+                    
+                    Text("Charging")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(KiaDesign.Colors.charging)
+                }
+            }
+        }
+        .padding(.horizontal, KiaDesign.Spacing.small)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(KiaDesign.Colors.cardBackground)
+                .opacity(0.7)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Vehicle status: \(Int(status.state.vehicle.green.batteryManagement.batteryRemain.ratio))% battery, \(status.state.vehicle.drivingReady ? "ready" : "not ready"), updated \(timeAgoString(from: status.lastUpdateTime))")
     }
     
     // MARK: - Battery Hero Section
@@ -402,7 +461,7 @@ struct MainView: View {
         switch state {
         case .authorized:
             if let vehicle = selectedVehicle {
-                return "\(vehicle.nickname) (\(vehicle.year))"
+                return vehicle.nickname
             }
             return api.configuration.name
         default:
