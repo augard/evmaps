@@ -39,6 +39,7 @@ struct MainView: View {
     @State var selectedVehicleStatus: VehicleStatusResponse? = nil
     @State var isSelectedVahicleExpanded = true
     @State var lastUpdateDate: Date?
+    @State var showingProfile = false
 
     init(configuration: AppConfiguration.Type) {
         self.configuration = configuration
@@ -60,6 +61,16 @@ struct MainView: View {
                 case .authorized:
                     modernContentView
                         .toolbar(content: {
+                            ToolbarItem(id: "profile", placement: .topBarLeading) {
+                                Button(action: {
+                                    showingProfile = true
+                                }) {
+                                    Image(systemName: "person.circle")
+                                        .font(.title2)
+                                        .foregroundStyle(KiaDesign.Colors.primary)
+                                }
+                            }
+                            
                             ToolbarItem(id: "logout", placement: .topBarTrailing) {
                                 Button("Logout", action: {
                                     Task {
@@ -73,8 +84,11 @@ struct MainView: View {
                     errorView(error: error)
                 }
             }
-            .navigationTitle(api.configuration.name)
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.large)
+            .sheet(isPresented: $showingProfile) {
+                UserProfileView(api: api)
+            }
         }
     }
 
@@ -474,6 +488,18 @@ struct MainView: View {
         let formatter = RelativeDateTimeFormatter()
         formatter.dateTimeStyle = .named
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+    
+    private var navigationTitle: String {
+        switch state {
+        case .authorized:
+            if let vehicle = selectedVehicle {
+                return "\(vehicle.nickname) (\(vehicle.year))"
+            }
+            return api.configuration.name
+        default:
+            return api.configuration.name
+        }
     }
     
     func errorView(error: Error) -> some View {

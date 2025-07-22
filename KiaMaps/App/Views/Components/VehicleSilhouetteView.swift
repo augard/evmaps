@@ -49,6 +49,38 @@ struct VehicleSilhouetteView: View {
         case tire(TirePosition)
         case chargingPort
         case vehicle
+        case warning(WarningType)
+    }
+    
+    enum WarningType: String, CaseIterable {
+        case lowBattery = "Low Battery"
+        case engineWarning = "Engine Warning"
+        case maintenanceRequired = "Maintenance Required"
+        case tirePressure = "Tire Pressure"
+        case batteryHealth = "Battery Health"
+        case chargingIssue = "Charging Issue"
+        
+        var icon: String {
+            switch self {
+            case .lowBattery: return "battery.25"
+            case .engineWarning: return "exclamationmark.triangle.fill"
+            case .maintenanceRequired: return "wrench.fill"
+            case .tirePressure: return "exclamationmark.circle.fill"
+            case .batteryHealth: return "battery.0"
+            case .chargingIssue: return "bolt.slash.fill"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .lowBattery: return KiaDesign.Colors.warning
+            case .engineWarning: return KiaDesign.Colors.error
+            case .maintenanceRequired: return KiaDesign.Colors.accent
+            case .tirePressure: return KiaDesign.Colors.warning
+            case .batteryHealth: return KiaDesign.Colors.error
+            case .chargingIssue: return KiaDesign.Colors.error
+            }
+        }
     }
     
     init(
@@ -73,6 +105,9 @@ struct VehicleSilhouetteView: View {
             if isCharging {
                 chargingPortIndicator
             }
+            
+            // Warning indicators overlay
+            warningIndicatorsOverlay
         }
         .frame(width: 280, height: 140)
         .background(
@@ -240,6 +275,68 @@ struct VehicleSilhouetteView: View {
         )
     }
     
+    // MARK: - Warning Indicators
+    
+    private var warningIndicatorsOverlay: some View {
+        ZStack {
+            // Display active warnings as floating indicators
+            ForEach(Array(activeWarnings.enumerated()), id: \.element) { index, warning in
+                warningIndicator(for: warning, index: index)
+            }
+        }
+    }
+    
+    private func warningIndicator(for warning: WarningType, index: Int) -> some View {
+        let position = warningPosition(for: index)
+        
+        return ZStack {
+            // Warning glow effect
+            Circle()
+                .fill(warning.color.opacity(0.3))
+                .frame(width: 24, height: 24)
+                .blur(radius: 2)
+            
+            // Warning icon background
+            Circle()
+                .fill(warning.color)
+                .frame(width: 18, height: 18)
+                .overlay(
+                    Circle()
+                        .stroke(.white, lineWidth: 2)
+                )
+            
+            // Warning icon
+            Image(systemName: warning.icon)
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .scaleEffect(
+            (pulsingElements as Set<InteractiveElement>).contains(.warning(warning)) ? 1.3 : 1.0
+        )
+        .animation(
+            (pulsingElements as Set<InteractiveElement>).contains(.warning(warning)) ? 
+                .easeInOut(duration: 0.8).repeatForever(autoreverses: true) : 
+                .default,
+            value: (pulsingElements as Set<InteractiveElement>).contains(.warning(warning))
+        )
+        .offset(x: position.x, y: position.y)
+        .onTapGesture {
+            // Handle warning tap
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            
+            // Pulse animation
+            withAnimation(.default) {
+                pulsingElements.insert(.warning(warning))
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation(.default) {
+                    _ = pulsingElements.remove(.warning(warning))
+                }
+            }
+        }
+    }
+    
     // MARK: - Helper Properties
     
     private var vehicleBodyColor: Color {
@@ -258,6 +355,42 @@ struct VehicleSilhouetteView: View {
     private var isCharging: Bool {
         // Using heading as charging indicator placeholder
         vehicleStatus.location.heading > 0
+    }
+    
+    private var activeWarnings: [WarningType] {
+        var warnings: [WarningType] = []
+        
+        // Check battery level
+        let batteryLevel = Double(vehicleStatus.green.batteryManagement.batteryRemain.ratio) / 100.0
+        if batteryLevel < 0.2 {
+            warnings.append(.lowBattery)
+        }
+        
+        // Check battery health
+        let batteryHealth = Double(vehicleStatus.green.batteryManagement.soH.ratio) / 100.0
+        if batteryHealth < 0.8 {
+            warnings.append(.batteryHealth)
+        }
+        
+        // Check tire pressures
+        let lowTirePressure = TirePosition.allCases.contains { tire in
+            tirePressure(for: tire) <= 30.0
+        }
+        if lowTirePressure {
+            warnings.append(.tirePressure)
+        }
+        
+        // Check for maintenance needs (using mock logic - park position and full battery)
+        if vehicleStatus.drivetrain.transmission.parkingPosition && batteryLevel > 0.9 {
+            warnings.append(.maintenanceRequired)
+        }
+        
+        // Check charging issues (when should be charging but not)
+        if batteryLevel < 0.3 && !isCharging {
+            warnings.append(.chargingIssue)
+        }
+        
+        return warnings
     }
     
     // MARK: - Position Calculations
@@ -290,6 +423,21 @@ struct VehicleSilhouetteView: View {
         }
     }
     
+    private func warningPosition(for index: Int) -> CGPoint {
+        // Position warnings in a semi-circle above the vehicle
+        let baseY: CGFloat = -60
+        let radius: CGFloat = 40
+        let startAngle: CGFloat = .pi * 0.2 // Start from left side
+        let endAngle: CGFloat = .pi * 0.8   // End at right side
+        
+        let angle = startAngle + (endAngle - startAngle) * CGFloat(index) / max(1, CGFloat(activeWarnings.count - 1))
+        
+        return CGPoint(
+            x: radius * cos(angle),
+            y: baseY + radius * sin(angle) * 0.5
+        )
+    }
+    
     // MARK: - Status Methods
     
     private func isDoorOpen(_ door: DoorPosition) -> Bool {
@@ -317,6 +465,11 @@ struct VehicleSilhouetteView: View {
             if tirePressure(for: tire) <= 30.0 {
                 pulsingElements.insert(.tire(tire))
             }
+        }
+        
+        // Start warning animations
+        for warning in activeWarnings {
+            pulsingElements.insert(.warning(warning))
         }
     }
 }
@@ -354,6 +507,8 @@ struct VehicleStatusDetailView: View {
             chargingDetailView()
         case .vehicle:
             vehicleOverviewView()
+        case .warning(let warningType):
+            warningDetailView(for: warningType)
         }
     }
     
@@ -482,6 +637,73 @@ struct VehicleStatusDetailView: View {
                 .foregroundStyle(KiaDesign.Colors.textSecondary)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    
+    private func warningDetailView(for warning: VehicleSilhouetteView.WarningType) -> some View {
+        VStack(spacing: KiaDesign.Spacing.small) {
+            HStack {
+                Image(systemName: warning.icon)
+                    .foregroundStyle(warning.color)
+                
+                Text(warning.rawValue)
+                    .font(KiaDesign.Typography.body)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                KiaStatusIndicator(status: .warning(warning.rawValue))
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(warningDescription(for: warning))
+                    .font(KiaDesign.Typography.caption)
+                    .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                if let action = warningAction(for: warning) {
+                    Text("Action: \(action)")
+                        .font(KiaDesign.Typography.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(warning.color)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+    }
+    
+    private func warningDescription(for warning: VehicleSilhouetteView.WarningType) -> String {
+        switch warning {
+        case .lowBattery:
+            return "Battery level is below 20%. Consider charging soon."
+        case .engineWarning:
+            return "Engine system requires attention. Check diagnostics."
+        case .maintenanceRequired:
+            return "Scheduled maintenance is due. Book service appointment."
+        case .tirePressure:
+            return "One or more tires have low pressure. Check and inflate."
+        case .batteryHealth:
+            return "Battery health has degraded. Consider replacement."
+        case .chargingIssue:
+            return "Charging is recommended but not active. Check charging cable."
+        }
+    }
+    
+    private func warningAction(for warning: VehicleSilhouetteView.WarningType) -> String? {
+        switch warning {
+        case .lowBattery:
+            return "Find charging station"
+        case .engineWarning:
+            return "Contact service center"
+        case .maintenanceRequired:
+            return "Schedule service"
+        case .tirePressure:
+            return "Check tire pressure"
+        case .batteryHealth:
+            return "Battery diagnostic"
+        case .chargingIssue:
+            return "Check charging setup"
         }
     }
 }

@@ -18,5 +18,5 @@ enum AppConfiguration {
     /// If nil it will choose first vehicle in list
     static let vehicleVin: String? = nil
 
-    static let accessGroupId = "com.porsche.one"
+    static let accessGroupId = "N448G4S8S9.com.porsche.one.shared"
 }
