@@ -48,82 +48,57 @@ struct MainView: View {
     }
 
     var body: some View {
-        NavigationView {
-            Group {
-                switch state {
-                case .loading:
-                    loadingView
-                        .task {
-                            await loadData()
+        Group {
+            switch state {
+            case .loading:
+                loadingView
+                    .task {
+                        await loadData()
+                    }
+            case .unauthorized:
+                loginView
+            case .authorized:
+                modernContentView
+                    .toolbar(content: {
+                        ToolbarItem(id: "profile", placement: .topBarLeading) {
+                            Button(action: {
+                                showingProfile = true
+                            }) {
+                                Image(systemName: "person.circle")
+                                    .font(.title2)
+                                    .foregroundStyle(KiaDesign.Colors.primary)
+                            }
                         }
-                case .unauthorized:
-                    loginView
-                case .authorized:
-                    modernContentView
-                        .toolbar(content: {
-                            ToolbarItem(id: "profile", placement: .topBarLeading) {
-                                Button(action: {
-                                    showingProfile = true
-                                }) {
-                                    Image(systemName: "person.circle")
-                                        .font(.title2)
-                                        .foregroundStyle(KiaDesign.Colors.primary)
+
+                        ToolbarItem(id: "logout", placement: .topBarTrailing) {
+                            Button("Logout", action: {
+                                Task {
+                                    await logout()
                                 }
-                            }
-                            
-                            ToolbarItem(id: "logout", placement: .topBarTrailing) {
-                                Button("Logout", action: {
-                                    Task {
-                                        await logout()
-                                    }
-                                })
-                                .foregroundStyle(KiaDesign.Colors.error)
-                            }
-                        })
-                case let .error(error):
-                    errorView(error: error)
-                }
+                            })
+                            .foregroundStyle(KiaDesign.Colors.error)
+                        }
+                    })
+            case let .error(error):
+                errorView(error: error)
             }
-            .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showingProfile) {
-                UserProfileView(api: api)
-            }
+        }
+        .navigationTitle(navigationTitle)
+        .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(KiaDesign.Colors.background, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .sheet(isPresented: $showingProfile) {
+            UserProfileView(api: api)
         }
     }
 
     // MARK: - Tesla-Inspired Loading View
     
     var loadingView: some View {
-        VStack(spacing: KiaDesign.Spacing.xl) {
-            // Animated loading indicator
-            ZStack {
-                Circle()
-                    .stroke(KiaDesign.Colors.cardBackground, lineWidth: 4)
-                    .frame(width: 60, height: 60)
-                
-                Circle()
-                    .trim(from: 0, to: 0.7)
-                    .stroke(KiaDesign.Colors.primary, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                    .frame(width: 60, height: 60)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: UUID())
-            }
-            
-            VStack(spacing: KiaDesign.Spacing.small) {
-                Text("Loading...")
-                    .font(KiaDesign.Typography.title3)
-                    .fontWeight(.medium)
-                    .foregroundStyle(KiaDesign.Colors.textPrimary)
-                
-                Text("Connecting to your vehicle")
-                    .font(KiaDesign.Typography.body)
-                    .foregroundStyle(KiaDesign.Colors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(KiaDesign.Colors.background)
+        KiaLoadingView(
+            message: "Loading",
+            submessage: "Connecting to your vehicle"
+        )
     }
 
     var loginView: some View {
@@ -162,7 +137,7 @@ struct MainView: View {
     // MARK: - Modern Tesla-Inspired Content View
     
     var modernContentView: some View {
-        ScrollView(.vertical, showsIndicators: false) {
+        ScrollView(.vertical) {
             LazyVStack(spacing: KiaDesign.Spacing.xl) {
                 if let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus {
                     // Hero Battery Section

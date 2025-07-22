@@ -91,6 +91,7 @@ struct BatteryHeroView: View {
                 }
             }
             .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Battery status")
@@ -159,12 +160,15 @@ private struct DetailItem: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .medium))
-                .foregroundStyle(color)
-                .frame(width: 32, height: 32)
-                .background(color.opacity(0.15))
-                .clipShape(Circle())
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 32, height: 32)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(color)
+            }
             
             VStack(spacing: 2) {
                 Text(value)
