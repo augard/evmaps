@@ -18,7 +18,19 @@ struct VehicleMapView: View {
     
     @StateObject private var locationManager = LocationManager()
     @State private var region: MKCoordinateRegion
-    @State private var mapStyle: MapStyle = .standard
+    @State private var currentMapStyle: CurrentMapStyle = .standard
+    
+    enum CurrentMapStyle: CaseIterable {
+        case standard, hybrid, imagery
+        
+        var mapStyle: MapStyle {
+            switch self {
+            case .standard: return .standard
+            case .hybrid: return .hybrid
+            case .imagery: return .imagery
+            }
+        }
+    }
     @State private var showingChargingStations = true
     @State private var selectedAnnotation: MapAnnotation?
     
@@ -49,7 +61,8 @@ struct VehicleMapView: View {
     var body: some View {
         ZStack {
             // Main Map
-            Map(coordinateRegion: $region)
+            Map(coordinateRegion: $region, interactionModes: .all, showsUserLocation: false, userTrackingMode: .constant(.none))
+                .mapStyle(currentMapStyle.mapStyle)
                 .overlay(
                     // Vehicle annotation overlay
                     VehicleAnnotationView(
@@ -105,25 +118,31 @@ struct VehicleMapView: View {
                 
                 VStack(spacing: KiaDesign.Spacing.small) {
                     // Map Style Toggle
-                    KiaCompactCard(action: toggleMapStyle) {
-                        Image(systemName: "map.fill")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(KiaDesign.Colors.textPrimary)
-                    }
+                    KiaButton(
+                        "",
+                        icon: "map.fill",
+                        style: .secondary,
+                        size: .small,
+                        action: toggleMapStyle
+                    )
                     
                     // Charging Stations Toggle
-                    KiaCompactCard(action: toggleChargingStations) {
-                        Image(systemName: "bolt.car.fill")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(showingChargingStations ? KiaDesign.Colors.charging : KiaDesign.Colors.textSecondary)
-                    }
+                    KiaButton(
+                        "",
+                        icon: "bolt.car.fill",
+                        style: showingChargingStations ? .primary : .secondary,
+                        size: .small,
+                        action: toggleChargingStations
+                    )
                     
                     // Center on Vehicle
-                    KiaCompactCard(action: centerOnVehicle) {
-                        Image(systemName: "location.fill")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(KiaDesign.Colors.primary)
-                    }
+                    KiaButton(
+                        "",
+                        icon: "location.fill",
+                        style: .primary,
+                        size: .small,
+                        action: centerOnVehicle
+                    )
                 }
                 .padding(KiaDesign.Spacing.medium)
             }
@@ -333,8 +352,14 @@ struct VehicleMapView: View {
     
     private func toggleMapStyle() {
         withAnimation(.easeInOut(duration: 0.3)) {
-            // Simple toggle - just trigger a refresh
-            // In a real implementation, this would change the map style
+            switch currentMapStyle {
+            case .standard:
+                currentMapStyle = .hybrid
+            case .hybrid:
+                currentMapStyle = .imagery
+            case .imagery:
+                currentMapStyle = .standard
+            }
         }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
@@ -506,7 +531,8 @@ struct VehicleAnnotationView: View {
             Image(systemName: "car.fill")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(.white)
-                .rotationEffect(.degrees(heading))
+                .rotationEffect(.degrees(heading - 180))
+                .padding(.bottom, 2)
         }
         .onAppear {
             if isCharging {
