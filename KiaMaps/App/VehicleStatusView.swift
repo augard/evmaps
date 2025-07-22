@@ -28,39 +28,41 @@ struct VehicleStatusView: View {
     }()
 
     var body: some View {
-        Group {
-            mainSection(vehicle: vehicle, status: vehicleStatus, lastUpdateTime: lastUpdateTime)
-            
-            DisclosureGroup("Body") {
-                bodySection(body: vehicleStatus.body)
-            }
-            
-            DisclosureGroup("Cabin") {
-                cabinSection(cabin: vehicleStatus.cabin)
-            }
-            
-            DisclosureGroup("Chassis") {
-                chasisSection(chassis: vehicleStatus.chassis)
-            }
-            
-            DisclosureGroup("Drivetrain") {
-                drivetrainSection(drivetrain: vehicleStatus.drivetrain)
-            }
-            
-            DisclosureGroup("Electronics") {
-                electronicsSection(electronics: vehicleStatus.electronics)
-            }
-            
-            DisclosureGroup("Green") {
-                greenSection(green: vehicleStatus.green)
-            }
-            
-            DisclosureGroup("Service") {
-                serviceSection(service: vehicleStatus.service, remoteControl: vehicleStatus.remoteControl)
-            }
+        List {
+            Group {
+                mainSection(vehicle: vehicle, status: vehicleStatus, lastUpdateTime: lastUpdateTime)
 
-            DisclosureGroup("Location") {
-                locationSection(location: vehicleStatus.location)
+                DisclosureGroup("Body") {
+                    bodySection(body: vehicleStatus.body)
+                }
+
+                DisclosureGroup("Cabin") {
+                    cabinSection(cabin: vehicleStatus.cabin)
+                }
+
+                DisclosureGroup("Chassis") {
+                    chasisSection(chassis: vehicleStatus.chassis)
+                }
+
+                DisclosureGroup("Drivetrain") {
+                    drivetrainSection(drivetrain: vehicleStatus.drivetrain)
+                }
+
+                DisclosureGroup("Electronics") {
+                    electronicsSection(electronics: vehicleStatus.electronics)
+                }
+
+                DisclosureGroup("Green") {
+                    greenSection(green: vehicleStatus.green)
+                }
+
+                DisclosureGroup("Service") {
+                    serviceSection(service: vehicleStatus.service, remoteControl: vehicleStatus.remoteControl)
+                }
+
+                DisclosureGroup("Location") {
+                    locationSection(location: vehicleStatus.location)
+                }
             }
         }
     }

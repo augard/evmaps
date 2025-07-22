@@ -13,6 +13,7 @@ struct DebugScreenView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var testResults: [String] = []
     @State private var isRunningTests = false
+    @State private var showingVehicleStatus = false
     
     var body: some View {
         NavigationView {
@@ -23,6 +24,9 @@ struct DebugScreenView: View {
                     
                     // Configuration Info
                     configurationSection
+                    
+                    // UI Debug
+                    uiDebugSection
                     
                     // Credential Tests
                     credentialTestsSection
@@ -45,6 +49,26 @@ struct DebugScreenView: View {
                         dismiss()
                     }
                     .foregroundStyle(KiaDesign.Colors.primary)
+                }
+            }
+            .sheet(isPresented: $showingVehicleStatus) {
+                NavigationView {
+                    // Create mock data for the legacy view
+                    VehicleStatusView(
+                        brand: AppConfiguration.apiConfiguration.name,
+                        vehicle: MockVehicleData.mockVehicle,
+                        vehicleStatus: MockVehicleData.standard,
+                        lastUpdateTime: Date()
+                    )
+                    .navigationTitle("Legacy Vehicle Status")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") {
+                                showingVehicleStatus = false
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -83,6 +107,41 @@ struct DebugScreenView: View {
                         configRow(title: "CCS2 Support", value: auth.isCcuCCS2Supported ? "✅ Enabled" : "❌ Disabled")
                         configRow(title: "Access Token", value: String(auth.accessToken.prefix(20)) + "...")
                     }
+                }
+            }
+        }
+    }
+    
+    // MARK: - UI Debug Section
+    
+    private var uiDebugSection: some View {
+        KiaCard {
+            VStack(alignment: .leading, spacing: KiaDesign.Spacing.medium) {
+                sectionHeader(title: "UI Debug", icon: "paintbrush")
+                
+                Text("Access legacy UI components and test views")
+                    .font(KiaDesign.Typography.caption)
+                    .foregroundStyle(KiaDesign.Colors.textSecondary)
+                
+                VStack(spacing: KiaDesign.Spacing.small) {
+                    testButton(
+                        title: "Legacy Vehicle Status View",
+                        subtitle: "Open the original vehicle status interface",
+                        icon: "car.2",
+                        action: {
+                            showingVehicleStatus = true
+                        }
+                    )
+                    
+                    testButton(
+                        title: "Loading View Demo",
+                        subtitle: "Test various loading animations",
+                        icon: "arrow.clockwise.circle",
+                        action: {
+                            // Future: Add loading view demo
+                            testResults.append("Loading view demo not yet implemented")
+                        }
+                    )
                 }
             }
         }

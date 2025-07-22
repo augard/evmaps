@@ -135,9 +135,10 @@ struct KiaButton: View {
         Button(action: handleTap) {
             HStack(spacing: KiaDesign.Spacing.small) {
                 if isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: currentColors.foreground))
-                        .scaleEffect(0.8)
+                    KiaInlineLoadingView(
+                        size: .small,
+                        color: currentColors.foreground
+                    )
                 } else if let icon = icon {
                     Image(systemName: icon)
                         .font(.system(size: iconSize, weight: .medium))

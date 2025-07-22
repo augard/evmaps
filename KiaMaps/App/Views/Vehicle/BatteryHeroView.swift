@@ -197,6 +197,18 @@ extension BatteryHeroView {
         self.estimatedTimeToFull = isCharging ? "2h 15m" : nil
         self.chargingPower = isCharging ? "11 kW" : nil
     }
+    
+    /// Create BatteryHeroView from VehicleStatusResponse
+    init(from response: VehicleStatusResponse) {
+        let vehicleStatus = response.state.vehicle
+        let batteryPercent = vehicleStatus.green.batteryManagement.batteryRemain.ratio
+        
+        self.batteryLevel = Double(batteryPercent) / 100.0
+        self.range = "\(Int(batteryPercent * 4)) km" // Rough range calculation
+        self.isCharging = vehicleStatus.location.heading > 0 // Using heading as charging indicator placeholder
+        self.estimatedTimeToFull = isCharging ? "2h 15m" : nil
+        self.chargingPower = isCharging ? "11 kW" : nil
+    }
 }
 
 // MARK: - Preview

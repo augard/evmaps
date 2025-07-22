@@ -144,7 +144,7 @@ struct MainView: View {
                     batteryHeroSection(vehicle: selectedVehicle, status: selectedVehicleStatus)
                     
                     // Quick Actions
-                    quickActionsSection
+                    quickActionsSection(status: selectedVehicleStatus)
                     
                     // Vehicle Status Grid
                     vehicleStatusGrid(status: selectedVehicleStatus)
@@ -182,56 +182,23 @@ struct MainView: View {
     
     // MARK: - Quick Actions Section
     
-    private var quickActionsSection: some View {
+    private func quickActionsSection(status: VehicleStatusResponse) -> some View {
         KiaCard {
-            VStack(alignment: .leading, spacing: KiaDesign.Spacing.medium) {
-                Text("Quick Actions")
-                    .font(KiaDesign.Typography.title3)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(KiaDesign.Colors.textPrimary)
-                
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: KiaDesign.Spacing.medium) {
-                    quickActionButton(
-                        icon: "lock.fill",
-                        title: "Lock Vehicle",
-                        subtitle: "Secure doors",
-                        color: KiaDesign.Colors.primary
-                    ) {
-                        // Lock vehicle action
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                    }
-                    
-                    quickActionButton(
-                        icon: "thermometer",
-                        title: "Climate Control",
-                        subtitle: "Pre-condition",
-                        color: KiaDesign.Colors.Climate.auto
-                    ) {
-                        // Climate control action
-                        UISelectionFeedbackGenerator().selectionChanged()
-                    }
-                    
-                    quickActionButton(
-                        icon: "horn",
-                        title: "Horn & Lights",
-                        subtitle: "Find vehicle",
-                        color: KiaDesign.Colors.accent
-                    ) {
-                        // Horn and lights action
-                        UINotificationFeedbackGenerator().notificationOccurred(.warning)
-                    }
-                    
-                    quickActionButton(
-                        icon: "location.fill",
-                        title: "Locate",
-                        subtitle: "Open Maps",
-                        color: KiaDesign.Colors.primary
-                    ) {
-                        // Locate vehicle action
-                        UISelectionFeedbackGenerator().selectionChanged()
-                    }
+            QuickActionsView(
+                vehicleStatus: status,
+                onLockAction: {
+                    // Lock vehicle action
+                },
+                onClimateAction: {
+                    // Climate control action
+                },
+                onHornAction: {
+                    // Horn and lights action
+                },
+                onLocateAction: {
+                    // Locate vehicle action
                 }
-            }
+            )
         }
     }
     
@@ -338,40 +305,6 @@ struct MainView: View {
     }
 
     // MARK: - Helper Views
-    
-    private func quickActionButton(
-        icon: String,
-        title: String,
-        subtitle: String,
-        color: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: KiaDesign.Spacing.medium) {
-                Image(systemName: icon)
-                    .font(.system(size: 24, weight: .medium))
-                    .foregroundStyle(color)
-                    .frame(width: 32, height: 32)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(KiaDesign.Typography.body)
-                        .fontWeight(.medium)
-                        .foregroundStyle(KiaDesign.Colors.textPrimary)
-                    
-                    Text(subtitle)
-                        .font(KiaDesign.Typography.caption)
-                        .foregroundStyle(KiaDesign.Colors.textSecondary)
-                }
-                
-                Spacer()
-            }
-            .padding(KiaDesign.Spacing.medium)
-            .background(KiaDesign.Colors.cardBackground.opacity(0.8))
-            .clipShape(RoundedRectangle(cornerRadius: KiaDesign.CornerRadius.medium))
-        }
-        .buttonStyle(.plain)
-    }
     
     private func statusCard(icon: String, title: String, value: String, color: Color) -> some View {
         KiaCard {

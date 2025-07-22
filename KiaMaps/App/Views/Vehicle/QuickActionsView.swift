@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Tesla-style quick action buttons for common vehicle operations
 struct QuickActionsView: View {
-    let vehicleStatus: VehicleStatus
+    let vehicleStatus: VehicleStatusResponse
     let onLockAction: () -> Void
     let onClimateAction: () -> Void
     let onHornAction: () -> Void
@@ -11,13 +11,14 @@ struct QuickActionsView: View {
     @State private var isPerformingAction: String? = nil
     
     private var isLocked: Bool {
-        // Use actual lock status when available - placeholder for now
-        true // Placeholder logic
+        // Use actual lock status from cabin door data
+        let cabin = vehicleStatus.state.vehicle.cabin.door
+        return !cabin.row1.driver.lock && !cabin.row1.passenger.lock && !cabin.row2.left.lock && !cabin.row2.right.lock
     }
     
     private var isClimateOn: Bool {
         // Use actual climate status when available - placeholder for now
-        false // Placeholder logic
+        false // Placeholder logic - would need actual climate system data
     }
     
     var body: some View {
@@ -118,9 +119,10 @@ struct ActionButton: View {
                     
                     Group {
                         if isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: color))
-                                .scaleEffect(0.8)
+                            KiaInlineLoadingView(
+                                size: .medium,
+                                color: color
+                            )
                         } else {
                             Image(systemName: icon)
                                 .font(.system(size: 24, weight: .medium))
@@ -193,7 +195,7 @@ extension ActionButton {
 // MARK: - Preview
 #Preview("Quick Actions - Standard") {
     QuickActionsView(
-        vehicleStatus: MockVehicleData.standard,
+        vehicleStatus: MockVehicleData.standardResponse,
         onLockAction: { print("🔒 Lock vehicle") },
         onClimateAction: { print("❄️ Climate control") },
         onHornAction: { print("🔊 Horn and lights") },
@@ -205,7 +207,7 @@ extension ActionButton {
 
 #Preview("Quick Actions - Charging") {
     QuickActionsView(
-        vehicleStatus: MockVehicleData.charging,
+        vehicleStatus: MockVehicleData.chargingResponse,
         onLockAction: { print("🔒 Lock vehicle") },
         onClimateAction: { print("❄️ Climate control") },
         onHornAction: { print("🔊 Horn and lights") },
@@ -217,7 +219,7 @@ extension ActionButton {
 
 #Preview("Quick Actions - Low Battery") {
     QuickActionsView(
-        vehicleStatus: MockVehicleData.lowBattery,
+        vehicleStatus: MockVehicleData.lowBatteryResponse,
         onLockAction: { print("🔒 Lock vehicle") },
         onClimateAction: { print("❄️ Climate control") },
         onHornAction: { print("🔊 Horn and lights") },

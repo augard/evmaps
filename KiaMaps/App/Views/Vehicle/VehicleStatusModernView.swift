@@ -3,7 +3,7 @@ import SwiftUI
 /// Tesla-inspired modern vehicle status view integrating all new design components
 struct VehicleStatusModernView: View {
     let vehicle: Vehicle
-    let vehicleStatus: VehicleStatus
+    let vehicleStatus: VehicleStatusResponse
     let lastUpdateTime: Date
     
     @State private var refreshing = false
@@ -90,10 +90,10 @@ struct VehicleStatusModernView: View {
                 // Status indicators
                 HStack(spacing: KiaDesign.Spacing.small) {
                     KiaStatusIndicator(
-                        status: vehicleStatus.drivingReady ? .ready : .warning("Not Ready")
+                        status: vehicleStatus.state.vehicle.drivingReady ? .ready : .warning("Not Ready")
                     )
                     
-                    if vehicleStatus.green.batteryManagement.batteryRemain.ratio > 80 {
+                    if vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio > 80 {
                         KiaStatusIndicator(
                             status: .charging
                         )
@@ -171,7 +171,7 @@ struct VehicleStatusModernView: View {
                 statusCard(
                     icon: "speedometer",
                     title: "Range",
-                    value: "\(Int(vehicleStatus.green.batteryManagement.batteryRemain.ratio * 3)) km",
+                    value: "\(Int(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio * 3)) km",
                     color: KiaDesign.Colors.primary
                 )
                 
@@ -206,7 +206,7 @@ struct VehicleStatusModernView: View {
                         .foregroundStyle(KiaDesign.Colors.textPrimary)
                     
                     KiaProgressBar(
-                        value: Double(vehicleStatus.green.batteryManagement.batteryRemain.ratio) / 100.0,
+                        value: Double(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio) / 100.0,
                         style: .battery,
                         showPercentage: true
                     )
@@ -390,7 +390,7 @@ struct VehicleStatusModernView: View {
 #Preview("Modern Vehicle Status - Standard") {
     VehicleStatusModernView(
         vehicle: MockVehicleData.mockVehicle,
-        vehicleStatus: MockVehicleData.standard,
+        vehicleStatus: MockVehicleData.standardResponse,
         lastUpdateTime: Date().addingTimeInterval(-300) // 5 minutes ago
     )
 }
@@ -398,7 +398,7 @@ struct VehicleStatusModernView: View {
 #Preview("Modern Vehicle Status - Charging") {
     VehicleStatusModernView(
         vehicle: MockVehicleData.mockVehicle,
-        vehicleStatus: MockVehicleData.charging,
+        vehicleStatus: MockVehicleData.chargingResponse,
         lastUpdateTime: Date().addingTimeInterval(-60) // 1 minute ago
     )
 }
@@ -406,7 +406,7 @@ struct VehicleStatusModernView: View {
 #Preview("Modern Vehicle Status - Low Battery") {
     VehicleStatusModernView(
         vehicle: MockVehicleData.mockVehicle,
-        vehicleStatus: MockVehicleData.lowBattery,
+        vehicleStatus: MockVehicleData.lowBatteryResponse,
         lastUpdateTime: Date().addingTimeInterval(-1200) // 20 minutes ago
     )
 }
