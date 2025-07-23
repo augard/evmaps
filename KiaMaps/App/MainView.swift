@@ -136,25 +136,125 @@ struct MainView: View {
 
     // MARK: - Modern Tesla-Inspired Content View
     
+    @ViewBuilder
     var modernContentView: some View {
-        ScrollView(.vertical) {
-            LazyVStack(spacing: KiaDesign.Spacing.xl) {
-                if let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus {
-                    // Hero Battery Section
-                    batteryHeroSection(vehicle: selectedVehicle, status: selectedVehicleStatus)
-                    
-                    // Quick Actions
-                    quickActionsSection(status: selectedVehicleStatus)
-                    
-                    // Vehicle Status Grid
-                    vehicleStatusGrid(status: selectedVehicleStatus)
-                    
-                    // Vehicle Details Card
-                    vehicleDetailsCard(vehicle: selectedVehicle)
-                } else {
-                    // Vehicle Selection
+        if let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus {
+            // Swipe Navigation with Multiple Pages
+            SwipeNavigationView(pages: navigationPages) { page, isActive in
+                pageContent(for: page, isActive: isActive, vehicle: selectedVehicle, status: selectedVehicleStatus)
+            }
+        } else {
+            // Vehicle Selection (Pre-Authorization)
+            ScrollView(.vertical) {
+                LazyVStack(spacing: KiaDesign.Spacing.xl) {
                     vehicleSelectionSection
                 }
+                .padding(KiaDesign.Spacing.large)
+            }
+            .background(KiaDesign.Colors.background)
+            .refreshable {
+                await refreshData()
+            }
+        }
+    }
+    
+    // MARK: - Navigation Pages Configuration
+    
+    private var navigationPages: [NavigationPage] {
+        [
+            NavigationPage(
+                id: "overview",
+                title: "Overview",
+                icon: "gauge",
+                accessibilityLabel: "Vehicle overview with battery status"
+            ),
+            NavigationPage(
+                id: "climate",
+                title: "Climate",
+                icon: "thermometer",
+                accessibilityLabel: "Climate control settings"
+            ),
+            NavigationPage(
+                id: "map",
+                title: "Map",
+                icon: "map",
+                accessibilityLabel: "Vehicle location and navigation"
+            ),
+            NavigationPage(
+                id: "details",
+                title: "Details",
+                icon: "info.circle",
+                accessibilityLabel: "Vehicle information and settings"
+            )
+        ]
+    }
+    
+    // MARK: - Page Content
+    
+    @ViewBuilder
+    private func pageContent(for page: NavigationPage, isActive: Bool, vehicle: Vehicle, status: VehicleStatusResponse) -> some View {
+        switch page.id {
+        case "overview":
+            overviewPage(vehicle: vehicle, status: status, isActive: isActive)
+        case "climate":
+            climatePage(status: status, isActive: isActive)
+        case "map":
+            mapPage(vehicle: vehicle, status: status, isActive: isActive)
+        case "details":
+            detailsPage(vehicle: vehicle, status: status, isActive: isActive)
+        default:
+            EmptyView()
+        }
+    }
+    
+    // MARK: - Individual Pages
+    
+    private func overviewPage(vehicle: Vehicle, status: VehicleStatusResponse, isActive: Bool) -> some View {
+        ScrollView(.vertical) {
+            LazyVStack(spacing: KiaDesign.Spacing.xl) {
+                // Hero Battery Section
+                batteryHeroSection(vehicle: vehicle, status: status)
+                
+                // Quick Actions
+                quickActionsSection(status: status)
+                
+                // Vehicle Status Grid
+                vehicleStatusGrid(status: status)
+            }
+            .padding(KiaDesign.Spacing.large)
+        }
+        .background(KiaDesign.Colors.background)
+        .refreshable {
+            await refreshData()
+        }
+    }
+    
+    private func climatePage(status: VehicleStatusResponse, isActive: Bool) -> some View {
+        ScrollView {
+            VStack(spacing: KiaDesign.Spacing.xl) {
+                ClimateControlView(unit: .celsius)
+                
+                // Additional climate features based on vehicle status
+                climateStatusSection(status: status)
+            }
+            .padding(KiaDesign.Spacing.large)
+        }
+        .background(KiaDesign.Colors.background)
+    }
+    
+    private func mapPage(vehicle: Vehicle, status: VehicleStatusResponse, isActive: Bool) -> some View {
+        VehicleMapView(vehicleStatus: status)
+            .background(KiaDesign.Colors.background)
+    }
+    
+    private func detailsPage(vehicle: Vehicle, status: VehicleStatusResponse, isActive: Bool) -> some View {
+        ScrollView(.vertical) {
+            LazyVStack(spacing: KiaDesign.Spacing.xl) {
+                // Vehicle Details Card
+                vehicleDetailsCard(vehicle: vehicle)
+                
+                // Additional vehicle information
+                additionalVehicleInfo(status: status)
             }
             .padding(KiaDesign.Spacing.large)
         }
@@ -355,6 +455,136 @@ struct MainView: View {
         }
     }
 
+    // MARK: - Climate Status Section
+    
+    private func climateStatusSection(status: VehicleStatusResponse) -> some View {
+        KiaCard {
+            VStack(alignment: .leading, spacing: KiaDesign.Spacing.medium) {
+                Text("Climate Status")
+                    .font(KiaDesign.Typography.title3)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(KiaDesign.Colors.textPrimary)
+                
+                VStack(spacing: KiaDesign.Spacing.small) {
+                    HStack {
+                        Text("Interior Temperature")
+                            .font(KiaDesign.Typography.body)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                        
+                        Spacer()
+                        
+                        Text("22°C")
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.medium)
+                            .foregroundStyle(KiaDesign.Colors.textPrimary)
+                    }
+                    
+                    HStack {
+                        Text("System Status")
+                            .font(KiaDesign.Typography.body)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                        
+                        Spacer()
+                        
+                        Text("Auto")
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.medium)
+                            .foregroundStyle(KiaDesign.Colors.success)
+                    }
+                    
+                    HStack {
+                        Text("Fan Speed")
+                            .font(KiaDesign.Typography.body)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                        
+                        Spacer()
+                        
+                        Text("Level 3")
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.medium)
+                            .foregroundStyle(KiaDesign.Colors.textPrimary)
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Additional Vehicle Info
+    
+    private func additionalVehicleInfo(status: VehicleStatusResponse) -> some View {
+        VStack(spacing: KiaDesign.Spacing.medium) {
+            // Vehicle Diagnostics
+            KiaCard {
+                VStack(alignment: .leading, spacing: KiaDesign.Spacing.medium) {
+                    Text("Diagnostics")
+                        .font(KiaDesign.Typography.title3)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(KiaDesign.Colors.textPrimary)
+                    
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: KiaDesign.Spacing.small) {
+                        diagnosticItem("Odometer", "45,672 km")
+                        diagnosticItem("Engine Hours", "1,234 hrs")
+                        diagnosticItem("Service Due", "2,000 km")
+                        diagnosticItem("Last Service", "30 days ago")
+                    }
+                }
+            }
+            
+            // Recent Activity
+            KiaCard {
+                VStack(alignment: .leading, spacing: KiaDesign.Spacing.medium) {
+                    Text("Recent Activity")
+                        .font(KiaDesign.Typography.title3)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(KiaDesign.Colors.textPrimary)
+                    
+                    VStack(spacing: KiaDesign.Spacing.xs) {
+                        activityItem("Charged to 85%", "2 hours ago", "bolt.circle.fill", KiaDesign.Colors.charging)
+                        activityItem("Trip to Downtown", "5 hours ago", "car.fill", KiaDesign.Colors.primary)
+                        activityItem("Remote start", "1 day ago", "power", KiaDesign.Colors.success)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func diagnosticItem(_ label: String, _ value: String) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(KiaDesign.Typography.body)
+                .fontWeight(.semibold)
+                .foregroundStyle(KiaDesign.Colors.textPrimary)
+            
+            Text(label)
+                .font(KiaDesign.Typography.caption)
+                .foregroundStyle(KiaDesign.Colors.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private func activityItem(_ title: String, _ time: String, _ icon: String, _ color: Color) -> some View {
+        HStack(spacing: KiaDesign.Spacing.medium) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(color)
+                .frame(width: 20)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(KiaDesign.Typography.body)
+                    .fontWeight(.medium)
+                    .foregroundStyle(KiaDesign.Colors.textPrimary)
+                
+                Text(time)
+                    .font(KiaDesign.Typography.caption)
+                    .foregroundStyle(KiaDesign.Colors.textSecondary)
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, KiaDesign.Spacing.xs)
+    }
+    
     // MARK: - Helper Views
     
     private func statusCard(icon: String, title: String, value: String, color: Color) -> some View {

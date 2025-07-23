@@ -23,6 +23,36 @@ struct VehicleStatusModernView: View {
         }
     }
     
+    // MARK: - Computed Properties
+    
+    /// Extract real efficiency data from API with fallback hierarchy
+    private var realEfficiency: String {
+        let status = vehicleStatus.state.vehicle
+        let economy = status.drivetrain.fuelSystem.averageFuelEconomy
+        
+        if economy.drive > 0 {
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            numberFormatter.maximumFractionDigits = 1
+            let formattedValue = numberFormatter.string(from: economy.drive as NSNumber) ?? "\(economy.drive)"
+            return "\(formattedValue) \(economy.unit.unitTitle)"
+        } else if economy.accumulated > 0 {
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            numberFormatter.maximumFractionDigits = 1
+            let formattedValue = numberFormatter.string(from: economy.accumulated as NSNumber) ?? "\(economy.accumulated)"
+            return "\(formattedValue) \(economy.unit.unitTitle)"
+        } else {
+            // Final fallback to driving history average
+            let drivingHistory = status.green.drivingHistory
+            if drivingHistory.average > 0 {
+                return String(format: "%.1f km/kWh", drivingHistory.average)
+            } else {
+                return "Not available"
+            }
+        }
+    }
+    
     var body: some View {
         ScrollView {
             LazyVStack(spacing: KiaDesign.Spacing.large) {
@@ -178,7 +208,7 @@ struct VehicleStatusModernView: View {
                 statusCard(
                     icon: "gauge.high",
                     title: "Efficiency",
-                    value: "4.2 km/kWh",
+                    value: realEfficiency,
                     color: KiaDesign.Colors.success
                 )
                 
