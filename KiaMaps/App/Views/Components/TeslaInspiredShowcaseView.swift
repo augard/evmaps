@@ -297,7 +297,9 @@ struct TeslaInspiredShowcaseView: View {
                     range: "\(Int(batteryLevel * 350)) km",
                     isCharging: isCharging,
                     estimatedTimeToFull: isCharging ? "45 min" : nil,
-                    chargingPower: isCharging ? "150 kW" : nil
+                    chargingPower: isCharging ? "150 kW" : nil,
+                    batteryHealth: 94.0,
+                    efficiency: "4.2 km/kWh" // Demo efficiency value
                 )
                 
                 // Charging session (if charging)

@@ -6,6 +6,8 @@ struct BatteryHeroView: View {
     let isCharging: Bool
     let estimatedTimeToFull: String?
     let chargingPower: String?
+    let batteryHealth: Double // State of Health as a percentage (0-100)
+    let efficiency: String? // Real efficiency value from API
     
     @State private var showDetails = false
     
@@ -32,7 +34,7 @@ struct BatteryHeroView: View {
         KiaHeroCard {
             VStack(spacing: 24) {
                 // Header with range
-                VStack(spacing: 8) {
+                VStack(spacing: 2) {
                     Text(range)
                         .font(KiaDesign.Typography.title1)
                         .fontWeight(.bold)
@@ -48,9 +50,9 @@ struct BatteryHeroView: View {
                 CircularBatteryView(
                     level: batteryLevel,
                     isCharging: isCharging,
-                    size: 200
+                    size: 150
                 )
-                
+
                 // Status information
                 VStack(spacing: 6) {
                     Text(statusText)
@@ -70,7 +72,9 @@ struct BatteryHeroView: View {
                     BatteryDetailsView(
                         batteryLevel: batteryLevel,
                         isCharging: isCharging,
-                        chargingPower: chargingPower
+                        chargingPower: chargingPower,
+                        batteryHealth: batteryHealth,
+                        efficiency: efficiency
                     )
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.9).combined(with: .opacity),
@@ -90,12 +94,21 @@ struct BatteryHeroView: View {
                     }
                 }
             }
-            .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Battery status")
         .accessibilityValue("\(Int(batteryLevel * 100)) percent, \(range) range, \(statusText)")
+    }
+    
+    // MARK: - Helper Functions
+    private func formatEfficiency(value: Double, unit: EconomyUnit) -> String {
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        numberFormatter.maximumFractionDigits = 1
+        
+        let formattedValue = numberFormatter.string(from: value as NSNumber) ?? "\(value)"
+        return "\(formattedValue) \(unit.unitTitle)"
     }
 }
 
@@ -104,11 +117,11 @@ private struct BatteryDetailsView: View {
     let batteryLevel: Double
     let isCharging: Bool
     let chargingPower: String?
+    let batteryHealth: Double // State of Health as a percentage (0-100)
+    let efficiency: String?
     
-    private var batteryHealth: String {
-        // Simulate battery health based on level patterns
-        let health = Int.random(in: 92...98)
-        return "\(health)%"
+    private var batteryHealthString: String {
+        return "\(Int(batteryHealth))%"
     }
     
     var body: some View {
@@ -120,8 +133,9 @@ private struct BatteryDetailsView: View {
                 DetailItem(
                     icon: "battery.100percent",
                     label: "Battery Health",
-                    value: batteryHealth,
-                    color: KiaDesign.Colors.success
+                    value: batteryHealthString,
+                    color: batteryHealth > 90 ? KiaDesign.Colors.success : 
+                           batteryHealth > 80 ? KiaDesign.Colors.warning : KiaDesign.Colors.error
                 )
                 
                 if let power = chargingPower, isCharging {
@@ -136,14 +150,14 @@ private struct BatteryDetailsView: View {
                 DetailItem(
                     icon: "thermometer",
                     label: "Battery Temp",
-                    value: "22°C",
+                    value: "22°C", // Should be from BatteryPreCondition
                     color: KiaDesign.Colors.textSecondary
                 )
                 
                 DetailItem(
                     icon: "speedometer",
                     label: "Efficiency",
-                    value: "4.2 km/kWh",
+                    value: efficiency ?? "Not available",
                     color: KiaDesign.Colors.accent
                 )
             }
@@ -190,24 +204,71 @@ extension BatteryHeroView {
     /// Create BatteryHeroView from VehicleStatus
     init(from status: VehicleStatus) {
         let batteryPercent = status.green.batteryManagement.batteryRemain.ratio
+        let dte = status.drivetrain.fuelSystem.dte
+        let rangeValue = dte.total
+        let rangeUnit = dte.unit == .kilometers ? "km" : "mi"
         
+        let chargingInfo = status.green.chargingInformation
+        let isCharging = status.isCharging
+
         self.batteryLevel = Double(batteryPercent) / 100.0
-        self.range = "\(Int(batteryPercent * 4)) km" // Rough range calculation
-        self.isCharging = status.location.heading > 0 // Using heading as charging indicator placeholder
-        self.estimatedTimeToFull = isCharging ? "2h 15m" : nil
-        self.chargingPower = isCharging ? "11 kW" : nil
+        self.range = "\(rangeValue) \(rangeUnit)"
+        self.isCharging = isCharging
+
+        // Calculate estimated time to full if charging
+        if isCharging && chargingInfo.charging.remainTime > 0 {
+            let remainingMinutes = Int(chargingInfo.charging.remainTime)
+            let hours = remainingMinutes / 60
+            let minutes = remainingMinutes % 60
+            if hours > 0 {
+                estimatedTimeToFull = "\(hours)h \(minutes)m"
+            } else {
+                estimatedTimeToFull = "\(minutes)m"
+            }
+        } else {
+            self.estimatedTimeToFull = nil
+        }
+        
+        // Get real charging power
+        if isCharging {
+            let realPower = status.green.electric.smartGrid.realTimePower
+            self.chargingPower = realPower > 0 ? String(format: "%.1f kW", realPower) : nil
+        } else {
+            self.chargingPower = nil
+        }
+        
+        // Get battery health
+        self.batteryHealth = status.green.batteryManagement.soH.ratio
+        
+        // Get real efficiency data from API (formatted inline to avoid calling self methods)
+        let economy = status.drivetrain.fuelSystem.averageFuelEconomy
+        
+        if economy.drive > 0 {
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            numberFormatter.maximumFractionDigits = 1
+            let formattedValue = numberFormatter.string(from: economy.drive as NSNumber) ?? "\(economy.drive)"
+            self.efficiency = "\(formattedValue) \(economy.unit.unitTitle)"
+        } else if economy.accumulated > 0 {
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            numberFormatter.maximumFractionDigits = 1
+            let formattedValue = numberFormatter.string(from: economy.accumulated as NSNumber) ?? "\(economy.accumulated)"
+            self.efficiency = "\(formattedValue) \(economy.unit.unitTitle)"
+        } else {
+            // Final fallback to driving history average
+            let drivingHistory = status.green.drivingHistory
+            if drivingHistory.average > 0 {
+                self.efficiency = String(format: "%.1f km/kWh", drivingHistory.average)
+            } else {
+                self.efficiency = nil
+            }
+        }
     }
     
     /// Create BatteryHeroView from VehicleStatusResponse
     init(from response: VehicleStatusResponse) {
-        let vehicleStatus = response.state.vehicle
-        let batteryPercent = vehicleStatus.green.batteryManagement.batteryRemain.ratio
-        
-        self.batteryLevel = Double(batteryPercent) / 100.0
-        self.range = "\(Int(batteryPercent * 4)) km" // Rough range calculation
-        self.isCharging = vehicleStatus.location.heading > 0 // Using heading as charging indicator placeholder
-        self.estimatedTimeToFull = isCharging ? "2h 15m" : nil
-        self.chargingPower = isCharging ? "11 kW" : nil
+        self.init(from: response.state.vehicle)
     }
 }
 

@@ -52,7 +52,14 @@ struct VehicleStatus: Codable {
     @DateValue<TimeIntervalDateFormatter> private(set) var date: Date
     let offset: String
     let location: Location
-    
+
+    var isCharging: Bool {
+        let chargingInfo = green.chargingInformation
+        let isConnectorFastened = chargingInfo.connectorFastening.state > 0
+        let chargingDoorOpen = green.chargingDoor.state == .open
+        return isConnectorFastened && chargingDoorOpen
+    }
+
     struct RemoteControl: Codable {
         @BoolValue private(set) var sleepMode: Bool
 

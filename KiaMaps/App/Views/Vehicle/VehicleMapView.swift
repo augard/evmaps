@@ -223,7 +223,9 @@ struct VehicleMapView: View {
                     .frame(height: 30)
                 
                 VStack(spacing: 4) {
-                    Text("\(Int(Double(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio) * 3.5)) km")
+                    let dte = vehicleStatus.state.vehicle.drivetrain.fuelSystem.dte
+                    let rangeUnit = dte.unit == .kilometers ? "km" : "mi"
+                    Text("\(dte.total) \(rangeUnit)")
                         .font(KiaDesign.Typography.body)
                         .fontWeight(.semibold)
                         .monospacedDigit()

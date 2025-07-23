@@ -126,6 +126,8 @@ struct MainView: View {
             ) {
                 login()
             }
+            .accessibilityLabel("Connect your vehicle")
+            .accessibilityHint("Tap to log in with your vehicle account credentials")
         }
         .padding(KiaDesign.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -200,7 +202,7 @@ struct MainView: View {
             }
             
             // Charging status (if applicable)
-            if status.state.vehicle.location.heading > 0 {
+            if status.state.vehicle.isCharging {
                 VStack(spacing: 2) {
                     Image(systemName: "bolt.circle.fill")
                         .font(.caption)
@@ -226,17 +228,7 @@ struct MainView: View {
     // MARK: - Battery Hero Section
     
     private func batteryHeroSection(vehicle: Vehicle, status: VehicleStatusResponse) -> some View {
-        let batteryLevel = status.state.vehicle.green.batteryManagement.batteryRemain.ratio / 100.0
-        let range = 350 // Approximate range calculation - would need actual range data
-        let isCharging = false // Would need actual charging status from API
-        
-        return BatteryHeroView(
-            batteryLevel: batteryLevel,
-            range: "\(Int(batteryLevel * Double(range))) km",
-            isCharging: isCharging,
-            estimatedTimeToFull: isCharging ? "2h 30m" : nil,
-            chargingPower: isCharging ? "7.2 kW" : nil
-        )
+        BatteryHeroView(from: status)
     }
     
     // MARK: - Quick Actions Section
@@ -386,6 +378,8 @@ struct MainView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, KiaDesign.Spacing.small)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(value)")
     }
     
     private func modernVehicleRow(_ vehicle: Vehicle) -> some View {

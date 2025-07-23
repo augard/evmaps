@@ -6,7 +6,8 @@ struct CircularBatteryView: View {
     let size: CGFloat
     
     @State private var animationProgress: Double = 0
-    @State private var chargingAnimation: Bool = false
+    @State private var chargingRotation: Double = 0
+    @State private var chargingPulse: Double = 1.0
     
     private var batteryPercentage: Int {
         Int(level * 100)
@@ -87,7 +88,7 @@ struct CircularBatteryView: View {
                             lineCap: .round
                         )
                     )
-                    .rotationEffect(.degrees(chargingAnimation ? 360 : -90))
+                    .rotationEffect(.degrees(chargingRotation))
                     .shadow(
                         color: KiaDesign.Colors.charging,
                         radius: 8,
@@ -98,27 +99,27 @@ struct CircularBatteryView: View {
             
             // Center content
             VStack(spacing: 4) {
-                // Battery percentage
-                Text("\(batteryPercentage)")
-                    .font(.system(size: size * 0.15, weight: .bold, design: .rounded))
-                    .foregroundStyle(KiaDesign.Colors.textPrimary)
-                
-                Text("%")
-                    .font(.system(size: size * 0.08, weight: .medium, design: .rounded))
-                    .foregroundStyle(KiaDesign.Colors.textSecondary)
-                
-                // Charging indicator
-                if isCharging {
-                    HStack(spacing: 4) {
-                        Image(systemName: "bolt.fill")
-                            .font(.system(size: size * 0.06))
-                            .foregroundStyle(KiaDesign.Colors.charging)
-                        
-                        Text("Charging")
-                            .font(.system(size: size * 0.05, weight: .medium))
-                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                HStack(spacing: 0) {
+                    // Charging indicator
+                    if isCharging {
+                        Group() {
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: size * 0.1))
+                                .foregroundStyle(KiaDesign.Colors.charging)
+                        }
+                        .scaleEffect(chargingPulse)
+                        .padding(.top, 1)
+                        .padding(.trailing, 4)
                     }
-                    .scaleEffect(chargingAnimation ? 1.05 : 1.0)
+
+                    // Battery percentage
+                    Text("\(batteryPercentage)")
+                        .font(.system(size: size * 0.15, weight: .bold, design: .rounded))
+                        .foregroundStyle(KiaDesign.Colors.textPrimary)
+
+                    Text("%")
+                        .font(.system(size: size * 0.08, weight: .medium, design: .rounded))
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
                 }
             }
         }
@@ -131,20 +132,7 @@ struct CircularBatteryView: View {
             
             // Start charging animation if charging
             if isCharging {
-                withAnimation(
-                    .linear(duration: 2.0)
-                    .repeatForever(autoreverses: false)
-                ) {
-                    chargingAnimation = true
-                }
-                
-                // Pulsing effect
-                withAnimation(
-                    .easeInOut(duration: 1.0)
-                    .repeatForever(autoreverses: true)
-                ) {
-                    chargingAnimation = true
-                }
+                startChargingAnimations()
             }
         }
         .onChange(of: level) { _, newLevel in
@@ -156,19 +144,44 @@ struct CircularBatteryView: View {
         .onChange(of: isCharging) { _, charging in
             // Handle charging state change
             if charging {
-                withAnimation(
-                    .linear(duration: 2.0)
-                    .repeatForever(autoreverses: false)
-                ) {
-                    chargingAnimation = true
-                }
+                startChargingAnimations()
             } else {
-                chargingAnimation = false
+                stopChargingAnimations()
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Battery level")
         .accessibilityValue("\(batteryPercentage) percent\(isCharging ? ", charging" : "")")
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func startChargingAnimations() {
+        // Start rotation animation
+        withAnimation(
+            .linear(duration: 3.0)
+            .repeatForever(autoreverses: false)
+        ) {
+            chargingRotation = 360
+        }
+        
+        // Start pulse animation
+        withAnimation(
+            .easeInOut(duration: 1.5)
+            .repeatForever(autoreverses: true)
+        ) {
+            chargingPulse = 1.1
+        }
+    }
+    
+    private func stopChargingAnimations() {
+        // Stop animations smoothly
+        withAnimation(.easeOut(duration: 0.5)) {
+            // Keep the current rotation value to prevent jumping
+            let currentRotation = chargingRotation.truncatingRemainder(dividingBy: 360)
+            chargingRotation = currentRotation
+            chargingPulse = 1.0
+        }
     }
 }
 
