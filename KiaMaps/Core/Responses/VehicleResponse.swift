@@ -28,13 +28,13 @@ struct VehicleResponse: Decodable {
 ///       "nickname": "My Genesis",
 ///       "tmuNum": "TMU123456789",
 ///       "year": "2023",
-///       "regDate": 1672531200000,
+///       "regDate": "2024-05-16 11:52:59.116",
 ///       "master": true,
 ///       "carShare": 1,
 ///       "personalFlag": "Y",
 ///       "detailInfo": { ... },
 ///       "protocolType": 1,
-///       "ccuCCS2ProtocolSupport": true
+///       "ccuCCS2ProtocolSupport": 1
 ///     }
 ///   ]
 /// }
@@ -62,7 +62,7 @@ struct Vehicle: Decodable, Identifiable {
     let year: String
     
     /// Vehicle registration date (parsed from timestamp)
-    @DateValue<TimeIntervalDateFormatter> var registrationDate: Date
+    @DateValue<MillisecondDateFormatter> var registrationDate: Date
     
     /// Whether this is the master/primary vehicle for the user account
     let master: Bool

@@ -36,6 +36,10 @@ enum ApiEndpoint: CustomStringConvertible {
     case refreshCCS2Vehicle(UUID)
     case vehicleCachedStatus(UUID)
     case vehicleCachedCCS2Status(UUID)
+    
+    // Climate control endpoints
+    case startClimate(UUID)
+    case stopClimate(UUID)
 
     var path: (String, RelativeTo) {
         switch self {
@@ -75,6 +79,10 @@ enum ApiEndpoint: CustomStringConvertible {
             ("vehicles/\(vehicleId.formatted)/ccs2/carstatus", .spa)
         case let .vehicleCachedCCS2Status(vehicleId):
             ("vehicles/\(vehicleId.formatted)/ccs2/carstatus/latest", .spa)
+        case let .startClimate(vehicleId):
+            ("vehicles/\(vehicleId.formatted)/control/temperature", .spa)
+        case let .stopClimate(vehicleId):
+            ("vehicles/\(vehicleId.formatted)/control/temperature/off", .spa)
         }
     }
 
@@ -116,6 +124,10 @@ enum ApiEndpoint: CustomStringConvertible {
             "refreshCCS2Vehicle"
         case .vehicleCachedCCS2Status:
             "vehicleCachedCCS2Status"
+        case .startClimate:
+            "startClimate"
+        case .stopClimate:
+            "stopClimate"
         }
     }
 }

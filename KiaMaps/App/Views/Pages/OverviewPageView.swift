@@ -15,6 +15,8 @@ struct OverviewPageView: View {
     let isActive: Bool
     let onRefresh: () async -> Void
     
+    @State private var showClimateModal = false
+    
     var body: some View {
         ScrollView(.vertical) {
             LazyVStack(spacing: KiaDesign.Spacing.xl) {
@@ -33,6 +35,26 @@ struct OverviewPageView: View {
         .refreshable {
             await onRefresh()
         }
+        .sheet(isPresented: $showClimateModal) {
+            NavigationView {
+                ClimatePageView(status: status, isActive: isActive)
+                    .navigationTitle("Climate Control")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button {
+                                showClimateModal = false
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(KiaDesign.Colors.textSecondary)
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
     }
     
     // MARK: - Quick Actions Section
@@ -45,7 +67,7 @@ struct OverviewPageView: View {
                     // Lock vehicle action
                 },
                 onClimateAction: {
-                    // Climate control action
+                    showClimateModal = true
                 },
                 onHornAction: {
                     // Horn and lights action
