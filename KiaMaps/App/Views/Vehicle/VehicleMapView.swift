@@ -214,6 +214,7 @@ struct VehicleMapView: View {
                 .foregroundStyle(KiaDesign.Colors.accent)
             }
             
+            // Vehicle info grid with dividers
             VStack(spacing: KiaDesign.Spacing.medium) {
                 // First row: Battery and Range
                 HStack(spacing: KiaDesign.Spacing.large) {
@@ -227,6 +228,7 @@ struct VehicleMapView: View {
                             .font(KiaDesign.Typography.caption)
                             .foregroundStyle(KiaDesign.Colors.textSecondary)
                     }
+                    .frame(maxWidth: .infinity)
                     
                     Divider()
                         .frame(height: 30)
@@ -243,6 +245,7 @@ struct VehicleMapView: View {
                             .font(KiaDesign.Typography.caption)
                             .foregroundStyle(KiaDesign.Colors.textSecondary)
                     }
+                    .frame(maxWidth: .infinity)
                 }
                 
                 // Second row: Speed and Altitude
@@ -261,6 +264,7 @@ struct VehicleMapView: View {
                             .font(KiaDesign.Typography.caption)
                             .foregroundStyle(KiaDesign.Colors.textSecondary)
                     }
+                    .frame(maxWidth: .infinity)
                     
                     Divider()
                         .frame(height: 30)
@@ -276,6 +280,7 @@ struct VehicleMapView: View {
                             .font(KiaDesign.Typography.caption)
                             .foregroundStyle(KiaDesign.Colors.textSecondary)
                     }
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -309,43 +314,65 @@ struct VehicleMapView: View {
                 .foregroundStyle(KiaDesign.Colors.accent)
             }
             
-            HStack(spacing: KiaDesign.Spacing.large) {
-                VStack(spacing: 4) {
-                    Text("\(station.powerLevel.maxPower) kW")
-                        .font(KiaDesign.Typography.body)
-                        .fontWeight(.semibold)
-                        .monospacedDigit()
+            // Charging station info grid with dividers
+            VStack(spacing: KiaDesign.Spacing.medium) {
+                // First row: Max Power and Available Ports
+                HStack(spacing: KiaDesign.Spacing.large) {
+                    VStack(spacing: 4) {
+                        Text("\(station.powerLevel.maxPower) kW")
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.semibold)
+                            .monospacedDigit()
+                        
+                        Text("Max Power")
+                            .font(KiaDesign.Typography.caption)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
                     
-                    Text("Max Power")
-                        .font(KiaDesign.Typography.caption)
-                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    Divider()
+                        .frame(height: 30)
+                    
+                    VStack(spacing: 4) {
+                        Text("\(station.availablePorts)/\(station.totalPorts)")
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.semibold)
+                            .monospacedDigit()
+                        
+                        Text("Available")
+                            .font(KiaDesign.Typography.caption)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
                 
-                Divider()
-                    .frame(height: 30)
-                
-                VStack(spacing: 4) {
-                    Text("\(station.availablePorts)/\(station.totalPorts)")
-                        .font(KiaDesign.Typography.body)
-                        .fontWeight(.semibold)
-                        .monospacedDigit()
+                // Second row: Price and Distance
+                HStack(spacing: KiaDesign.Spacing.large) {
+                    VStack(spacing: 4) {
+                        Text(station.pricePerKwh, format: .currency(code: "USD"))
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.semibold)
+                        
+                        Text("per kWh")
+                            .font(KiaDesign.Typography.caption)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
                     
-                    Text("Available")
-                        .font(KiaDesign.Typography.caption)
-                        .foregroundStyle(KiaDesign.Colors.textSecondary)
-                }
-                
-                Divider()
-                    .frame(height: 30)
-                
-                VStack(spacing: 4) {
-                    Text(station.pricePerKwh, format: .currency(code: "USD"))
-                        .font(KiaDesign.Typography.body)
-                        .fontWeight(.semibold)
+                    Divider()
+                        .frame(height: 30)
                     
-                    Text("per kWh")
-                        .font(KiaDesign.Typography.caption)
-                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    VStack(spacing: 4) {
+                        Text("\(String(format: "%.1f", station.distanceKm)) km")
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.semibold)
+                            .monospacedDigit()
+                        
+                        Text("Distance")
+                            .font(KiaDesign.Typography.caption)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
