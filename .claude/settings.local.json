@@ -22,7 +22,10 @@
       "Bash(-destination 'platform=iOS Simulator,id=6FC001A4-5FEE-473C-AAF4-7C2C9B645534' )",
       "Bash(swift:*)",
       "Bash(find:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

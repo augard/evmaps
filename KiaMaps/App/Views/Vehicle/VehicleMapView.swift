@@ -12,6 +12,7 @@ import CoreLocation
 
 /// Tesla-style map view with vehicle location and charging station integration
 struct VehicleMapView: View {
+    let vehicle: Vehicle?
     let vehicleStatus: VehicleStatusResponse
     let onChargingStationTap: ((ChargingStation) -> Void)?
     let onVehicleTap: (() -> Void)?
@@ -32,16 +33,18 @@ struct VehicleMapView: View {
         }
     }
     @State private var showingChargingStations = true
-    @State private var selectedAnnotation: MapAnnotation?
+    @State private var selectedAnnotation: CustomMapAnnotation?
     
     // Mock charging stations for demo
     @State private var chargingStations: [ChargingStation] = []
     
     init(
+        vehicle: Vehicle? = nil,
         vehicleStatus: VehicleStatusResponse,
         onChargingStationTap: ((ChargingStation) -> Void)? = nil,
         onVehicleTap: (() -> Void)? = nil
     ) {
+        self.vehicle = vehicle
         self.vehicleStatus = vehicleStatus
         self.onChargingStationTap = onChargingStationTap
         self.onVehicleTap = onVehicleTap
@@ -60,40 +63,43 @@ struct VehicleMapView: View {
     
     var body: some View {
         ZStack {
-            // Main Map
-            Map(coordinateRegion: $region, interactionModes: .all, showsUserLocation: false, userTrackingMode: .constant(.none))
-                .mapStyle(currentMapStyle.mapStyle)
-                .overlay(
-                    // Vehicle annotation overlay
-                    VehicleAnnotationView(
-                        batteryLevel: Double(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio) / 100.0,
-                        isCharging: isVehicleCharging,
-                        heading: vehicleStatus.state.vehicle.location.heading
-                    )
-                    .position(coordinateToScreenPosition(vehicleCoordinate))
-                    .scaleEffect(selectedAnnotation?.id == "vehicle" ? 1.3 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedAnnotation?.id)
-                    .onTapGesture {
-                        selectedAnnotation = MapAnnotation(id: "vehicle", coordinate: vehicleCoordinate, type: .vehicle)
-                        onVehicleTap?()
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    }
-                )
-                .overlay(
-                    // Charging station annotations overlay
-                    ForEach(showingChargingStations ? chargingStations : []) { station in
-                        ChargingStationAnnotationView(
-                            station: station,
-                            isSelected: selectedAnnotation?.id == station.id
-                        )
-                        .position(coordinateToScreenPosition(station.coordinate))
-                        .onTapGesture {
-                            selectedAnnotation = MapAnnotation(id: station.id, coordinate: station.coordinate, type: .chargingStation(station))
-                            onChargingStationTap?(station)
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            // Main Map with annotations using the older but working API
+            Map(coordinateRegion: $region, 
+                interactionModes: .all, 
+                showsUserLocation: false, 
+                userTrackingMode: .constant(.none),
+                annotationItems: mapAnnotations) { annotation in
+                MapAnnotation(coordinate: annotation.coordinate) {
+                    Group {
+                        switch annotation.type {
+                        case .vehicle:
+                            VehicleAnnotationView(
+                                batteryLevel: Double(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio) / 100.0,
+                                isCharging: isVehicleCharging,
+                                heading: vehicleStatus.state.vehicle.location.heading
+                            )
+                            .scaleEffect(selectedAnnotation?.id == annotation.id ? 1.3 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedAnnotation?.id)
+                            .onTapGesture {
+                                selectedAnnotation = annotation
+                                onVehicleTap?()
+                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                            }
+                        case .chargingStation(let station):
+                            ChargingStationAnnotationView(
+                                station: station,
+                                isSelected: selectedAnnotation?.id == annotation.id
+                            )
+                            .onTapGesture {
+                                selectedAnnotation = annotation
+                                onChargingStationTap?(station)
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            }
                         }
                     }
-                )
+                }
+            }
+            .mapStyle(currentMapStyle.mapStyle)
             .onAppear {
                 loadNearbyChargingStations()
             }
@@ -154,7 +160,7 @@ struct VehicleMapView: View {
     // MARK: - Annotation Detail Card
     
     @ViewBuilder
-    private func annotationDetailCard(for annotation: MapAnnotation) -> some View {
+    private func annotationDetailCard(for annotation: CustomMapAnnotation) -> some View {
         VStack {
             Spacer()
             
@@ -187,7 +193,8 @@ struct VehicleMapView: View {
                     .foregroundStyle(KiaDesign.Colors.primary)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("My EV9")
+                    // Use real vehicle nickname from API
+                    Text(vehicleNickname)
                         .font(KiaDesign.Typography.bodyBold)
                         .foregroundStyle(KiaDesign.Colors.textPrimary)
                     
@@ -207,45 +214,68 @@ struct VehicleMapView: View {
                 .foregroundStyle(KiaDesign.Colors.accent)
             }
             
-            HStack(spacing: KiaDesign.Spacing.large) {
-                VStack(spacing: 4) {
-                    Text("\(Int(Double(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio)))%")
-                        .font(KiaDesign.Typography.body)
-                        .fontWeight(.semibold)
-                        .monospacedDigit()
+            VStack(spacing: KiaDesign.Spacing.medium) {
+                // First row: Battery and Range
+                HStack(spacing: KiaDesign.Spacing.large) {
+                    VStack(spacing: 4) {
+                        Text("\(Int(Double(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio)))%")
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.semibold)
+                            .monospacedDigit()
+                        
+                        Text("Battery")
+                            .font(KiaDesign.Typography.caption)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    }
                     
-                    Text("Battery")
-                        .font(KiaDesign.Typography.caption)
-                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    Divider()
+                        .frame(height: 30)
+                    
+                    VStack(spacing: 4) {
+                        let dte = vehicleStatus.state.vehicle.drivetrain.fuelSystem.dte
+                        let rangeUnit = dte.unit == .kilometers ? "km" : "mi"
+                        Text("\(dte.total) \(rangeUnit)")
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.semibold)
+                            .monospacedDigit()
+                        
+                        Text("Range")
+                            .font(KiaDesign.Typography.caption)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    }
                 }
                 
-                Divider()
-                    .frame(height: 30)
-                
-                VStack(spacing: 4) {
-                    let dte = vehicleStatus.state.vehicle.drivetrain.fuelSystem.dte
-                    let rangeUnit = dte.unit == .kilometers ? "km" : "mi"
-                    Text("\(dte.total) \(rangeUnit)")
-                        .font(KiaDesign.Typography.body)
-                        .fontWeight(.semibold)
-                        .monospacedDigit()
+                // Second row: Speed and Altitude
+                HStack(spacing: KiaDesign.Spacing.large) {
+                    VStack(spacing: 4) {
+                        let speed = vehicleStatus.state.vehicle.location.speed
+                        let speedUnit = speed.unit == .km ? "km/h" : speed.unit == .miles ? "mph" : "m/s"
+                        let speedText = speed.value > 0 ? "\(Int(speed.value)) \(speedUnit)" : (isVehicleCharging ? "Charging" : "Parked")
+                        
+                        Text(speedText)
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.semibold)
+                            .monospacedDigit()
+                        
+                        Text(speed.value > 0 ? "Speed" : "Status")
+                            .font(KiaDesign.Typography.caption)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    }
                     
-                    Text("Range")
-                        .font(KiaDesign.Typography.caption)
-                        .foregroundStyle(KiaDesign.Colors.textSecondary)
-                }
-                
-                Divider()
-                    .frame(height: 30)
-                
-                VStack(spacing: 4) {
-                    Text(isVehicleCharging ? "Charging" : "Parked")
-                        .font(KiaDesign.Typography.body)
-                        .fontWeight(.semibold)
+                    Divider()
+                        .frame(height: 30)
                     
-                    Text("Status")
-                        .font(KiaDesign.Typography.caption)
-                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    VStack(spacing: 4) {
+                        let altitude = vehicleStatus.state.vehicle.location.geoCoordinate.altitude
+                        Text("\(Int(altitude)) m")
+                            .font(KiaDesign.Typography.body)
+                            .fontWeight(.semibold)
+                            .monospacedDigit()
+                        
+                        Text("Altitude")
+                            .font(KiaDesign.Typography.caption)
+                            .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    }
                 }
             }
         }
@@ -324,8 +354,11 @@ struct VehicleMapView: View {
     // MARK: - Helper Properties
     
     private var isVehicleCharging: Bool {
-        // Using heading as charging indicator placeholder
-        vehicleStatus.state.vehicle.location.heading > 0
+        vehicleStatus.state.vehicle.isCharging
+    }
+    
+    private var vehicleNickname: String {
+        vehicle?.nickname ?? "My Vehicle"
     }
     
     private var vehicleCoordinate: CLLocationCoordinate2D {
@@ -335,20 +368,30 @@ struct VehicleMapView: View {
         )
     }
     
-    private func coordinateToScreenPosition(_ coordinate: CLLocationCoordinate2D) -> CGPoint {
-        // Simple approximation - in a real app, you'd use proper coordinate conversion
-        let mapWidth: CGFloat = 400  // Approximate map width
-        let mapHeight: CGFloat = 400 // Approximate map height
+    private var mapAnnotations: [CustomMapAnnotation] {
+        var annotations: [CustomMapAnnotation] = []
         
-        // Calculate relative position based on current map region
-        let deltaLat = coordinate.latitude - region.center.latitude
-        let deltaLon = coordinate.longitude - region.center.longitude
+        // Add vehicle annotation
+        annotations.append(CustomMapAnnotation(
+            id: "vehicle",
+            coordinate: vehicleCoordinate,
+            type: .vehicle
+        ))
         
-        let x = mapWidth/2 + (deltaLon / region.span.longitudeDelta) * mapWidth
-        let y = mapHeight/2 - (deltaLat / region.span.latitudeDelta) * mapHeight
+        // Add charging station annotations if enabled
+        if showingChargingStations {
+            for station in chargingStations {
+                annotations.append(CustomMapAnnotation(
+                    id: station.id,
+                    coordinate: station.coordinate,
+                    type: .chargingStation(station)
+                ))
+            }
+        }
         
-        return CGPoint(x: x, y: y)
+        return annotations
     }
+    
     
     // MARK: - Actions
     
@@ -438,7 +481,7 @@ struct VehicleMapView: View {
 
 // MARK: - Map Annotation Models
 
-struct MapAnnotation: Identifiable {
+struct CustomMapAnnotation: Identifiable {
     let id: String
     let coordinate: CLLocationCoordinate2D
     let type: AnnotationType
@@ -638,6 +681,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
 #Preview("Vehicle Map - Standard") {
     VehicleMapView(
+        vehicle: MockVehicleData.mockVehicle,
         vehicleStatus: MockVehicleData.standardResponse,
         onChargingStationTap: { station in
             print("Tapped charging station: \(station.name)")
@@ -653,6 +697,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
 #Preview("Vehicle Map - Charging") {
     VehicleMapView(
+        vehicle: MockVehicleData.mockVehicle,
         vehicleStatus: MockVehicleData.chargingResponse,
         onChargingStationTap: { station in
             print("Tapped charging station: \(station.name)")
