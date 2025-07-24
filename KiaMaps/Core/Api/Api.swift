@@ -8,6 +8,32 @@
 
 import Foundation
 
+/**
+ * Api - Main interface for Kia/Hyundai/Genesis vehicle API communication
+ * 
+ * This class handles all aspects of vehicle API interaction including:
+ * - Multi-step OAuth2 authentication flow
+ * - Vehicle status retrieval (cached and live refresh)
+ * - Climate control operations with PIN protection
+ * - User profile and session management
+ * - Device registration for push notifications
+ * 
+ * ## Authentication Flow
+ * The API uses a complex multi-step authentication process:
+ * 1. Login page retrieval and form submission
+ * 2. Device ID registration with push notification setup
+ * 3. OAuth2 authorization code exchange
+ * 4. Access token retrieval and validation
+ * 5. User integration setup
+ * 
+ * ## CCS2 Support
+ * The API automatically detects and uses CCS2 endpoints when supported by the vehicle,
+ * falling back to standard endpoints for older vehicles.
+ * 
+ * ## Thread Safety
+ * This class is designed to be used from async contexts and is not thread-safe.
+ * Use a single instance per authentication session.
+ */
 class Api {
     let configuration: ApiConfiguration
 
@@ -27,6 +53,12 @@ class Api {
         provider = ApiRequestProvider(configuration: configuration)
     }
 
+    /// Authenticate user and establish session with vehicle API
+    /// - Parameters:
+    ///   - username: User's login username/email
+    ///   - password: User's login password
+    /// - Returns: Complete authorization data including tokens and device ID
+    /// - Throws: Authentication errors, network errors, or validation failures
     func login(username: String, password: String) async throws -> AuthorizationData {
         let stamp = AuthorizationData.generateStamp(for: configuration)
         cleanCookies()
@@ -60,6 +92,8 @@ class Api {
         return authorizationData
     }
 
+    /// Logout user and clean up session data
+    /// - Throws: Network errors (non-critical - cleanup continues regardless)
     func logout() async throws {
         do {
             try await provider.request(endpoint: .logout).empty()
@@ -71,26 +105,98 @@ class Api {
         cleanCookies()
     }
 
+    /// Retrieve list of vehicles associated with the user account
+    /// - Returns: Complete vehicle response containing all registered vehicles
+    /// - Throws: Network errors or authentication failures
     func vehicles() async throws -> VehicleResponse {
         try await provider.request(endpoint: .vehicles).response()
     }
 
+    /// Request fresh vehicle status update from the vehicle
+    /// - Parameter vehicleId: The vehicle's unique identifier
+    /// - Returns: Operation result ID for tracking the refresh request
+    /// - Note: Uses CCS2 endpoint if supported, fallback to standard endpoint
+    /// - Throws: Network errors or vehicle communication failures
     func refreshVehicle(_ vehicleId: UUID) async throws -> UUID {
         let endpoint: ApiEndpoint = authorization?.isCcuCCS2Supported == true ? .refreshCCS2Vehicle(vehicleId) : .refreshVehicle(vehicleId)
         return try await provider.request(endpoint: endpoint).responseEmpty().resultId
     }
 
+    /// Retrieve cached vehicle status (last known state)
+    /// - Parameter vehicleId: The vehicle's unique identifier
+    /// - Returns: Complete vehicle status including battery, location, and system states
+    /// - Note: Uses CCS2 endpoint if supported, fallback to standard endpoint
+    /// - Throws: Network errors or data parsing failures
     func vehicleCachedStatus(_ vehicleId: UUID) async throws -> VehicleStatusResponse {
         let endpoint: ApiEndpoint = authorization?.isCcuCCS2Supported == true ? .vehicleCachedCCS2Status(vehicleId) : .vehicleCachedStatus(vehicleId)
         return try await provider.request(endpoint: endpoint).response()
     }
 
+    /// Retrieve user profile information
+    /// - Returns: User profile data as JSON string
+    /// - Throws: Network errors or authentication failures
     func profile() async throws -> String {
         try await provider.request(endpoint: .userProfile).string()
+    }
+    
+    // MARK: - Climate Control
+    
+    /// Start climate control with specified options
+    /// - Parameters:
+    ///   - vehicleId: The vehicle ID
+    ///   - options: Climate control configuration options
+    ///   - pin: Vehicle PIN (required for climate control)
+    /// - Returns: Operation result ID for tracking
+    func startClimate(_ vehicleId: UUID, options: ClimateControlOptions, pin: String) async throws -> UUID {
+        guard !pin.isEmpty else {
+            throw ClimateControlError.missingPin
+        }
+        
+        guard options.isValid else {
+            if !options.isTemperatureValid {
+                throw ClimateControlError.invalidTemperature(options.temperature)
+            }
+            if !options.areSeatLevelsValid {
+                let invalidLevel = [options.driverSeatLevel, options.passengerSeatLevel, 
+                                 options.rearLeftSeatLevel, options.rearRightSeatLevel]
+                    .first { $0 < 0 || $0 > 3 } ?? -1
+                throw ClimateControlError.invalidSeatLevel(invalidLevel)
+            }
+            if !options.isDurationValid {
+                throw ClimateControlError.invalidDuration(options.duration)
+            }
+            throw ClimateControlError.vehicleNotReady
+        }
+        
+        let request = options.toClimateControlRequest(pin: pin)
+        let headers = authorization?.authorizatioHeaders(for: configuration) ?? [:]
+        
+        return try await provider.request(
+            with: .post,
+            endpoint: .startClimate(vehicleId),
+            headers: headers,
+            encodable: request
+        ).responseEmpty().resultId
+    }
+    
+    /// Stop climate control
+    /// - Parameter vehicleId: The vehicle ID
+    /// - Returns: Operation result ID for tracking
+    func stopClimate(_ vehicleId: UUID) async throws -> UUID {
+        let headers = authorization?.authorizatioHeaders(for: configuration) ?? [:]
+        
+        return try await provider.request(
+            with: .post,
+            endpoint: .stopClimate(vehicleId),
+            headers: headers
+        ).responseEmpty().resultId
     }
 }
 
 private extension Api {
+    /// Retrieve the login page and generate a new user session ID
+    /// - Returns: Tuple containing generated user ID and login page HTML content
+    /// - Throws: Network errors or HTML parsing failures
     func loginPage() async throws -> (userId: UUID, body: String) {
         let userId = UUID()
         let queryItems: [URLQueryItem] = try [
@@ -118,6 +224,13 @@ private extension Api {
         return (userId, body)
     }
 
+    /// Submit login credentials to authenticate with the vehicle service
+    /// - Parameters:
+    ///   - username: User's login username/email
+    ///   - password: User's login password
+    ///   - loginUrlQuery: Query parameters extracted from login page
+    /// - Returns: Redirect URL for next authentication step
+    /// - Throws: Authentication failures or network errors
     func loginAction(username: String, password: String, loginUrlQuery: String) async throws -> URL {
         let headers = [
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -140,6 +253,12 @@ private extension Api {
         ).referalUrl()
     }
 
+    /// Handle login redirect with user integration data
+    /// - Parameters:
+    ///   - userId: Generated user session ID
+    ///   - userIntegration: User integration response from previous step
+    ///   - sessionState: Session state UUID (currently unused)
+    /// - Throws: Network errors or redirect handling failures
     func loginRedirect(userId: UUID, userIntegration: UserIntegrationResponse, sessionState _: UUID) async throws {
         let queryItems: [URLQueryItem] = [
             .init(name: "user_id", value: userId.uuidString.lowercased()),
@@ -166,6 +285,8 @@ private extension Api {
         }
     }
 
+    /// Initialize OAuth2 authorization flow
+    /// - Throws: Network errors or OAuth2 setup failures
     func authorization() async throws {
         let queryItems: [URLQueryItem] = [
             .init(name: "response_type", value: "code"),
@@ -190,6 +311,12 @@ private extension Api {
         }
     }
 
+    /// Exchange authorization code for access token
+    /// - Parameters:
+    ///   - serviceId: Service identifier UUID
+    ///   - code: Authorization code from OAuth2 flow
+    /// - Returns: Authorization response containing access token and refresh token
+    /// - Throws: Token exchange failures or network errors
     func authorizationToken(serviceId: UUID, code: String) async throws -> AuthorizationResponse {
         let authorization = "\(serviceId.uuidString.lowercased()):secret".data(using: .utf8)?.base64EncodedString() ?? ""
         let headers = [
@@ -205,6 +332,8 @@ private extension Api {
         return try await provider.request(endpoint: .authorizationToken, headers: headers, form: form).data()
     }
 
+    /// Establish user session after authentication
+    /// - Throws: Network errors or session establishment failures
     func userSession() async throws {
         let headers: ApiRequest.Headers = [
             "Sec-Fetch-Site": "same-origin",
@@ -215,6 +344,9 @@ private extension Api {
         try await provider.request(endpoint: .userSession, headers: headers).empty()
     }
 
+    /// Retrieve user integration information for service setup
+    /// - Returns: User integration response containing service and user IDs
+    /// - Throws: Network errors or integration setup failures
     func userIntegration() async throws -> UserIntegrationResponse {
         let headers: ApiRequest.Headers = [
             "Sec-Fetch-Site": "same-origin",
@@ -225,11 +357,18 @@ private extension Api {
         return try await provider.request(endpoint: .userIntegrationInfo, headers: headers).data()
     }
 
+    /// Set user interface language preference
+    /// - Parameter languageCode: Language code (default: "en")
+    /// - Throws: Network errors or language setting failures
     func setLanguage(languageCode: String = "en") async throws {
         let payload = ["language": languageCode]
         try await provider.request(endpoint: .language, encodable: payload).empty()
     }
 
+    /// Complete sign-in process and retrieve authorization code
+    /// - Parameter userId: User ID (currently unused but kept for API compatibility)
+    /// - Returns: Authorization code for token exchange
+    /// - Throws: Sign-in failures or network errors
     @discardableResult
     func signIn(userId _: UUID) async throws -> String {
         let headers: ApiRequest.Headers = [
@@ -247,6 +386,10 @@ private extension Api {
         return code
     }
 
+    /// Register device and retrieve device ID for push notifications
+    /// - Parameter stamp: Authorization stamp for device registration
+    /// - Returns: Unique device ID for this installation
+    /// - Throws: Device registration failures or network errors
     func deviceId(stamp: String) async throws -> UUID {
         /* let number = Int.random(in: 80_000_000_000...100_000_000_000)
          let myHex = String(format: "%064x", number)
@@ -273,6 +416,9 @@ private extension Api {
         return response.deviceId
     }
 
+    /// Register device for push notifications with vehicle service
+    /// - Parameter deviceId: Device ID obtained from device registration
+    /// - Throws: Notification registration failures or network errors
     func notificationRegister(deviceId: UUID) async throws {
         var headers: ApiRequest.Headers = provider.authorization?.authorizatioHeaders(for: configuration) ?? [:]
         headers["Content-Type"] = "application/json; charset=UTF-8"
@@ -280,6 +426,9 @@ private extension Api {
         try await provider.request(with: .post, endpoint: .notificationRegisterWithDeviceId(deviceId), headers: headers).empty(acceptStatusCode: 200)
     }
 
+    /// Extract login URL query parameters from HTML response
+    /// - Parameter htmlString: HTML content from login page
+    /// - Returns: Query string for login action, or nil if not found
     func extractLoginUrlQuery(from htmlString: String) -> String? {
         // Define the regular expression pattern
         let pattern = "eu-account\\.\(configuration.key)\\.com\\/auth\\/realms\\/eu\(configuration.key)idm\\/login-actions\\/authenticate?([^\"]+)"
@@ -299,6 +448,7 @@ private extension Api {
         return nil
     }
 
+    /// Clear all HTTP cookies to ensure clean authentication state
     func cleanCookies() {
         let cookies = HTTPCookieStorage.shared.cookies ?? []
         for cookie in cookies {
