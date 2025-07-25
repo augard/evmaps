@@ -237,14 +237,14 @@ struct MockVehicleData {
                     "Row1": {
                         "Left": {
                             "Tire": {
-                                "PressureLow": 0,
-                                "Pressure": 32
+                                "PressureLow": \(scenario == "low_tire_pressure" ? 1 : 0),
+                                "Pressure": \(scenario == "low_tire_pressure" ? 26 : 32)
                             }
                         },
                         "Right": {
                             "Tire": {
-                                "PressureLow": \(scenario == "maintenance" ? 1 : 0),
-                                "Pressure": \(scenario == "maintenance" ? 28 : 32)
+                                "PressureLow": \(scenario == "maintenance" || scenario == "low_tire_pressure" ? 1 : 0),
+                                "Pressure": \(scenario == "maintenance" ? 28 : (scenario == "low_tire_pressure" ? 24 : 32))
                             }
                         }
                     },
@@ -257,14 +257,14 @@ struct MockVehicleData {
                         },
                         "Right": {
                             "Tire": {
-                                "PressureLow": 0,
-                                "Pressure": 32
+                                "PressureLow": \(scenario == "low_tire_pressure" ? 1 : 0),
+                                "Pressure": \(scenario == "low_tire_pressure" ? 27 : 32)
                             }
                         }
                     },
                     "Tire": {
-                        "PressureLow": \(scenario == "maintenance" ? 1 : 0),
-                        "PressureUnit": 1
+                        "PressureLow": \(scenario == "maintenance" || scenario == "low_tire_pressure" ? 1 : 0),
+                        "PressureUnit": 0
                     }
                 },
                 "Brake": {
@@ -679,6 +679,14 @@ struct MockVehicleData {
         drivingReady: false,
         scenario: "maintenance"
     )
+    
+    /// Low tire pressure demo - 73% battery, multiple tires with low pressure
+    static let lowTirePressure = createVehicleStatus(
+        batteryLevel: 73,
+        isCharging: false,
+        drivingReady: true,
+        scenario: "low_tire_pressure"
+    )
 }
 
 // MARK: - VehicleStatusResponse Mock Data
@@ -709,6 +717,9 @@ extension MockVehicleData {
     
     /// Complete VehicleStatusResponse with low battery scenario
     static let lowBatteryResponse = createVehicleStatusResponse(vehicleStatus: lowBattery)
+    
+    /// Complete VehicleStatusResponse with low tire pressure scenario
+    static let lowTirePressureResponse = createVehicleStatusResponse(vehicleStatus: lowTirePressure)
 }
 
 // MARK: - Vehicle Mock Data
@@ -767,6 +778,7 @@ extension VehicleStatus {
     static let fastChargingPreview = MockVehicleData.fastCharging
     static let preconditioningPreview = MockVehicleData.preconditioning
     static let maintenancePreview = MockVehicleData.maintenance
+    static let lowTirePressurePreview = MockVehicleData.lowTirePressure
 }
 
 extension VehicleStatusResponse {
@@ -774,6 +786,7 @@ extension VehicleStatusResponse {
     static let preview = MockVehicleData.standardResponse
     static let chargingPreview = MockVehicleData.chargingResponse
     static let lowBatteryPreview = MockVehicleData.lowBatteryResponse
+    static let lowTirePressurePreview = MockVehicleData.lowTirePressureResponse
 }
 
 extension Vehicle {

@@ -19,6 +19,7 @@ struct KiaStatusIndicator: View {
     
     enum Status: Equatable {
         case ready
+        case normal
         case charging
         case locked
         case unlocked
@@ -31,6 +32,8 @@ struct KiaStatusIndicator: View {
             switch self {
             case .ready:
                 return "Ready"
+            case .normal:
+                return "Normal"
             case .charging:
                 return "Charging"
             case .locked:
@@ -52,6 +55,8 @@ struct KiaStatusIndicator: View {
             switch self {
             case .ready:
                 return "checkmark.circle.fill"
+            case .normal:
+                return "checkmark.circle.fill"
             case .charging:
                 return "bolt.circle.fill"
             case .locked:
@@ -72,6 +77,8 @@ struct KiaStatusIndicator: View {
         var color: Color {
             switch self {
             case .ready:
+                return KiaDesign.Colors.Status.ready
+            case .normal:
                 return KiaDesign.Colors.Status.ready
             case .charging:
                 return KiaDesign.Colors.Status.locked
@@ -372,6 +379,7 @@ struct KiaTemperatureStatusIndicator: View {
                 
                 VStack(alignment: .leading, spacing: KiaDesign.Spacing.small) {
                     KiaStatusIndicator(status: .ready)
+                    KiaStatusIndicator(status: .normal)
                     KiaStatusIndicator(status: .charging, style: .outlined)
                     KiaStatusIndicator(status: .locked, style: .ghost)
                     KiaStatusIndicator(status: .warning("Low Tire Pressure"))

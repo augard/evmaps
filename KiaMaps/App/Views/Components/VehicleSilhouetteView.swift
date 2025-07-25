@@ -23,12 +23,16 @@ struct VehicleSilhouetteView: View {
         case rearLeft = "Rear Left"
         case rearRight = "Rear Right"
         case trunk = "Trunk"
+        case frunk = "Frunk"
         
         var systemIcon: String {
             switch self {
-            case .frontLeft, .rearLeft: return "door.left.hand.closed"
-            case .frontRight, .rearRight: return "door.right.hand.closed"
-            case .trunk: return "car.rear"
+            case .frontLeft: return "car.top.door.front.left.open"
+            case .rearLeft: return "car.top.door.rear.left.open"
+            case .frontRight: return "car.top.door.front.right.open"
+            case .rearRight: return "car.top.door.rear.right.open"
+            case .trunk: return "car.side.rear.open"
+            case .frunk: return "car.side.front.open"
             }
         }
     }
@@ -40,7 +44,7 @@ struct VehicleSilhouetteView: View {
         case rearRight = "Rear Right"
         
         var systemIcon: String {
-            return "circle.fill"
+            return "tire"
         }
     }
     
@@ -94,30 +98,40 @@ struct VehicleSilhouetteView: View {
     }
     
     var body: some View {
-        ZStack {
-            // Main vehicle silhouette
-            vehicleSilhouette
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let height = width * 0.5 // Maintain 2:1 aspect ratio
             
-            // Interactive elements overlay
-            interactiveElementsOverlay
-            
-            // Charging indicator (if charging)
-            if isCharging {
-                chargingPortIndicator
+            ZStack {
+                // Main vehicle silhouette
+                vehicleSilhouette
+                    .scaleEffect(width / 280) // Scale based on original 280 width
+
+                // Interactive elements overlay
+                interactiveElementsOverlay
+                    .scaleEffect(width / 280)
+                
+                // Charging indicator (if charging)
+                if isCharging {
+                    chargingPortIndicator
+                        .scaleEffect(width / 280)
+                }
+                
+                // Warning indicators overlay
+                warningIndicatorsOverlay
+                    .scaleEffect(width / 280)
             }
-            
-            // Warning indicators overlay
-            warningIndicatorsOverlay
+            .frame(width: width, height: height)
+            .background(
+                RoundedRectangle(cornerRadius: KiaDesign.CornerRadius.large)
+                    .fill(KiaDesign.Colors.cardBackground)
+                    .stroke(KiaDesign.Colors.textTertiary.opacity(0.2), lineWidth: 1)
+            )
+            .onAppear {
+                startStatusAnimations()
+            }
         }
-        .frame(width: 280, height: 140)
-        .background(
-            RoundedRectangle(cornerRadius: KiaDesign.CornerRadius.large)
-                .fill(KiaDesign.Colors.cardBackground)
-                .stroke(KiaDesign.Colors.textTertiary.opacity(0.2), lineWidth: 1)
-        )
-        .onAppear {
-            startStatusAnimations()
-        }
+        .aspectRatio(2, contentMode: .fit)
     }
     
     // MARK: - Vehicle Silhouette
@@ -132,21 +146,21 @@ struct VehicleSilhouetteView: View {
                     // Windows
                     RoundedRectangle(cornerRadius: 8)
                         .fill(KiaDesign.Colors.textTertiary.opacity(0.3))
-                        .frame(width: 160, height: 40)
-                        .offset(y: -5)
+                        .frame(width: 160, height: 50)
+                        .offset(y: 0)
                 )
             
             // Hood detail
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 12)
                 .fill(vehicleBodyColor.opacity(0.8))
-                .frame(width: 40, height: 20)
+                .frame(width: 30, height: 70)
                 .offset(x: -80, y: 0)
-            
+
             // Rear detail
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 12)
                 .fill(vehicleBodyColor.opacity(0.8))
-                .frame(width: 30, height: 16)
-                .offset(x: 85, y: 0)
+                .frame(width: 40, height: 70)
+                .offset(x: 75, y: 0)
         }
     }
     
@@ -168,10 +182,25 @@ struct VehicleSilhouetteView: View {
     
     private func doorIndicator(for door: DoorPosition) -> some View {
         let isOpen = isDoorOpen(door)
+        let isLocked = isDoorLocked(door)
+        let hasFault = door == .frunk && vehicleStatus.hasFrunkFault(door)
         let position = doorPosition(for: door)
         
+        // Determine door color based on state
+        let doorColor: Color = {
+            if hasFault {
+                return KiaDesign.Colors.error // Red for frunk fault
+            } else if isOpen {
+                return KiaDesign.Colors.warning // Orange for open
+            } else if !isLocked {
+                return KiaDesign.Colors.error // Red for unlocked
+            } else {
+                return KiaDesign.Colors.success // Green for locked and closed
+            }
+        }()
+        
         return Circle()
-            .fill(isOpen ? KiaDesign.Colors.warning : KiaDesign.Colors.success)
+            .fill(doorColor)
             .frame(width: 12, height: 12)
             .overlay(
                 Circle()
@@ -208,12 +237,11 @@ struct VehicleSilhouetteView: View {
     }
     
     private func tireIndicator(for tire: TirePosition) -> some View {
-        let pressure = tirePressure(for: tire)
-        let isHealthy = pressure > 30.0
+        let isLowPressure = isTirePressureLow(for: tire)
         let position = tirePosition(for: tire)
         
         return Circle()
-            .fill(isHealthy ? KiaDesign.Colors.textPrimary : KiaDesign.Colors.warning)
+            .fill(isLowPressure ? KiaDesign.Colors.warning : KiaDesign.Colors.textPrimary)
             .frame(width: 16, height: 16)
             .overlay(
                 Circle()
@@ -256,7 +284,11 @@ struct VehicleSilhouetteView: View {
                 .fill(KiaDesign.Colors.charging.opacity(0.3))
                 .frame(width: 20, height: 20)
                 .blur(radius: 2)
-            
+                .overlay(
+                    Circle()
+                        .stroke(KiaDesign.Colors.cardBackground, lineWidth: 2)
+                )
+
             // Port indicator
             Circle()
                 .fill(KiaDesign.Colors.charging)
@@ -267,7 +299,6 @@ struct VehicleSilhouetteView: View {
                         .foregroundStyle(.white)
                 )
         }
-        .offset(x: -60, y: 10) // Left side of vehicle
         .scaleEffect((pulsingElements as Set<InteractiveElement>).contains(.chargingPort) ? 1.4 : 1.0)
         .animation(
             .easeInOut(duration: 1.0).repeatForever(autoreverses: true),
@@ -353,8 +384,8 @@ struct VehicleSilhouetteView: View {
     }
     
     private var isCharging: Bool {
-        // Using heading as charging indicator placeholder
-        vehicleStatus.location.heading > 0
+        // Use real charging status from API
+        vehicleStatus.isCharging
     }
     
     private var activeWarnings: [WarningType] {
@@ -374,7 +405,7 @@ struct VehicleSilhouetteView: View {
         
         // Check tire pressures
         let lowTirePressure = TirePosition.allCases.contains { tire in
-            tirePressure(for: tire) <= 30.0
+            isTirePressureLow(for: tire)
         }
         if lowTirePressure {
             warnings.append(.tirePressure)
@@ -398,28 +429,31 @@ struct VehicleSilhouetteView: View {
     private func doorPosition(for door: DoorPosition) -> CGPoint {
         switch door {
         case .frontLeft:
-            return CGPoint(x: -60, y: -25)
+            return CGPoint(x: -50, y: -40)
         case .frontRight:
-            return CGPoint(x: -60, y: 25)
+            return CGPoint(x: -50, y: 40)
         case .rearLeft:
-            return CGPoint(x: 60, y: -25)
+            return CGPoint(x: 40, y: -40)
         case .rearRight:
-            return CGPoint(x: 60, y: 25)
+            return CGPoint(x: 40, y: 40)
         case .trunk:
-            return CGPoint(x: 95, y: 0)
+            return CGPoint(x: 100, y: 0)
+        case .frunk:
+            return CGPoint(x: -100, y: 0)
         }
     }
     
     private func tirePosition(for tire: TirePosition) -> CGPoint {
+        let outsidePossition = 40.0
         switch tire {
         case .frontLeft:
-            return CGPoint(x: -75, y: -35)
+            return CGPoint(x: -80, y: -outsidePossition)
         case .frontRight:
-            return CGPoint(x: -75, y: 35)
+            return CGPoint(x: -80, y: outsidePossition)
         case .rearLeft:
-            return CGPoint(x: 75, y: -35)
+            return CGPoint(x: 75, y: -outsidePossition)
         case .rearRight:
-            return CGPoint(x: 75, y: 35)
+            return CGPoint(x: 75, y: outsidePossition)
         }
     }
     
@@ -441,17 +475,40 @@ struct VehicleSilhouetteView: View {
     // MARK: - Status Methods
     
     private func isDoorOpen(_ door: DoorPosition) -> Bool {
-        // Placeholder logic - doors are closed in current API
-        false
+        return vehicleStatus.isDoorOpen(door)
+    }
+    
+    private func isDoorLocked(_ door: DoorPosition) -> Bool {
+        return vehicleStatus.isDoorLocked(door)
     }
     
     private func tirePressure(for tire: TirePosition) -> Double {
-        // Simulate tire pressure values
+        // Get real tire pressure values from API
+        let chassis = vehicleStatus.chassis
         switch tire {
-        case .frontLeft: return 32.0
-        case .frontRight: return 32.5
-        case .rearLeft: return 31.8
-        case .rearRight: return 32.2
+        case .frontLeft: 
+            return Double(chassis.axle.row1.left.tire.pressure)
+        case .frontRight: 
+            return Double(chassis.axle.row1.right.tire.pressure)
+        case .rearLeft: 
+            return Double(chassis.axle.row2.left.tire.pressure)
+        case .rearRight: 
+            return Double(chassis.axle.row2.right.tire.pressure)
+        }
+    }
+    
+    private func isTirePressureLow(for tire: TirePosition) -> Bool {
+        // Check if tire pressure is low from API
+        let chassis = vehicleStatus.chassis
+        switch tire {
+        case .frontLeft:
+            return chassis.axle.row1.left.tire.pressureLow
+        case .frontRight:
+            return chassis.axle.row1.right.tire.pressureLow
+        case .rearLeft:
+            return chassis.axle.row2.left.tire.pressureLow
+        case .rearRight:
+            return chassis.axle.row2.right.tire.pressureLow
         }
     }
     
@@ -462,7 +519,7 @@ struct VehicleSilhouetteView: View {
         
         // Pulse any low tire pressure indicators
         for tire in TirePosition.allCases {
-            if tirePressure(for: tire) <= 30.0 {
+            if isTirePressureLow(for: tire) {
                 pulsingElements.insert(.tire(tire))
             }
         }
@@ -513,18 +570,45 @@ struct VehicleStatusDetailView: View {
     }
     
     private func doorDetailView(for door: VehicleSilhouetteView.DoorPosition) -> some View {
-        VStack(spacing: KiaDesign.Spacing.small) {
+        let isOpen = vehicleStatus.isDoorOpen(door)
+        let isLocked = vehicleStatus.isDoorLocked(door)
+        let hasFault = door == .frunk && vehicleStatus.hasFrunkFault(door)
+        
+        // Determine status text and color based on door type
+        let (statusText, statusColor, statusIndicator): (String, Color, KiaStatusIndicator.Status) = {
+            if door == .frunk {
+                if hasFault {
+                    return ("Fault Detected", KiaDesign.Colors.error, .error("Fault"))
+                } else if isOpen {
+                    return ("Open", KiaDesign.Colors.warning, .warning("Open"))
+                } else {
+                    return ("Closed", KiaDesign.Colors.success, .ready)
+                }
+            } else {
+                if isOpen {
+                    return ("Open", KiaDesign.Colors.warning, .warning("Open"))
+                } else if !isLocked {
+                    return ("Closed & Unlocked", KiaDesign.Colors.error, .warning("Unlocked"))
+                } else {
+                    return ("Closed & Locked", KiaDesign.Colors.success, .ready)
+                }
+            }
+        }()
+        
+        let doorTitle = door == .frunk ? "Frunk" : door.rawValue + " Door"
+        
+        return VStack(spacing: KiaDesign.Spacing.small) {
             HStack {
                 Image(systemName: door.systemIcon)
                     .foregroundStyle(KiaDesign.Colors.primary)
                 
-                Text(door.rawValue + " Door")
+                Text(doorTitle)
                     .font(KiaDesign.Typography.body)
                     .fontWeight(.semibold)
                 
                 Spacer()
                 
-                KiaStatusIndicator(status: .ready)
+                KiaStatusIndicator(status: statusIndicator)
             }
             
             HStack {
@@ -534,18 +618,37 @@ struct VehicleStatusDetailView: View {
                 
                 Spacer()
                 
-                Text("Closed & Locked")
+                Text(statusText)
                     .font(KiaDesign.Typography.caption)
                     .fontWeight(.medium)
-                    .foregroundStyle(KiaDesign.Colors.success)
+                    .foregroundStyle(statusColor)
+            }
+            
+            // Show frunk-specific information
+            if door == .frunk && hasFault {
+                HStack {
+                    Text("Note:")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    
+                    Spacer()
+                    
+                    Text("Service Required")
+                        .font(KiaDesign.Typography.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(KiaDesign.Colors.error)
+                }
             }
         }
     }
     
     private func tireDetailView(for tire: VehicleSilhouetteView.TirePosition) -> some View {
-        VStack(spacing: KiaDesign.Spacing.small) {
+        let pressure = getTirePressure(for: tire)
+        let pressureStatus = getTirePressureStatus(for: tire)
+        
+        return VStack(spacing: KiaDesign.Spacing.small) {
             HStack {
-                Image(systemName: "circle.fill")
+                Image(systemName: tire.systemIcon)
                     .foregroundStyle(KiaDesign.Colors.primary)
                 
                 Text(tire.rawValue + " Tire")
@@ -554,7 +657,7 @@ struct VehicleStatusDetailView: View {
                 
                 Spacer()
                 
-                KiaStatusIndicator(status: .ready)
+                KiaStatusIndicator(status: pressureStatus)
             }
             
             HStack {
@@ -564,7 +667,7 @@ struct VehicleStatusDetailView: View {
                 
                 Spacer()
                 
-                Text("32.0 PSI")
+                Text("\(Int(pressure)) \(getPressureUnit())")
                     .font(KiaDesign.Typography.caption)
                     .fontWeight(.medium)
                     .foregroundStyle(KiaDesign.Colors.success)
@@ -706,6 +809,51 @@ struct VehicleStatusDetailView: View {
             return "Check charging setup"
         }
     }
+    
+    // MARK: - Tire Pressure Helpers
+    
+    private func getTirePressure(for tire: VehicleSilhouetteView.TirePosition) -> Double {
+        let chassis = vehicleStatus.chassis
+        switch tire {
+        case .frontLeft:
+            return Double(chassis.axle.row1.left.tire.pressure)
+        case .frontRight:
+            return Double(chassis.axle.row1.right.tire.pressure)
+        case .rearLeft:
+            return Double(chassis.axle.row2.left.tire.pressure)
+        case .rearRight:
+            return Double(chassis.axle.row2.right.tire.pressure)
+        }
+    }
+    
+    private func getTirePressureStatus(for tire: VehicleSilhouetteView.TirePosition) -> KiaStatusIndicator.Status {
+        let chassis = vehicleStatus.chassis
+        let isLow: Bool
+        
+        switch tire {
+        case .frontLeft:
+            isLow = chassis.axle.row1.left.tire.pressureLow
+        case .frontRight:
+            isLow = chassis.axle.row1.right.tire.pressureLow
+        case .rearLeft:
+            isLow = chassis.axle.row2.left.tire.pressureLow
+        case .rearRight:
+            isLow = chassis.axle.row2.right.tire.pressureLow
+        }
+        
+        return isLow ? .warning("Low") : .normal
+    }
+    
+    private func getPressureUnit() -> String {
+        // Get pressure unit from API (0 = PSI, 1 = kPa, 2 = bar)
+        let unit = vehicleStatus.chassis.axle.tire.pressureUnit
+        switch unit {
+        case 0: return "PSI"
+        case 1: return "kPa"
+        case 2: return "bar"
+        default: return "PSI"
+        }
+    }
 }
 
 // MARK: - Interactive Silhouette Container
@@ -731,6 +879,7 @@ struct InteractiveVehicleSilhouetteView: View {
                     showingDetails = true
                 }
             )
+            .frame(maxWidth: .infinity)
             
             // Details (if selected)
             if showingDetails {
@@ -746,6 +895,7 @@ struct InteractiveVehicleSilhouetteView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity)
         .onTapGesture {
             if showingDetails {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
@@ -762,22 +912,77 @@ struct InteractiveVehicleSilhouetteView: View {
 #Preview("Vehicle Silhouette") {
     ScrollView {
         VStack(spacing: KiaDesign.Spacing.xl) {
-            // Static silhouette
-            Text("Static Silhouette")
+            // Static silhouette - standard scenario
+            Text("Standard Scenario")
                 .font(KiaDesign.Typography.title2)
             
-            // Mock vehicle status for preview
             VehicleSilhouetteView(vehicleStatus: MockVehicleData.standard)
             
             Divider()
             
-            // Interactive silhouette
-            Text("Interactive Silhouette")
+            // Interactive silhouette - charging scenario
+            Text("Charging Scenario")
                 .font(KiaDesign.Typography.title2)
             
             InteractiveVehicleSilhouetteView(vehicleStatus: MockVehicleData.charging)
+            
+            Divider()
+            
+            // Low tire pressure demo
+            Text("Low Tire Pressure Demo")
+                .font(KiaDesign.Typography.title2)
+            
+            InteractiveVehicleSilhouetteView(vehicleStatus: MockVehicleData.lowTirePressure)
         }
         .padding()
     }
     .background(KiaDesign.Colors.background)
+}
+
+// MARK: - VehicleStatus Extensions
+
+extension VehicleStatus {
+    func isDoorOpen(_ door: VehicleSilhouetteView.DoorPosition) -> Bool {
+        let doors = cabin.door
+        switch door {
+        case .frontLeft:
+            return doors.row1.driver.open
+        case .frontRight:
+            return doors.row1.passenger.open
+        case .rearLeft:
+            return doors.row2.left.open
+        case .rearRight:
+            return doors.row2.right.open
+        case .trunk:
+            // Trunk status not currently available in API
+            return false
+        case .frunk:
+            return body.hood.open
+        }
+    }
+    
+    func isDoorLocked(_ door: VehicleSilhouetteView.DoorPosition) -> Bool {
+        let doors = cabin.door
+        switch door {
+        case .frontLeft:
+            return !doors.row1.driver.lock // API uses inverted logic (false = locked)
+        case .frontRight:
+            return !doors.row1.passenger.lock
+        case .rearLeft:
+            return !doors.row2.left.lock
+        case .rearRight:
+            return !doors.row2.right.lock
+        case .trunk:
+            // Trunk lock status not currently available in API
+            return true
+        case .frunk:
+            // Frunk is typically not lockable, consider it "locked" when closed
+            return !body.hood.open
+        }
+    }
+    
+    func hasFrunkFault(_ door: VehicleSilhouetteView.DoorPosition) -> Bool {
+        guard door == .frunk else { return false }
+        return body.hood.frunk.fault
+    }
 }

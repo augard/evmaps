@@ -3,10 +3,10 @@ import SwiftUI
 /// Tesla-style quick action buttons for common vehicle operations
 struct QuickActionsView: View {
     let vehicleStatus: VehicleStatusResponse
-    let onLockAction: () -> Void
-    let onClimateAction: () -> Void
-    let onHornAction: () -> Void
-    let onLocateAction: () -> Void
+    let onLockAction: () async -> Void
+    let onClimateAction: () async -> Void
+    let onHornAction: () async -> Void
+    let onLocateAction: () async -> Void
     
     @State private var isPerformingAction: String? = nil
     
@@ -40,7 +40,9 @@ struct QuickActionsView: View {
                     color: isLocked ? KiaDesign.Colors.success : KiaDesign.Colors.warning,
                     isLoading: isPerformingAction == "lock",
                     action: {
-                        performAction("lock", onLockAction)
+                        Task {
+                            await performAsyncAction("lock", onLockAction)
+                        }
                     }
                 )
                 
@@ -51,7 +53,9 @@ struct QuickActionsView: View {
                     color: isClimateOn ? KiaDesign.Colors.accent : KiaDesign.Colors.textSecondary,
                     isLoading: isPerformingAction == "climate",
                     action: {
-                        performAction("climate", onClimateAction)
+                        Task {
+                            await performAsyncAction("climate", onClimateAction)
+                        }
                     }
                 )
                 
@@ -62,7 +66,9 @@ struct QuickActionsView: View {
                     color: KiaDesign.Colors.primary,
                     isLoading: isPerformingAction == "horn",
                     action: {
-                        performAction("horn", onHornAction)
+                        Task {
+                            await performAsyncAction("horn", onHornAction)
+                        }
                     }
                 )
                 
@@ -73,27 +79,38 @@ struct QuickActionsView: View {
                     color: KiaDesign.Colors.accent,
                     isLoading: isPerformingAction == "locate",
                     action: {
-                        performAction("locate", onLocateAction)
+                        Task {
+                            await performAsyncAction("locate", onLocateAction)
+                        }
                     }
                 )
             }
         }
     }
     
-    private func performAction(_ actionType: String, _ action: @escaping () -> Void) {
+    @MainActor
+    private func performAsyncAction(_ actionType: String, _ action: @escaping () async -> Void) async {
+        // Prevent multiple simultaneous actions
+        guard isPerformingAction == nil else { return }
+        
         isPerformingAction = actionType
         
         // Add haptic feedback
         ActionButton.HapticFeedback.medium.trigger()
         
-        // Simulate network delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            action()
-            isPerformingAction = nil
+        do {
+            // Execute the async action
+            await action()
             
             // Success haptic
             ActionButton.HapticFeedback.success.trigger()
+        } catch {
+            // Error haptic
+            ActionButton.HapticFeedback.error.trigger()
         }
+        
+        // Clear loading state
+        isPerformingAction = nil
     }
 }
 
@@ -196,10 +213,21 @@ extension ActionButton {
 #Preview("Quick Actions - Standard") {
     QuickActionsView(
         vehicleStatus: MockVehicleData.standardResponse,
-        onLockAction: { print("🔒 Lock vehicle") },
-        onClimateAction: { print("❄️ Climate control") },
-        onHornAction: { print("🔊 Horn and lights") },
-        onLocateAction: { print("📍 Locate vehicle") }
+        onLockAction: { 
+            print("🔒 Lock vehicle")
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+        },
+        onClimateAction: { 
+            print("❄️ Climate control")
+        },
+        onHornAction: { 
+            print("🔊 Horn and lights")
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+        },
+        onLocateAction: { 
+            print("📍 Locate vehicle")
+            try? await Task.sleep(nanoseconds: 800_000_000)
+        }
     )
     .padding()
     .background(KiaDesign.Colors.background)
@@ -208,10 +236,21 @@ extension ActionButton {
 #Preview("Quick Actions - Charging") {
     QuickActionsView(
         vehicleStatus: MockVehicleData.chargingResponse,
-        onLockAction: { print("🔒 Lock vehicle") },
-        onClimateAction: { print("❄️ Climate control") },
-        onHornAction: { print("🔊 Horn and lights") },
-        onLocateAction: { print("📍 Locate vehicle") }
+        onLockAction: { 
+            print("🔒 Lock vehicle")
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+        },
+        onClimateAction: { 
+            print("❄️ Climate control")
+        },
+        onHornAction: { 
+            print("🔊 Horn and lights")
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+        },
+        onLocateAction: { 
+            print("📍 Locate vehicle")
+            try? await Task.sleep(nanoseconds: 800_000_000)
+        }
     )
     .padding()
     .background(KiaDesign.Colors.background)
@@ -220,10 +259,21 @@ extension ActionButton {
 #Preview("Quick Actions - Low Battery") {
     QuickActionsView(
         vehicleStatus: MockVehicleData.lowBatteryResponse,
-        onLockAction: { print("🔒 Lock vehicle") },
-        onClimateAction: { print("❄️ Climate control") },
-        onHornAction: { print("🔊 Horn and lights") },
-        onLocateAction: { print("📍 Locate vehicle") }
+        onLockAction: { 
+            print("🔒 Lock vehicle")
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+        },
+        onClimateAction: { 
+            print("❄️ Climate control")
+        },
+        onHornAction: { 
+            print("🔊 Horn and lights")
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+        },
+        onLocateAction: { 
+            print("📍 Locate vehicle")
+            try? await Task.sleep(nanoseconds: 800_000_000)
+        }
     )
     .padding()
     .background(KiaDesign.Colors.background)

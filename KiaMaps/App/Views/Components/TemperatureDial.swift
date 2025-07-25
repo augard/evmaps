@@ -59,7 +59,10 @@ struct TemperatureDial: View {
             
             // Thumb
             thumbView
-                .offset(thumbOffset)
+                .position(
+                    x: size / 2 + thumbOffset.width,
+                    y: size / 2 + thumbOffset.height
+                )
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged(handleDragChanged)
@@ -230,12 +233,13 @@ struct TemperatureDial: View {
     }
     
     private var thumbOffset: CGSize {
-        let radius = (size - thumbSize) / 2
-        let angleInRadians = (dragAngle + startAngle) * .pi / 180
+        let radius = (size - trackWidth) / 2  // Use track width for proper alignment
+        let actualAngle = startAngle + dragAngle  // Add to start angle, not multiply
+        let angleInRadians = actualAngle * .pi / 180
         
         return CGSize(
-            width: Foundation.cos(angleInRadians) * radius,
-            height: Foundation.sin(angleInRadians) * radius
+            width: cos(angleInRadians) * radius,
+            height: sin(angleInRadians) * radius
         )
     }
     
@@ -248,20 +252,39 @@ struct TemperatureDial: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         }
         
+        // Calculate angle from center of dial
         let center = CGPoint(x: size / 2, y: size / 2)
-        let location = CGPoint(
+        let vector = CGPoint(
             x: value.location.x - center.x,
             y: value.location.y - center.y
         )
         
-        let angle = atan2(location.y, location.x) * 180 / .pi
-        let normalizedAngle = ((angle - startAngle + 360).truncatingRemainder(dividingBy: 360))
-        let clampedAngle = max(0, min(totalAngle, normalizedAngle))
+        // Get angle in degrees (0-360)
+        var angle = atan2(vector.y, vector.x) * 180 / .pi
         
-        dragAngle = clampedAngle
+        // Normalize angle to 0-360 range
+        if angle < 0 {
+            angle += 360
+        }
         
-        // Update temperature
-        let newTemperature = range.lowerBound + (clampedAngle / totalAngle) * (range.upperBound - range.lowerBound)
+        // Adjust for start angle and convert to 0-270 range
+        var adjustedAngle = angle - startAngle
+        if adjustedAngle < 0 {
+            adjustedAngle += 360
+        }
+        
+        // Handle wrap-around at the gap (between 270 and 360/0 degrees)
+        if adjustedAngle > totalAngle && adjustedAngle < 360 - (360 - totalAngle) / 2 {
+            adjustedAngle = totalAngle
+        } else if adjustedAngle >= 360 - (360 - totalAngle) / 2 {
+            adjustedAngle = 0
+        }
+        
+        // Clamp to valid range
+        dragAngle = max(0, min(totalAngle, adjustedAngle))
+        
+        // Update temperature smoothly
+        let newTemperature = range.lowerBound + (dragAngle / totalAngle) * (range.upperBound - range.lowerBound)
         let roundedTemperature = round(newTemperature * 2) / 2 // Round to nearest 0.5
         
         if abs(roundedTemperature - temperature) >= 0.5 {

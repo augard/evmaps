@@ -60,7 +60,7 @@ struct MainView: View {
                     login()
                 }
             case .authorized:
-                modernContentView
+                contentView
                     .toolbar(content: {
                         ToolbarItem(id: "profile", placement: .topBarLeading) {
                             Button(action: {
@@ -101,11 +101,10 @@ struct MainView: View {
     // MARK: - Modern Tesla-Inspired Content View
     
     @ViewBuilder
-    var modernContentView: some View {
+    var contentView: some View {
         if let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus {
-            // Swipe Navigation with Multiple Pages
-            SwipeNavigationView(pages: navigationPages) { page, isActive in
-                pageContent(for: page, isActive: isActive, vehicle: selectedVehicle, status: selectedVehicleStatus)
+            OverviewPageView(vehicle: selectedVehicle, status: selectedVehicleStatus, isActive: true) {
+                await refreshData()
             }
         } else {
             // Vehicle Selection (Pre-Authorization)
@@ -114,77 +113,6 @@ struct MainView: View {
             }
         }
     }
-    
-    // MARK: - Navigation Pages Configuration
-    
-    private var navigationPages: [NavigationPage] {
-        [
-            NavigationPage(
-                id: "overview",
-                title: "Overview",
-                icon: "gauge",
-                accessibilityLabel: "Vehicle overview with battery status"
-            ),
-            NavigationPage(
-                id: "climate",
-                title: "Climate",
-                icon: "thermometer",
-                accessibilityLabel: "Climate control settings"
-            ),
-            NavigationPage(
-                id: "map",
-                title: "Map",
-                icon: "map",
-                accessibilityLabel: "Vehicle location and navigation"
-            ),
-            NavigationPage(
-                id: "details",
-                title: "Details",
-                icon: "info.circle",
-                accessibilityLabel: "Vehicle information and settings"
-            )
-        ]
-    }
-    
-    // MARK: - Page Content
-    
-    @ViewBuilder
-    private func pageContent(for page: NavigationPage, isActive: Bool, vehicle: Vehicle, status: VehicleStatusResponse) -> some View {
-        switch page.id {
-        case "overview":
-            OverviewPageView(
-                vehicle: vehicle,
-                status: status,
-                isActive: isActive
-            ) {
-                await refreshData()
-            }
-        case "climate":
-            ClimatePageView(
-                status: status,
-                isActive: isActive
-            )
-        case "map":
-            MapPageView(
-                vehicle: vehicle,
-                status: status,
-                isActive: isActive
-            )
-        case "details":
-            DetailsPageView(
-                vehicle: vehicle,
-                status: status,
-                isActive: isActive,
-                onRefresh: {
-                    await refreshData()
-                },
-                apiConfigurationName: api.configuration.name
-            )
-        default:
-            EmptyView()
-        }
-    }
-    
     
     // MARK: - Vehicle Status Icons (for toolbar)
     
