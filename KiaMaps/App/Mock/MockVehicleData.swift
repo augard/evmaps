@@ -358,7 +358,7 @@ struct MockVehicleData {
                         "VehicleToGrid": {
                             "Mode": 0
                         },
-                        "RealTimePower": \(isCharging ? 11.2 : 0.0)
+                        "RealTimePower": \(getChargingPower(for: scenario, isCharging: isCharging))
                     }
                 },
                 "ChargingInformation": {
@@ -388,7 +388,7 @@ struct MockVehicleData {
                     "SequenceDetails": 0,
                     "SequenceSubcode": 0,
                     "ElectricCurrentLevel": {
-                        "State": \(isCharging ? 2 : 0)
+                        "State": \(getChargingCurrentLevel(for: scenario, isCharging: isCharging))
                     },
                     "Charging": {
                         "RemainTime": \(isCharging ? Double((100 - batteryLevel) * 3) : 0.0),
@@ -592,6 +592,26 @@ struct MockVehicleData {
         case "maintenance": return 48.7
         case "preconditioning": return 67.2
         default: return 52.3
+        }
+    }
+    
+    private static func getChargingPower(for scenario: String, isCharging: Bool) -> Double {
+        if !isCharging { return 0.0 }
+        
+        switch scenario {
+        case "charging": return 11.2  // AC charging
+        case "fast_charging": return 150.0  // DC fast charging
+        default: return 0.0
+        }
+    }
+    
+    private static func getChargingCurrentLevel(for scenario: String, isCharging: Bool) -> Int {
+        if !isCharging { return 0 }
+        
+        switch scenario {
+        case "charging": return 1  // AC charging
+        case "fast_charging": return 2  // DC fast charging
+        default: return 0
         }
     }
     

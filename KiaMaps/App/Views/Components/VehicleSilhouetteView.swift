@@ -676,7 +676,11 @@ struct VehicleStatusDetailView: View {
     }
     
     private func chargingDetailView() -> some View {
-        VStack(spacing: KiaDesign.Spacing.small) {
+        let chargingPower = getChargingPower()
+        let remainingTime = getChargingRemainingTime()
+        let chargingCurrentLevel = getChargingCurrentLevel()
+        
+        return VStack(spacing: KiaDesign.Spacing.small) {
             HStack {
                 Image(systemName: "bolt.fill")
                     .foregroundStyle(KiaDesign.Colors.charging)
@@ -691,6 +695,7 @@ struct VehicleStatusDetailView: View {
             }
             
             VStack(spacing: 4) {
+                // Charging Power
                 HStack {
                     Text("Power:")
                         .font(KiaDesign.Typography.caption)
@@ -698,12 +703,13 @@ struct VehicleStatusDetailView: View {
                     
                     Spacer()
                     
-                    Text("11 kW")
+                    Text(chargingPower)
                         .font(KiaDesign.Typography.caption)
                         .fontWeight(.medium)
                         .foregroundStyle(KiaDesign.Colors.charging)
                 }
                 
+                // Remaining Time
                 HStack {
                     Text("Time Remaining:")
                         .font(KiaDesign.Typography.caption)
@@ -711,10 +717,24 @@ struct VehicleStatusDetailView: View {
                     
                     Spacer()
                     
-                    Text("2h 15m")
+                    Text(remainingTime)
                         .font(KiaDesign.Typography.caption)
                         .fontWeight(.medium)
                         .foregroundStyle(KiaDesign.Colors.textPrimary)
+                }
+                
+                // Charging Level (AC/DC indicator)
+                HStack {
+                    Text("Mode:")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    
+                    Spacer()
+                    
+                    Text(chargingCurrentLevel)
+                        .font(KiaDesign.Typography.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
                 }
             }
         }
@@ -854,6 +874,88 @@ struct VehicleStatusDetailView: View {
         default: return "PSI"
         }
     }
+    
+    // MARK: - Charging Helpers
+    
+    private func getChargingPower() -> String {
+        // Get real-time charging power from API
+        let power = vehicleStatus.green.electric.smartGrid.realTimePower
+        
+        if power > 0 {
+            if power >= 1.0 {
+                return String(format: "%.1f kW", power)
+            } else {
+                return String(format: "%.0f W", power * 1000)
+            }
+        } else {
+            return "Not charging"
+        }
+    }
+    
+    private func getChargingRemainingTime() -> String {
+        // Get remaining charging time from API
+        let remainTime = vehicleStatus.green.chargingInformation.charging.remainTime
+        let unit = vehicleStatus.green.chargingInformation.charging.remainTimeUnit
+        
+        if remainTime > 0 {
+            let hours = Int(remainTime / 60)
+            let minutes = Int(remainTime.truncatingRemainder(dividingBy: 60))
+            
+            switch unit {
+            case .minute:
+                if hours > 0 {
+                    return "\(hours)h \(minutes)m"
+                } else {
+                    return "\(minutes)m"
+                }
+            case .hour:
+                // Time is already in hours
+                let totalHours = Int(remainTime)
+                let remainingMinutes = Int((remainTime - Double(totalHours)) * 60)
+                if totalHours > 0 {
+                    return "\(totalHours)h \(remainingMinutes)m"
+                } else {
+                    return "\(remainingMinutes)m"
+                }
+            case .second:
+                // Convert seconds to hours and minutes
+                let totalMinutes = Int(remainTime / 60)
+                let hours = totalMinutes / 60
+                let minutes = totalMinutes % 60
+                if hours > 0 {
+                    return "\(hours)h \(minutes)m"
+                } else {
+                    return "\(minutes)m"
+                }
+            case .microseconds:
+                // Convert microseconds to minutes (very unlikely for charging times)
+                let totalMinutes = Int(remainTime / 60_000_000)
+                if totalMinutes > 0 {
+                    return "\(totalMinutes)m"
+                } else {
+                    return "< 1m"
+                }
+            }
+        } else {
+            return "Complete"
+        }
+    }
+    
+    private func getChargingCurrentLevel() -> String {
+        // Get charging current level from API (AC/DC indicator)
+        let currentLevel = vehicleStatus.green.chargingInformation.electricCurrentLevel.state
+        
+        switch currentLevel {
+        case 0:
+            return "Not connected"
+        case 1:
+            return "AC Charging"
+        case 2:
+            return "DC Fast Charging"
+        default:
+            return "Unknown"
+        }
+    }
 }
 
 // MARK: - Interactive Silhouette Container
@@ -921,10 +1023,18 @@ struct InteractiveVehicleSilhouetteView: View {
             Divider()
             
             // Interactive silhouette - charging scenario
-            Text("Charging Scenario")
+            Text("Charging Scenario (AC)")
                 .font(KiaDesign.Typography.title2)
             
             InteractiveVehicleSilhouetteView(vehicleStatus: MockVehicleData.charging)
+            
+            Divider()
+            
+            // Fast charging scenario
+            Text("Fast Charging Scenario (DC)")
+                .font(KiaDesign.Typography.title2)
+            
+            InteractiveVehicleSilhouetteView(vehicleStatus: MockVehicleData.fastCharging)
             
             Divider()
             
