@@ -291,14 +291,16 @@ struct TemperatureDial: View {
 
 /// Complete climate control interface with temperature dial and additional controls
 struct ClimateControlView: View {
+    let vehicleStatus: VehicleStatus?
+    let unit: TemperatureUnit
+    
     @State private var targetTemperature: Double = 22
     @State private var isClimateOn: Bool = false
     @State private var fanSpeed: Double = 3
     @State private var isAutoMode: Bool = true
     
-    let unit: TemperatureUnit
-    
-    init(unit: TemperatureUnit = .celsius) {
+    init(vehicleStatus: VehicleStatus? = nil, unit: TemperatureUnit = .celsius) {
+        self.vehicleStatus = vehicleStatus
         self.unit = unit
     }
     
@@ -395,6 +397,49 @@ struct ClimateControlView: View {
             }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: isClimateOn)
+        .onAppear {
+            initializeFromVehicleStatus()
+        }
+    }
+    
+    // MARK: - Private Methods
+    
+    private func initializeFromVehicleStatus() {
+        guard let vehicleStatus = vehicleStatus else { return }
+        
+        let hvac = vehicleStatus.cabin.hvac
+        
+        // Set fan speed from API
+        let apiFanSpeed = hvac.row1.driver.blower.speedLevel
+        fanSpeed = Double(apiFanSpeed)
+        
+        // Determine if climate is on based on fan speed
+        isClimateOn = apiFanSpeed > 0
+        
+        // Extract temperature from API
+        let tempValue = hvac.row1.driver.temperature.value
+        let tempUnit = hvac.row1.driver.temperature.unit
+        
+        // Convert hex temperature to Double if needed
+        if let intValue = Int(tempValue, radix: 16) {
+            let celsiusTemp = Double(intValue) / 2.0 // Assuming hex represents half degrees
+            if tempUnit == .celsius {
+                targetTemperature = celsiusTemp
+            } else {
+                // Convert Fahrenheit to Celsius for internal storage
+                targetTemperature = (celsiusTemp - 32) * 5/9
+            }
+        } else if let directValue = Double(tempValue) {
+            // If not hex, try direct conversion
+            if tempUnit == .celsius {
+                targetTemperature = directValue
+            } else {
+                targetTemperature = (directValue - 32) * 5/9
+            }
+        }
+        
+        // Since we don't have autoMode in API, assume manual when system is on
+        isAutoMode = false
     }
 }
 
