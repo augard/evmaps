@@ -14,6 +14,7 @@ struct VehicleSilhouetteView: View {
     let onDoorTap: ((DoorPosition) -> Void)?
     let onTireTap: ((TirePosition) -> Void)?
     let onChargingPortTap: (() -> Void)?
+    let onVehicleTap: (() -> Void)?
     
     @State private var selectedElement: InteractiveElement?
     @State private var pulsingElements: Set<InteractiveElement> = []
@@ -92,12 +93,14 @@ struct VehicleSilhouetteView: View {
         vehicleStatus: VehicleStatus,
         onDoorTap: ((DoorPosition) -> Void)? = nil,
         onTireTap: ((TirePosition) -> Void)? = nil,
-        onChargingPortTap: (() -> Void)? = nil
+        onChargingPortTap: (() -> Void)? = nil,
+        onVehicleTap: (() -> Void)? = nil
     ) {
         self.vehicleStatus = vehicleStatus
         self.onDoorTap = onDoorTap
         self.onTireTap = onTireTap
         self.onChargingPortTap = onChargingPortTap
+        self.onVehicleTap = onVehicleTap
     }
     
     var body: some View {
@@ -164,6 +167,13 @@ struct VehicleSilhouetteView: View {
                 .fill(vehicleBodyColor.opacity(0.8))
                 .frame(width: 40, height: 70)
                 .offset(x: 75, y: 0)
+        }
+        .onTapGesture {
+            selectedElement = .vehicle
+            onVehicleTap?()
+            
+            // Haptic feedback
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
         }
     }
     
@@ -1028,6 +1038,19 @@ struct InteractiveVehicleSilhouetteView: View {
                         } else {
                             // Show charging details
                             selectedElement = .chargingPort
+                            showingDetails = true
+                        }
+                    }
+                },
+                onVehicleTap: {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        if selectedElement == .vehicle && showingDetails {
+                            // Toggle off if tapping the vehicle again
+                            showingDetails = false
+                            selectedElement = nil
+                        } else {
+                            // Show vehicle overview
+                            selectedElement = .vehicle
                             showingDetails = true
                         }
                     }
