@@ -13,6 +13,7 @@ struct VehicleSilhouetteView: View {
     let vehicleStatus: VehicleStatus
     let onDoorTap: ((DoorPosition) -> Void)?
     let onTireTap: ((TirePosition) -> Void)?
+    let onChargingPortTap: (() -> Void)?
     
     @State private var selectedElement: InteractiveElement?
     @State private var pulsingElements: Set<InteractiveElement> = []
@@ -90,11 +91,13 @@ struct VehicleSilhouetteView: View {
     init(
         vehicleStatus: VehicleStatus,
         onDoorTap: ((DoorPosition) -> Void)? = nil,
-        onTireTap: ((TirePosition) -> Void)? = nil
+        onTireTap: ((TirePosition) -> Void)? = nil,
+        onChargingPortTap: (() -> Void)? = nil
     ) {
         self.vehicleStatus = vehicleStatus
         self.onDoorTap = onDoorTap
         self.onTireTap = onTireTap
+        self.onChargingPortTap = onChargingPortTap
     }
     
     var body: some View {
@@ -299,11 +302,30 @@ struct VehicleSilhouetteView: View {
                         .foregroundStyle(.white)
                 )
         }
+        .offset(x: -60, y: 10) // Left side of vehicle
         .scaleEffect((pulsingElements as Set<InteractiveElement>).contains(.chargingPort) ? 1.4 : 1.0)
         .animation(
             .easeInOut(duration: 1.0).repeatForever(autoreverses: true),
             value: (pulsingElements as Set<InteractiveElement>).contains(.chargingPort)
         )
+        .onTapGesture {
+            selectedElement = .chargingPort
+            onChargingPortTap?()
+            
+            // Haptic feedback
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            
+            // Pulse animation
+            withAnimation(.default) {
+                pulsingElements.insert(.chargingPort)
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation(.default) {
+                    _ = pulsingElements.remove(.chargingPort)
+                }
+            }
+        }
     }
     
     // MARK: - Warning Indicators
@@ -978,6 +1000,10 @@ struct InteractiveVehicleSilhouetteView: View {
                 },
                 onTireTap: { tire in
                     selectedElement = .tire(tire)
+                    showingDetails = true
+                },
+                onChargingPortTap: {
+                    selectedElement = .chargingPort
                     showingDetails = true
                 }
             )
