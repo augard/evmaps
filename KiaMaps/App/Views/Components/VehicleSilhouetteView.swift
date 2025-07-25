@@ -302,7 +302,6 @@ struct VehicleSilhouetteView: View {
                         .foregroundStyle(.white)
                 )
         }
-        .offset(x: -60, y: 10) // Left side of vehicle
         .scaleEffect((pulsingElements as Set<InteractiveElement>).contains(.chargingPort) ? 1.4 : 1.0)
         .animation(
             .easeInOut(duration: 1.0).repeatForever(autoreverses: true),
@@ -995,16 +994,43 @@ struct InteractiveVehicleSilhouetteView: View {
             VehicleSilhouetteView(
                 vehicleStatus: vehicleStatus,
                 onDoorTap: { door in
-                    selectedElement = .door(door)
-                    showingDetails = true
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        if selectedElement == .door(door) && showingDetails {
+                            // Toggle off if tapping the same door
+                            showingDetails = false
+                            selectedElement = nil
+                        } else {
+                            // Show details for this door
+                            selectedElement = .door(door)
+                            showingDetails = true
+                        }
+                    }
                 },
                 onTireTap: { tire in
-                    selectedElement = .tire(tire)
-                    showingDetails = true
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        if selectedElement == .tire(tire) && showingDetails {
+                            // Toggle off if tapping the same tire
+                            showingDetails = false
+                            selectedElement = nil
+                        } else {
+                            // Show details for this tire
+                            selectedElement = .tire(tire)
+                            showingDetails = true
+                        }
+                    }
                 },
                 onChargingPortTap: {
-                    selectedElement = .chargingPort
-                    showingDetails = true
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        if selectedElement == .chargingPort && showingDetails {
+                            // Toggle off if tapping the charging port again
+                            showingDetails = false
+                            selectedElement = nil
+                        } else {
+                            // Show charging details
+                            selectedElement = .chargingPort
+                            showingDetails = true
+                        }
+                    }
                 }
             )
             .frame(maxWidth: .infinity)
