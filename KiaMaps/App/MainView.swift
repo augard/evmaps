@@ -11,10 +11,11 @@ import SwiftUI
 struct MainView: View {
     let configuration: AppConfiguration.Type
     var api: Api
+    
+    @Environment(\.dismiss) private var dismiss
 
     enum ViewState {
         case loading
-        case unauthorized
         case authorized
         case error(Error)
     }
@@ -44,7 +45,7 @@ struct MainView: View {
     init(configuration: AppConfiguration.Type) {
         self.configuration = configuration
         api = Api(configuration: configuration.apiConfiguration)
-        state = Authorization.isAuthorized ? .loading : .unauthorized
+        state = .loading
     }
 
     var body: some View {
@@ -55,10 +56,6 @@ struct MainView: View {
                     .task {
                         await loadData()
                     }
-            case .unauthorized:
-                MainLoginView {
-                    login()
-                }
             case .authorized:
                 contentView
                     .toolbar(content: {
@@ -205,8 +202,15 @@ struct MainView: View {
             if let authorization = Authorization.authorization {
                 api.authorization = authorization
             } else {
-                let authorization = try await api.login(username: configuration.username, password: configuration.password)
-                Authorization.store(data: authorization)
+                // Try to restore login with stored credentials first
+                if let storedCredentials = LoginCredentialManager.retrieveCredentials() {
+                    let authorization = try await api.login(username: storedCredentials.username, password: storedCredentials.password)
+                    Authorization.store(data: authorization)
+                } else {
+                    // Fallback to configuration credentials (for development/testing)
+                    let authorization = try await api.login(username: configuration.username, password: configuration.password)
+                    Authorization.store(data: authorization)
+                }
             }
 
             // let profile = try await api.profile()
@@ -235,11 +239,7 @@ struct MainView: View {
 
             state = .authorized
         } catch {
-            if let error = error as? ApiError, case .unauthorized = error {
-                await logout()
-            } else {
-                state = .error(error)
-            }
+            state = .error(error)
         }
     }
 
@@ -260,21 +260,18 @@ struct MainView: View {
             let manager = VehicleManager(id: selectedVehicle.vehicleId)
             manager.deleteStatus()
         } catch {
-            if let error = error as? ApiError, case .unauthorized = error {
-                await logout()
-            } else {
-                state = .error(error)
-            }
+            state = .error(error)
         }
-    }
-
-    private func login() {
-        state = .loading
     }
 
     private func logout() async {
         try? await api.logout()
         Authorization.remove()
-        state = .unauthorized
+        
+        // Clear stored login credentials
+        LoginCredentialManager.clearCredentials()
+        
+        // Dismiss to return to root (login screen)
+        dismiss()
     }
 }

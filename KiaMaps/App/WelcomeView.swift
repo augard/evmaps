@@ -1,5 +1,5 @@
 //
-//  MainLoginView.swift
+//  WelcomeView.swift
 //  KiaMaps
 //
 //  Created by Claude Code on 23.07.2025.
@@ -9,13 +9,13 @@
 import SwiftUI
 
 /// Login view displayed when user is not authenticated
-struct MainLoginView: View {
+struct WelcomeView: View {
     let onLogin: () -> Void
     
     var body: some View {
         VStack(spacing: KiaDesign.Spacing.xl) {
             // Brand icon/logo area
-            Image(systemName: "car.circle.fill")
+            Image(systemName: "bolt.car")
                 .font(.system(size: 80, weight: .thin))
                 .foregroundStyle(KiaDesign.Colors.primary)
             
@@ -45,13 +45,14 @@ struct MainLoginView: View {
         .padding(KiaDesign.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(KiaDesign.Colors.background)
+        .navigationTitle("Kia")
     }
 }
 
 // MARK: - Preview
 
 #Preview("Main Login View") {
-    MainLoginView(onLogin: {
+    WelcomeView(onLogin: {
         print("Login tapped")
     })
 }

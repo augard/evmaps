@@ -16,6 +16,7 @@ struct KiaButton: View {
     let size: Size
     let isEnabled: Bool
     let isLoading: Bool
+    let isFullWidth: Bool
     let hapticFeedback: HapticFeedback
     let action: () -> Void
     
@@ -43,6 +44,23 @@ struct KiaButton: View {
                 return (KiaDesign.Colors.success, .white, nil)
             case .custom(let bg, let fg, let border):
                 return (bg, fg, border)
+            }
+        }
+        
+        var disabledColors: (background: Color, foreground: Color, border: Color?) {
+            switch self {
+            case .primary:
+                return (KiaDesign.Colors.textTertiary, KiaDesign.Colors.textSecondary, nil)
+            case .secondary:
+                return (KiaDesign.Colors.cardBackground.opacity(0.5), KiaDesign.Colors.textTertiary, KiaDesign.Colors.textTertiary.opacity(0.3))
+            case .tertiary:
+                return (.clear, KiaDesign.Colors.textTertiary, nil)
+            case .destructive:
+                return (KiaDesign.Colors.error.opacity(0.3), KiaDesign.Colors.textTertiary, nil)
+            case .success:
+                return (KiaDesign.Colors.success.opacity(0.3), KiaDesign.Colors.textTertiary, nil)
+            case .custom(let bg, _, let border):
+                return (bg.opacity(0.3), KiaDesign.Colors.textTertiary, border?.opacity(0.3))
             }
         }
         
@@ -118,6 +136,7 @@ struct KiaButton: View {
         size: Size = .medium,
         isEnabled: Bool = true,
         isLoading: Bool = false,
+        isFullWidth: Bool = false,
         hapticFeedback: HapticFeedback = .light,
         action: @escaping () -> Void
     ) {
@@ -127,6 +146,7 @@ struct KiaButton: View {
         self.size = size
         self.isEnabled = isEnabled
         self.isLoading = isLoading
+        self.isFullWidth = isFullWidth
         self.hapticFeedback = hapticFeedback
         self.action = action
     }
@@ -153,11 +173,11 @@ struct KiaButton: View {
             .foregroundStyle(currentColors.foreground)
             .padding(size.dimensions.padding)
             .frame(minHeight: size.dimensions.height)
+            .frame(maxWidth: isFullWidth ? .infinity : nil)
             .background(currentColors.background)
             .clipShape(RoundedRectangle(cornerRadius: KiaDesign.CornerRadius.medium))
             .overlay(borderOverlay)
             .scaleEffect(isPressed && isEnabled ? 0.96 : 1.0)
-            .opacity(isEnabled ? 1.0 : 0.6)
             .animation(KiaDesign.Animation.quick, value: isPressed)
         }
         .buttonStyle(PlainButtonStyle()) // Remove default button styling
@@ -173,17 +193,20 @@ struct KiaButton: View {
     
     // MARK: - Private Properties
     
-    private var currentColors: (background: Color, foreground: Color) {
-        if isPressed && isEnabled && !isLoading {
-            return style.pressedColors
+    private var currentColors: (background: Color, foreground: Color, border: Color?) {
+        if !isEnabled || isLoading {
+            return style.disabledColors
+        } else if isPressed && isEnabled && !isLoading {
+            let pressed = style.pressedColors
+            return (pressed.background, pressed.foreground, style.colors.border)
         } else {
-            return (style.colors.background, style.colors.foreground)
+            return style.colors
         }
     }
     
     private var borderOverlay: some View {
         Group {
-            if let borderColor = style.colors.border {
+            if let borderColor = currentColors.border {
                 RoundedRectangle(cornerRadius: KiaDesign.CornerRadius.medium)
                     .stroke(borderColor, lineWidth: 1)
             } else {
@@ -435,7 +458,30 @@ struct KiaFloatingActionButton: View {
                     .font(KiaDesign.Typography.title2)
                 
                 KiaButton("Loading", isLoading: true) { }
-                KiaButton("Disabled", isEnabled: false) { }
+                
+                // Disabled states for all styles
+                VStack(spacing: KiaDesign.Spacing.small) {
+                    Text("Disabled States")
+                        .font(KiaDesign.Typography.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
+                    
+                    KiaButton("Disabled Primary", style: .primary, isEnabled: false) { }
+                    KiaButton("Disabled Secondary", style: .secondary, isEnabled: false) { }
+                    KiaButton("Disabled Tertiary", style: .tertiary, isEnabled: false) { }
+                    KiaButton("Disabled Destructive", style: .destructive, isEnabled: false) { }
+                }
+            }
+            
+            Divider()
+            
+            // Full width buttons
+            VStack(spacing: KiaDesign.Spacing.medium) {
+                Text("Full Width Buttons")
+                    .font(KiaDesign.Typography.title2)
+                
+                KiaButton("Full Width Primary", style: .primary, isFullWidth: true) { }
+                KiaButton("Full Width Secondary", style: .secondary, isFullWidth: true) { }
+                KiaButton("Sign In", icon: "arrow.right", style: .primary, size: .large, isFullWidth: true) { }
             }
         }
         .padding()

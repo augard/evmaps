@@ -353,7 +353,13 @@ struct UserProfileView: View {
         do {
             try await api.logout()
             Authorization.remove()
+            LoginCredentialManager.clearCredentials()
+            
+            // Dismiss the profile view
             dismiss()
+            
+            // The app will automatically return to login screen
+            // since Authorization.isAuthorized is now false
         } catch {
             // Handle error - for now just dismiss
             dismiss()

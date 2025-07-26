@@ -302,15 +302,22 @@ The plan leverages your existing strong foundation (comprehensive API integratio
 - [x] **MUST BUILD** after each enhancement
 
 ### Phase 5: Real API integration
+- [x] Add new separate login screen, that will have username and password field, can be autofilled from saved credentials in iOS
+- [x] After credentials are filled we will try login user on login screen, if are bad we will show error message under user credentials
+- [x] After login is successfull we will push MainView
+- [x] Credentials are stored to keychain
+- [x] After each app launch we will check if we have stored credentials or seesion and try restore state
+- [x] If we login sucessfully after restore, go directly to MainView
+- [x] After logout we will go always back to login screen and delete credentials from keychain
 - [x] Integrate UI with KIA api vehicle model
 - [x] Navigation title should change after login to car nick name
 - [x] Add simple user profile screen
 - [x] Restore previous UI as debug screen linked
 
 ### Final Testing & Polish
-- [x] Performance testing (60fps target)
-- [x] Accessibility audit
-- [x] User testing sessions  
-- [x] Code review and refactoring
-- [x] Documentation updates
-- [x] **FINAL BUILD** verification
+- [ ] Performance testing (60fps target)
+- [ ] Accessibility audit
+- [ ] User testing sessions  
+- [ ] Code review and refactoring
+- [ ] Documentation updates
+- [ ] **FINAL BUILD** verification
