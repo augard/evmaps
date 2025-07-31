@@ -24,6 +24,11 @@ final class LocalCredentialServer {
         return listener?.state == .ready
     }
     
+    /// Current server state
+    var serverState: NWListener.State? {
+        return listener?.state
+    }
+    
     /// Server configuration
     private struct Configuration {
         static let defaultPort: UInt16 = 8765
@@ -51,9 +56,10 @@ final class LocalCredentialServer {
     }
     
     /// Starts the local server
-    func start() {
+    func start(completion: ((Bool) -> Void)? = nil) {
         guard listener == nil else {
             print("LocalCredentialServer: Server already running")
+            completion?(true)
             return
         }
         
@@ -67,6 +73,7 @@ final class LocalCredentialServer {
             listener = try NWListener(using: parameters, on: NWEndpoint.Port(integerLiteral: port))
         } catch {
             print("LocalCredentialServer: Failed to create listener: \(error)")
+            completion?(false)
             return
         }
         
@@ -74,11 +81,14 @@ final class LocalCredentialServer {
             switch state {
             case .ready:
                 print("LocalCredentialServer: Server is ready on port \(self?.port ?? 0)")
+                completion?(true)
             case .failed(let error):
                 print("LocalCredentialServer: Server failed with error: \(error)")
                 self?.handleServerFailure(error: error)
+                completion?(false)
             case .cancelled:
                 print("LocalCredentialServer: Server cancelled")
+                completion?(false)
             case .waiting(let error):
                 print("LocalCredentialServer: Server waiting: \(error)")
             default:

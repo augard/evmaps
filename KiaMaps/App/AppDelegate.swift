@@ -10,23 +10,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         BackgroundTaskManager.shared.registerBackgroundTasks()
         
         // Start the local credential server
-        LocalCredentialServer.shared.start()
-        print("AppDelegate: Started local credential server")
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            self.localClient = LocalCredentialClient(extensionIdentifier: "KiaExtension")
-            Task {
-                self.localClient.fetchCredentials() { result in
-                    switch result {
-                    case .success(let credentials):
-                        print("credentials success: \(String(describing: credentials))")
-                    case .failure(let error):
-                        print("credentials failed: \(String(describing: error))")
-                    }
-                }
-            }
+        LocalCredentialServer.shared.start { success in
+            print("AppDelegate: Server start success: \(success)")
         }
-
         return true
     }
     
@@ -106,7 +92,7 @@ class BackgroundTaskManager: ObservableObject {
         }
         
         // Check and restart server if needed
-        DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .default).async {
             if !LocalCredentialServer.shared.isRunning {
                 print("BackgroundTaskManager: Restarting server during background refresh")
                 LocalCredentialServer.shared.start()
@@ -129,7 +115,7 @@ class BackgroundTaskManager: ObservableObject {
         }
         
         // Keep server running in background
-        DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .default).async {
             [weak self] in
             self?.maintainServerInBackground()
         }

@@ -9,22 +9,18 @@
 import Intents
 
 class IntentHandler: INExtension {
-    private let api: Api
-    private let credentialsHandler: CredentialsHandler
-
-    private lazy var intentHandlers: [Handler] = [
-        CarListHandler(api: api, credentialsHandler: credentialsHandler),
-        GetCarPowerLevelStatusHandler(api: api, credentialsHandler: credentialsHandler),
-    ]
-
-    override init() {
-        api = Api(configuration: AppConfiguration.apiConfiguration)
-        credentialsHandler = CredentialsHandler(
+    static let api: Api = Api(configuration: AppConfiguration.apiConfiguration)
+    static let credentialsHandler: CredentialsHandler = {
+        CredentialsHandler(
             api: api,
             credentialClient: LocalCredentialClient(extensionIdentifier: "KiaExtension")
         )
-        super.init()
-    }
+    }()
+
+    private lazy var intentHandlers: [Handler] = [
+        CarListHandler(api: Self.api, credentialsHandler: Self.credentialsHandler),
+        GetCarPowerLevelStatusHandler(api: Self.api, credentialsHandler: Self.credentialsHandler),
+    ]
 
     override func handler(for intent: INIntent) -> Any? {
         intentHandlers.first { $0.canHandle(intent) }

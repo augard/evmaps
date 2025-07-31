@@ -10,55 +10,6 @@ import Foundation
 import Intents
 import UIKit
 
-class BatteryChargeBox {
-    var value: Float?
-    init(_ value: Float? = nil) { self.value = value }
-}
-
-extension VehicleStatusResponse.State {
-    func toIntentResponse(carId: UUID, vehicleParameters: VehicleParameters) -> INGetCarPowerLevelStatusIntentResponse {
-        let result: INGetCarPowerLevelStatusIntentResponse
-
-        let dateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: .now)
-        let chargingInformation = vehicle.green.chargingInformation
-        let batteryManagement = vehicle.green.batteryManagement
-        let drivetrain = vehicle.drivetrain
-        let batteryCapacity = Double(batteryManagement.batteryCapacity.value)
-        let batteryRemain = Float(batteryManagement.batteryRemain.ratio)
-
-        result = .init(code: .success, userActivity: nil)
-        result.carIdentifier = carId.uuidString
-        result.dateOfLastStateUpdate = dateComponents
-        result.consumptionFormulaArguments = vehicleParameters.consumptionFormulaArguments()
-        result.chargingFormulaArguments = vehicleParameters.chargingFormulaArguments(maximumBatteryCapacity: batteryCapacity, unit: .kilojoules)
-
-        result.maximumDistance = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
-        result.distanceRemaining = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.measuremntUnit)
-
-        result.maximumDistanceElectric = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
-        result.distanceRemainingElectric = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.measuremntUnit)
-
-        result.minimumBatteryCapacity = .init(value: 0, unit: .kilowattHours)
-        result.currentBatteryCapacity = .init(value: batteryCapacity * 0.01 * Double(batteryRemain), unit: .kilojoules)
-        result.maximumBatteryCapacity = .init(value: batteryCapacity, unit: .kilojoules)
-
-        result.charging = chargingInformation.electricCurrentLevel.state == 1
-        if result.charging == true {
-            let charging = chargingInformation.charging
-            let measurement = Measurement<UnitDuration>(value: charging.remainTime, unit: charging.remainTimeUnit.unitDuration)
-            result.minutesToFull = Int(measurement.converted(to: .minutes).value)
-            result.activeConnector = .ccs2
-        } else {
-            result.minutesToFull = chargingInformation.estimatedTime.quick
-            result.activeConnector = nil
-        }
-
-        result.chargePercentRemaining = batteryRemain / 100
-
-        return result
-    }
-}
-
 class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHandling, Handler {
     private let api: Api
     private let credentialsHandler: CredentialsHandler
@@ -187,3 +138,51 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
     }
 }
 
+class BatteryChargeBox {
+    var value: Float?
+    init(_ value: Float? = nil) { self.value = value }
+}
+
+extension VehicleStatusResponse.State {
+    func toIntentResponse(carId: UUID, vehicleParameters: VehicleParameters) -> INGetCarPowerLevelStatusIntentResponse {
+        let result: INGetCarPowerLevelStatusIntentResponse
+
+        let dateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: .now)
+        let chargingInformation = vehicle.green.chargingInformation
+        let batteryManagement = vehicle.green.batteryManagement
+        let drivetrain = vehicle.drivetrain
+        let batteryCapacity = Double(batteryManagement.batteryCapacity.value)
+        let batteryRemain = Float(batteryManagement.batteryRemain.ratio)
+
+        result = .init(code: .success, userActivity: nil)
+        result.carIdentifier = carId.uuidString
+        result.dateOfLastStateUpdate = dateComponents
+        result.consumptionFormulaArguments = vehicleParameters.consumptionFormulaArguments()
+        result.chargingFormulaArguments = vehicleParameters.chargingFormulaArguments(maximumBatteryCapacity: batteryCapacity, unit: .kilojoules)
+
+        result.maximumDistance = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
+        result.distanceRemaining = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.measuremntUnit)
+
+        result.maximumDistanceElectric = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
+        result.distanceRemainingElectric = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.measuremntUnit)
+
+        result.minimumBatteryCapacity = .init(value: 0, unit: .kilowattHours)
+        result.currentBatteryCapacity = .init(value: batteryCapacity * 0.01 * Double(batteryRemain), unit: .kilojoules)
+        result.maximumBatteryCapacity = .init(value: batteryCapacity, unit: .kilojoules)
+
+        result.charging = chargingInformation.electricCurrentLevel.state == 1
+        if result.charging == true {
+            let charging = chargingInformation.charging
+            let measurement = Measurement<UnitDuration>(value: charging.remainTime, unit: charging.remainTimeUnit.unitDuration)
+            result.minutesToFull = Int(measurement.converted(to: .minutes).value)
+            result.activeConnector = .ccs2
+        } else {
+            result.minutesToFull = chargingInformation.estimatedTime.quick
+            result.activeConnector = nil
+        }
+
+        result.chargePercentRemaining = batteryRemain / 100
+
+        return result
+    }
+}

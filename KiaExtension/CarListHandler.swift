@@ -71,11 +71,11 @@ extension Vehicle {
         )
 
         for connector in supportedChargingConnectors {
-            if let power = manager.vehicleParamter.maximumPower(for: connector) {
-                car.setMaximumPower(.init(value: power, unit: .kilowatts), for: connector)
+            guard let power = manager.vehicleParamter.maximumPower(for: connector) else {
+                continue
             }
+            car.setMaximumPower(.init(value: power, unit: .kilowatts), for: connector)
         }
-
         return car
     }
 }

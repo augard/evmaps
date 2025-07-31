@@ -17,11 +17,12 @@ class CredentialsHandler {
         self.api = api
         self.credentialClient = credentialClient
 
-        DarwinNotificationHelper.observe(name: DarwinNotificationHelper.NotificationName.credentialsUpdated) { [weak self] in
-            Task {
+        // Not working correctly, it's looping in code
+        /*DarwinNotificationHelper.observe(name: DarwinNotificationHelper.NotificationName.credentialsUpdated) { [weak self] in
+            self?.task = Task {
                 await self?.updateCredentials()
             }
-        }
+        }*/
 
         task = Task { [weak self] in
             await self?.updateCredentials()

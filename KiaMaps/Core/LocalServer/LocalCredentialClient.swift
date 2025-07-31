@@ -68,7 +68,7 @@ final class LocalCredentialClient {
         }
         
         connection.start(queue: queue)
-        
+
         // Send request
         let request = CredentialRequest(password: serverPassword, extensionIdentifier: extensionIdentifier)
         
@@ -90,11 +90,13 @@ final class LocalCredentialClient {
                     if let error = error {
                         print("LocalCredentialClient: Receive error: \(error)")
                         completion(.failure(error))
+                        connection.cancel()
                         return
                     }
                     
                     guard let data = data, !data.isEmpty else {
                         completion(.failure(NSError(domain: "LocalCredentialClient", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                        connection.cancel()
                         return
                     }
                     
@@ -102,6 +104,7 @@ final class LocalCredentialClient {
                     if let errorDict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: String],
                        let errorMessage = errorDict["error"] {
                         completion(.failure(NSError(domain: "LocalCredentialClient", code: -2, userInfo: [NSLocalizedDescriptionKey: errorMessage])))
+                        connection.cancel()
                         return
                     }
                     
@@ -109,9 +112,11 @@ final class LocalCredentialClient {
                     do {
                         let response = try JSONDecoder().decode(CredentialResponse.self, from: data)
                         completion(.success(response))
+                        connection.cancel()
                     } catch {
                         print("LocalCredentialClient: Decode error: \(error)")
                         completion(.failure(error))
+                        connection.cancel()
                     }
                 }
             })
