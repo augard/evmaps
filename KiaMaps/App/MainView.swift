@@ -216,9 +216,11 @@ struct MainView: View {
                     let authorization = try await api.login(username: storedCredentials.username, password: storedCredentials.password)
                     Authorization.store(data: authorization)
                 } else {
-                    // Fallback to configuration credentials (for development/testing)
-                    let authorization = try await api.login(username: configuration.username, password: configuration.password)
-                    Authorization.store(data: authorization)
+                    Authorization.remove()
+
+                    // Dismiss to return to root (login screen)
+                    dismiss()
+                    return
                 }
             }
 

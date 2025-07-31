@@ -110,7 +110,7 @@ struct UserProfileView: View {
                     
                     accountInfoRow(
                         title: "Username",
-                        value: AppConfiguration.username.isEmpty ? "Not configured" : AppConfiguration.username,
+                        value: LoginCredentialManager.retrieveCredentials()?.username ?? "Not Set",
                         icon: "person"
                     )
                     

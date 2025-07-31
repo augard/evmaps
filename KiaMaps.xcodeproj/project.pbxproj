@@ -72,6 +72,20 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		80CCB6782E3B9FA5002D8DA6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				LocalServer/LocalCredentialServer.swift,
+			);
+			target = CDA8AD9922E8CF8700B1EAF8 /* KiaExtension */;
+		};
+		80CCB6792E3B9FA5002D8DA6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				LocalServer/LocalCredentialServer.swift,
+			);
+			target = CDA8ADA222E8CF8700B1EAF8 /* KiaExtensionUI */;
+		};
 		80D82EAB2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -106,7 +120,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		803D467E2E2E7413003EFC10 /* KiaTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = KiaTests; sourceTree = "<group>"; };
 		80D82E3A2E2EB44C008CE0E7 /* App */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (80D82EAB2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 80D82EAC2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = App; sourceTree = "<group>"; };
-		80D82E6C2E2EB457008CE0E7 /* Core */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Core; sourceTree = "<group>"; };
+		80D82E6C2E2EB457008CE0E7 /* Core */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (80CCB6782E3B9FA5002D8DA6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 80CCB6792E3B9FA5002D8DA6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Core; sourceTree = "<group>"; };
 		80FC55BF2E34C3E300DA8884 /* KiaExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (80FC55C52E34C3F300DA8884 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = KiaExtension; sourceTree = "<group>"; };
 		80FC55CB2E34C40000DA8884 /* KiaExtensionUI */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (80FC55CF2E34C41100DA8884 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = KiaExtensionUI; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */

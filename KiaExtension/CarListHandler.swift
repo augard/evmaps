@@ -45,6 +45,8 @@ class CarListHandler: NSObject, INListCarsIntentHandling, Handler {
                         } catch {
                             result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
                         }
+                    case .unexpectedStatusCode(400):
+                        result = .init(code: .success, userActivity: nil)
                     default:
                         result = .init(code: .failure, userActivity: nil)
                     }

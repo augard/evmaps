@@ -40,6 +40,8 @@ final class LocalCredentialServer {
     private struct CredentialResponse: Codable {
         let authorization: AuthorizationData?
         let selectedVIN: String?
+        let username: String?
+        let password: String?
         let timestamp: Date
     }
     
@@ -177,11 +179,15 @@ final class LocalCredentialServer {
             }
             
             print("LocalCredentialServer: Valid request from extension: \(request.extensionIdentifier)")
-            
+
+            let credentials = LoginCredentialManager.retrieveCredentials()
+
             // Get current credentials and selected VIN
             let response = CredentialResponse(
                 authorization: Authorization.authorization,
                 selectedVIN: SharedVehicleManager.shared.selectedVehicleVIN,
+                username: credentials?.username,
+                password: credentials?.password,
                 timestamp: Date()
             )
             

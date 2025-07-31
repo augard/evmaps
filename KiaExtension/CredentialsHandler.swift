@@ -31,10 +31,16 @@ class CredentialsHandler {
     }
 
     func reauthorize() async throws {
+        // First try to get credentials from local server
+        guard let credentials = LoginCredentialManager.retrieveCredentials() else {
+            return
+        }
+        
         do {
+            print("CredentialsHandler: Using credentials from local server for reauthorization")
             let authorization = try await api.login(
-                username: AppConfiguration.username,
-                password: AppConfiguration.password
+                username: credentials.username,
+                password: credentials.password
             )
             Authorization.store(data: authorization)
         } catch {
@@ -58,10 +64,21 @@ class CredentialsHandler {
             } else {
                 Authorization.remove()
             }
+            
+            // Store username and password if available for future use
+            if let username = credentials.username, let password = credentials.password {
+                print("CredentialsHandler: Successfully received username and password from local server")
+                LoginCredentialManager.store(
+                    credentials: LoginCredentials(
+                        username: username,
+                        password: password
+                    )
+                )
+            }
             print("CredentialsHandler: Successfully updated authorization from local server")
         } else {
             print("CredentialsHandler: Failed to fetch credentials from local server")
-            // Fallback to localy stored in keychain
+            // Fallback to locally stored in keychain
             api.authorization = Authorization.authorization
         }
     }

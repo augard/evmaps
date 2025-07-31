@@ -18,20 +18,22 @@ final class LocalCredentialClient {
     private let extensionIdentifier: String
     private let serverPassword: String
     private let maxRetryAttempts: Int
-    
+
     /// Response structure from the server
     struct CredentialResponse: Codable {
         let authorization: AuthorizationData?
         let selectedVIN: String?
+        let username: String?
+        let password: String?
         let timestamp: Date
     }
-    
+
     /// Request structure to send to server
     private struct CredentialRequest: Codable {
         let password: String
         let extensionIdentifier: String
     }
-    
+
     /// Initialize with explicit parameters
     init(extensionIdentifier: String, serverPassword: String? = nil, maxRetryAttempts: Int = 3) {
         self.extensionIdentifier = extensionIdentifier
@@ -39,12 +41,12 @@ final class LocalCredentialClient {
         self.serverPassword = serverPassword ?? ProcessInfo.processInfo.environment["KIAMAPS_SERVER_PASSWORD"] ?? "KiaMapsSecurePassword2025"
         self.maxRetryAttempts = maxRetryAttempts
     }
-    
+
     /// Convenience initializer for extensions
     convenience init(extensionIdentifier: String) {
         self.init(extensionIdentifier: extensionIdentifier, serverPassword: nil, maxRetryAttempts: 3)
     }
-    
+
     /// Fetches credentials from the local server
     func fetchCredentials(completion: @escaping (Result<CredentialResponse, Error>) -> Void) {
         let connection = NWConnection(
@@ -52,7 +54,7 @@ final class LocalCredentialClient {
             port: NWEndpoint.Port(integerLiteral: serverPort),
             using: .tcp
         )
-        
+
         connection.stateUpdateHandler = { state in
             switch state {
             case .ready:
@@ -66,15 +68,15 @@ final class LocalCredentialClient {
                 print("LocalCredentialClient: Connection state \(state)")
             }
         }
-        
+
         connection.start(queue: queue)
 
         // Send request
         let request = CredentialRequest(password: serverPassword, extensionIdentifier: extensionIdentifier)
-        
+
         do {
             let requestData = try JSONEncoder().encode(request)
-            
+
             connection.send(content: requestData, completion: .contentProcessed { error in
                 if let error = error {
                     print("LocalCredentialClient: Send error: \(error)")
@@ -82,24 +84,24 @@ final class LocalCredentialClient {
                     connection.cancel()
                     return
                 }
-                
+
                 // Receive response
                 connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { data, _, _, error in
                     defer { connection.cancel() }
-                    
+
                     if let error = error {
                         print("LocalCredentialClient: Receive error: \(error)")
                         completion(.failure(error))
                         connection.cancel()
                         return
                     }
-                    
+
                     guard let data = data, !data.isEmpty else {
                         completion(.failure(NSError(domain: "LocalCredentialClient", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
                         connection.cancel()
                         return
                     }
-                    
+
                     // Try to decode as error response first
                     if let errorDict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: String],
                        let errorMessage = errorDict["error"] {
@@ -107,7 +109,7 @@ final class LocalCredentialClient {
                         connection.cancel()
                         return
                     }
-                    
+
                     // Decode as credential response
                     do {
                         let response = try JSONDecoder().decode(CredentialResponse.self, from: data)
@@ -126,7 +128,7 @@ final class LocalCredentialClient {
             connection.cancel()
         }
     }
-    
+
     /// Async/await version for fetching credentials
     func fetchCredentials() async throws -> CredentialResponse {
         try await withCheckedThrowingContinuation { continuation in
