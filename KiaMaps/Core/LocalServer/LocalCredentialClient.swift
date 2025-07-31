@@ -57,7 +57,7 @@ final class LocalCredentialClient {
             switch state {
             case .ready:
                 print("LocalCredentialClient: Connected to server")
-            case .failed(let error):
+            case .failed(let error), .waiting(let error):
                 print("LocalCredentialClient: Connection failed: \(error)")
                 completion(.failure(error))
             case .cancelled:

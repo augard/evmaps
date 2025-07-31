@@ -27,16 +27,33 @@ class CarListHandler: NSObject, INListCarsIntentHandling, Handler {
     func handle(completion: @escaping (INListCarsIntentResponse) -> Void) {
         Task {
             await credentialsHandler.continueOrWaitForCredentials()
-            let result: INListCarsIntentResponse
+            let result: INListCarsIntentResponse?
 
             do {
                 let cars = try await api.vehicles().vehicles
 
                 result = .init(code: .success, userActivity: nil)
-                result.cars = cars.map { $0.car(with: api.configuration) }
-            } catch {
-                result = .init(code: .failure, userActivity: nil)
+                result?.cars = cars.map { $0.car(with: api.configuration) }
+            } catch let error  {
+                if let error = error as? ApiError {
+                    switch error {
+                    case .unauthorized:
+                        do {
+                            try await credentialsHandler.reauthorize()
+                            result = nil
+                            handle(completion: completion)
+                        } catch {
+                            result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
+                        }
+                    default:
+                        result = .init(code: .failure, userActivity: nil)
+                    }
+                } else {
+                    result = .init(code: .failure, userActivity: nil)
+                }
             }
+
+            guard let result = result else { return }
             await MainActor.run {
                 completion(result)
             }

@@ -30,6 +30,19 @@ class CredentialsHandler {
         }
     }
 
+    func reauthorize() async throws {
+        do {
+            let authorization = try await api.login(
+                username: AppConfiguration.username,
+                password: AppConfiguration.password
+            )
+            Authorization.store(data: authorization)
+        } catch {
+            Authorization.remove()
+            throw error
+        }
+    }
+
     func continueOrWaitForCredentials() async {
         guard let task = task else { return }
         _ = await task.result

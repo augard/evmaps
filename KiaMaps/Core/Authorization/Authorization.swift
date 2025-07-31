@@ -63,7 +63,7 @@ enum Authorization {
     static func store(data: AuthorizationData) {
         Keychain<Key>.store(value: data, path: .authorization)
         // Notify extensions that credentials have been updated
-        DarwinNotificationHelper.post(name: DarwinNotificationHelper.NotificationName.credentialsUpdated)
+        //DarwinNotificationHelper.post(name: DarwinNotificationHelper.NotificationName.credentialsUpdated)
         // Post local notification for UI updates
         NotificationCenter.default.post(name: .authorizationDidChange, object: nil)
     }
@@ -78,7 +78,7 @@ enum Authorization {
     static func remove() {
         Keychain<Key>.removeVakue(at: .authorization)
         // Notify extensions that credentials have been cleared
-        DarwinNotificationHelper.post(name: DarwinNotificationHelper.NotificationName.credentialsCleared)
+        //DarwinNotificationHelper.post(name: DarwinNotificationHelper.NotificationName.credentialsCleared)
         // Post local notification for UI updates
         NotificationCenter.default.post(name: .authorizationDidChange, object: nil)
     }

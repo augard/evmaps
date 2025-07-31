@@ -172,9 +172,15 @@ struct MainView: View {
         .padding(.horizontal, KiaDesign.Spacing.small)
         .padding(.vertical, 4)
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(KiaDesign.Colors.cardBackground)
-                .opacity(0.7)
+            Group {
+                if #available(iOS 26.0, *) {
+                    EmptyView()
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(KiaDesign.Colors.cardBackground)
+                        .opacity(0.7)
+                }
+            }
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Vehicle status: \(Int(status.state.vehicle.green.batteryManagement.batteryRemain.ratio))% battery, \(status.state.vehicle.drivingReady ? "ready" : "not ready"), updated \(timeAgoString(from: status.lastUpdateTime))")

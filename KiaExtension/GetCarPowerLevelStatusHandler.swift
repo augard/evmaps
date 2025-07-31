@@ -50,7 +50,21 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
             if let cachedData = try? manager.vehicleStatus {
                 return cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
             } else {
-                result = .init(code: .failure, userActivity: nil)
+                if let error = error as? ApiError {
+                    switch error {
+                    case .unauthorized:
+                        do {
+                            try await credentialsHandler.reauthorize()
+                            result = await fetchCarStatus(carId: carId)
+                        } catch {
+                            result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
+                        }
+                    default:
+                        result = .init(code: .failure, userActivity: nil)
+                    }
+                } else {
+                    result = .init(code: .failure, userActivity: nil)
+                }
             }
         }
         return result
