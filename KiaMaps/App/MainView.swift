@@ -77,12 +77,20 @@ struct MainView: View {
                         }
                     })
             case let .error(error):
-                MainErrorView(error: error) {
-                    Task {
-                        state = .loading
-                        await loadData()
+                MainErrorView(
+                    error: error,
+                    onRetry: {
+                        Task {
+                            state = .loading
+                            await loadData()
+                        }
+                    },
+                    onLogout: {
+                        Task {
+                            await logout()
+                        }
                     }
-                }
+                )
             }
         }
         .navigationTitle(navigationTitle)
@@ -172,10 +180,6 @@ struct MainView: View {
         .accessibilityLabel("Vehicle status: \(Int(status.state.vehicle.green.batteryManagement.batteryRemain.ratio))% battery, \(status.state.vehicle.drivingReady ? "ready" : "not ready"), updated \(timeAgoString(from: status.lastUpdateTime))")
     }
     
-    
-    
-
-    
     // MARK: - Helper Views
     
     private func timeAgoString(from date: Date) -> String {
@@ -195,7 +199,6 @@ struct MainView: View {
             return api.configuration.name
         }
     }
-    
 
     private func loadData() async {
         do {
@@ -214,7 +217,7 @@ struct MainView: View {
             }
 
             // let profile = try await api.profile()
-            vehicles = try await api.vehicles().vehicles
+            vehicles = try await api.vehiclesWithAutoRefresh().vehicles
             let selectedVehicle = vehicles.vehicle(with: configuration.vehicleVin) ?? vehicles.first
 
             guard !vehicles.isEmpty else {
@@ -226,13 +229,14 @@ struct MainView: View {
                 return
             }
             self.selectedVehicle = vehicle
-            let manager = VehicleManager(id: vehicle.vehicleId)
+            SharedVehicleManager.shared.selectedVehicleVIN = vehicle.vin
+            let manager = SharedVehicleManager.shared.manager(for: vehicle.vehicleId)
             manager.store(type: configuration.apiConfiguration.name + "-" + vehicle.detailInfo.saleCarmdlEnName)
 
             if let cachedVehicle = try? manager.vehicleStatus {
                 selectedVehicleStatus = cachedVehicle
             } else {
-                let vehicleStatus = try await api.vehicleCachedStatus(vehicle.vehicleId)
+                let vehicleStatus = try await api.vehicleCachedStatusWithAutoRefresh(vehicle.vehicleId)
                 try manager.store(status: vehicleStatus)
                 selectedVehicleStatus = vehicleStatus
             }
@@ -254,18 +258,18 @@ struct MainView: View {
                     print("Updated")
                 }
             } else {
-                _ = try await api.refreshVehicle(selectedVehicle.vehicleId)
+                _ = try await api.refreshVehicleWithAutoRefresh(selectedVehicle.vehicleId)
                 lastUpdateDate = selectedVehicleStatus.lastUpdateTime
             }
-            let manager = VehicleManager(id: selectedVehicle.vehicleId)
-            manager.deleteStatus()
+            let manager = SharedVehicleManager.shared.manager(for: selectedVehicle.vehicleId)
+            manager.removeLastUpdateDate()
         } catch {
             state = .error(error)
         }
     }
 
     private func logout() async {
-        try? await api.logout()
+        try? await api.logoutWithAutoRefresh()
         Authorization.remove()
         
         // Clear stored login credentials

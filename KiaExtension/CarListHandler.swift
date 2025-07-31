@@ -12,70 +12,32 @@ import UIKit
 
 class CarListHandler: NSObject, INListCarsIntentHandling, Handler {
     private let api: Api
+    private let credentialsHandler: CredentialsHandler
 
-    init(api: Api) {
+    init(api: Api, credentialsHandler: CredentialsHandler) {
         self.api = api
+        self.credentialsHandler = credentialsHandler
         super.init()
-        
-        // Set up credential observers for this handler
-        setupCredentialObservers()
-    }
-    
-    private func setupCredentialObservers() {
-        // Listen for credential updates to refresh API authorization
-        DarwinNotificationHelper.observe(name: DarwinNotificationHelper.NotificationName.credentialsUpdated) {
-            [weak self] in
-            DispatchQueue.main.async {
-                if Authorization.isAuthorized {
-                    self?.api.authorization = Authorization.authorization
-                }
-            }
-        }
-        
-        // Listen for credential clearing
-        DarwinNotificationHelper.observe(name: DarwinNotificationHelper.NotificationName.credentialsCleared) {
-            [weak self] in
-            DispatchQueue.main.async {
-                self?.api.authorization = nil
-            }
-        }
     }
 
     func canHandle(_ intent: INIntent) -> Bool {
         return intent is INListCarsIntent
     }
 
-    func cars() async throws -> [Vehicle] {
-        // Check if we have valid authorization from shared keychain
-        if Authorization.isAuthorized {
-            api.authorization = Authorization.authorization
-        } else {
-            // If no authorization available, try to login and store in shared keychain
-            let authorization = try await api.login(
-                username: AppConfiguration.username,
-                password: AppConfiguration.password
-            )
-            Authorization.store(data: authorization)
-            // Darwin notification will be automatically posted by Authorization.store()
-        }
-        return try await api.vehicles().vehicles
-    }
-
     func handle(completion: @escaping (INListCarsIntentResponse) -> Void) {
-        // completion(.init(code: .inProgress, userActivity:  nil))
-
         Task {
+            await credentialsHandler.continueOrWaitForCredentials()
             let result: INListCarsIntentResponse
 
             do {
-                let cars = try await cars()
+                let cars = try await api.vehicles().vehicles
 
                 result = .init(code: .success, userActivity: nil)
                 result.cars = cars.map { $0.car(with: api.configuration) }
             } catch {
                 result = .init(code: .failure, userActivity: nil)
             }
-            DispatchQueue.main.async {
+            await MainActor.run {
                 completion(result)
             }
         }

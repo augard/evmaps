@@ -314,6 +314,15 @@ The plan leverages your existing strong foundation (comprehensive API integratio
 - [x] Add simple user profile screen
 - [x] Restore previous UI as debug screen linked
 
+### Phase 6: Extension communication
+
+- [x] Write simple server in main application that will run on local host
+- [x] Server will communicate, selected car VIN, and user credentials
+- [x] Server need to be protected, idally by password made at compilation phase
+- [x] Integrate each extension that need credentials to use this server
+- [x] Stop using keychain in extensions
+- [x] Create tests for this communication
+
 ### Final Testing & Polish
 - [ ] Performance testing (60fps target)
 - [ ] Accessibility audit

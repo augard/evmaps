@@ -351,7 +351,7 @@ struct UserProfileView: View {
     
     private func signOut() async {
         do {
-            try await api.logout()
+            try await api.logoutWithAutoRefresh()
             Authorization.remove()
             LoginCredentialManager.clearCredentials()
             

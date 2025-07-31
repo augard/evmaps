@@ -10,65 +10,27 @@ import Foundation
 import Intents
 import UIKit
 
-class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHandling, Handler {
-    private let api: Api
-    private var manager = VehicleManager(id: UUID())
-    private var vehicleParameters: VehicleParameters { manager.vehicleParamter }
+class BatteryChargeBox {
+    var value: Float?
+    init(_ value: Float? = nil) { self.value = value }
+}
 
-    private var timer: Timer?
-    #if targetEnvironment(simulator)
-        private let mock: Bool = true
-    #else
-        private let mock: Bool = false
-    #endif
-
-    init(api: Api) {
-        self.api = api
-        super.init()
-        
-        // Set up credential observers for this handler
-        setupCredentialObservers()
-    }
-    
-    private func setupCredentialObservers() {
-        // Listen for credential updates to refresh API authorization
-        DarwinNotificationHelper.observe(name: DarwinNotificationHelper.NotificationName.credentialsUpdated) {
-            [weak self] in
-            DispatchQueue.main.async {
-                if Authorization.isAuthorized {
-                    self?.api.authorization = Authorization.authorization
-                }
-            }
-        }
-        
-        // Listen for credential clearing
-        DarwinNotificationHelper.observe(name: DarwinNotificationHelper.NotificationName.credentialsCleared) {
-            [weak self] in
-            DispatchQueue.main.async {
-                self?.api.authorization = nil
-            }
-        }
-    }
-
-    func canHandle(_ intent: INIntent) -> Bool {
-        return intent is INGetCarPowerLevelStatusIntent
-    }
-
-    func responseFromCarStatus(carId: UUID, status: VehicleStatusResponse) -> INGetCarPowerLevelStatusIntentResponse {
+extension VehicleStatusResponse.State {
+    func toIntentResponse(carId: UUID, vehicleParameters: VehicleParameters) -> INGetCarPowerLevelStatusIntentResponse {
         let result: INGetCarPowerLevelStatusIntentResponse
 
         let dateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: .now)
-        let chargingInformation = status.state.vehicle.green.chargingInformation
-        let batteryManagement = status.state.vehicle.green.batteryManagement
-        let drivetrain = status.state.vehicle.drivetrain
+        let chargingInformation = vehicle.green.chargingInformation
+        let batteryManagement = vehicle.green.batteryManagement
+        let drivetrain = vehicle.drivetrain
         let batteryCapacity = Double(batteryManagement.batteryCapacity.value)
         let batteryRemain = Float(batteryManagement.batteryRemain.ratio)
 
         result = .init(code: .success, userActivity: nil)
         result.carIdentifier = carId.uuidString
         result.dateOfLastStateUpdate = dateComponents
-        result.consumptionFormulaArguments = consumptionFormulaArguments()
-        result.chargingFormulaArguments = chargingFormulaArguments(maximumBatteryCapacity: batteryCapacity, unit: .kilojoules)
+        result.consumptionFormulaArguments = vehicleParameters.consumptionFormulaArguments()
+        result.chargingFormulaArguments = vehicleParameters.chargingFormulaArguments(maximumBatteryCapacity: batteryCapacity, unit: .kilojoules)
 
         result.maximumDistance = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
         result.distanceRemaining = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.measuremntUnit)
@@ -95,64 +57,50 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
 
         return result
     }
+}
 
-    func mockCarStatus(carId: UUID) -> INGetCarPowerLevelStatusIntentResponse {
-        let result: INGetCarPowerLevelStatusIntentResponse
+class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHandling, Handler {
+    private let api: Api
+    private let credentialsHandler: CredentialsHandler
+    private var manager = VehicleManager(id: UUID())
+    private var vehicleParameters: VehicleParameters { manager.vehicleParamter }
 
-        let maximumCapacity = 100.0
-        let currentCharge = 39.0
-        let dateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: .now)
+    private var timer: Timer?
+    #if targetEnvironment(simulator)
+        private let mock: Bool = true
+    #else
+        private let mock: Bool = false
+    #endif
 
-        result = .init(code: .success, userActivity: nil)
-        result.carIdentifier = carId.uuidString
-        result.dateOfLastStateUpdate = dateComponents
-        result.consumptionFormulaArguments = consumptionFormulaArguments()
-        result.chargingFormulaArguments = chargingFormulaArguments(maximumBatteryCapacity: maximumCapacity, unit: .kilowattHours)
-
-        result.maximumDistance = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
-        result.distanceRemaining = .init(value: 189, unit: .kilometers)
-
-        result.maximumDistanceElectric = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
-        result.distanceRemainingElectric = .init(value: 189, unit: .kilometers)
-
-        result.minimumBatteryCapacity = .init(value: 0, unit: .kilowattHours)
-        result.currentBatteryCapacity = .init(value: currentCharge, unit: .kilowattHours)
-        result.maximumBatteryCapacity = .init(value: maximumCapacity, unit: .kilowattHours)
-
-        result.charging = true
-        result.activeConnector = .ccs2
-
-        result.chargePercentRemaining = Float(currentCharge / 100)
-        result.minutesToFull = 24
-
-        return result
+    init(api: Api, credentialsHandler: CredentialsHandler) {
+        self.api = api
+        self.credentialsHandler = credentialsHandler
+        super.init()
+    }
+    
+    func canHandle(_ intent: INIntent) -> Bool {
+        return intent is INGetCarPowerLevelStatusIntent
     }
 
-    func carStatus(carId: UUID) async -> INGetCarPowerLevelStatusIntentResponse {
+    func fetchCarStatus(carId: UUID) async -> INGetCarPowerLevelStatusIntentResponse {
         let result: INGetCarPowerLevelStatusIntentResponse
 
         do {
-            // Check if we have valid authorization from shared keychain
-            if Authorization.isAuthorized {
-                api.authorization = Authorization.authorization
-            } else {
-                // If no authorization available, try to login and store in shared keychain
-                let authorization = try await api.login(username: AppConfiguration.username, password: AppConfiguration.password)
-                Authorization.store(data: authorization)
-                // Darwin notification will be automatically posted by Authorization.store()
-            }
-
             let status = try await api.vehicleCachedStatus(carId)
-
+            // Fetched status is older than 5 minutes, try ask for refresh in next 5 mins
             if status.lastUpdateTime + 5 * 60 < Date.now {
                 _ = try await api.refreshVehicle(carId)
-                manager.deleteStatus()
             } else {
                 try manager.store(status: status)
             }
-            result = responseFromCarStatus(carId: carId, status: status)
+            result = status.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
         } catch {
-            result = .init(code: .failure, userActivity: nil)
+            manager.restoreOutdatedData()
+            if let cachedData = try? manager.vehicleStatus {
+                return cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
+            } else {
+                result = .init(code: .failure, userActivity: nil)
+            }
         }
         return result
     }
@@ -166,32 +114,33 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
         manager = VehicleManager(id: carId)
 
         if mock {
-            completion(mockCarStatus(carId: carId))
-            return
+            // Use mock for testing
+            completion(VehicleStatusResponse.lowBatteryPreview.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters))
         } else if let cachedData = try? manager.vehicleStatus {
+            // Use data from cache
             if cachedData.lastUpdateTime + 5 * 60 < Date.now {
                 Task {
+                    await credentialsHandler.continueOrWaitForCredentials()
                     _ = try await api.refreshVehicle(carId)
                 }
-                manager.deleteStatus()
+                manager.removeLastUpdateDate()
             }
-            completion(responseFromCarStatus(carId: carId, status: cachedData))
-            return
-        }
+            completion(cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters))
+        } else {
+            // Get data from server
+            Task {
+                await credentialsHandler.continueOrWaitForCredentials()
+                let result = await fetchCarStatus(carId: carId)
 
-        // completion(.init(code: .inProgress, userActivity: nil))
-
-        Task {
-            let result = await carStatus(carId: carId)
-
-            DispatchQueue.main.async {
-                completion(result)
+                await MainActor.run {
+                    completion(result)
+                }
             }
         }
     }
 
     func startSendingUpdates(for intent: INGetCarPowerLevelStatusIntent, to observer: any INGetCarPowerLevelStatusIntentResponseObserver) {
-        var lastBatteryCharge: Float?
+        let lastBatteryCharge = BatteryChargeBox()
         timer = Timer.scheduledTimer(withTimeInterval: 60 * 4, repeats: true, block: { [weak self] _ in
             guard let identifier = intent.carName?.vocabularyIdentifier, let carId = UUID(uuidString: identifier) else {
                 observer.didUpdate(getCarPowerLevelStatus: .init(code: .failureRequiringAppLaunch, userActivity: nil))
@@ -202,20 +151,19 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
             self.manager = VehicleManager(id: carId)
 
             if self.mock {
-                let response = mockCarStatus(carId: carId)
-                lastBatteryCharge = updateCharge(observer: observer, response: response, lastBatteryCharge: lastBatteryCharge)
-                return
-            } else if let cachedData = try? manager.vehicleStatus {
-                let response = responseFromCarStatus(carId: carId, status: cachedData)
-                lastBatteryCharge = updateCharge(observer: observer, response: response, lastBatteryCharge: lastBatteryCharge)
-                return
+                let response = VehicleStatusResponse.lowBatteryPreview.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
+                lastBatteryCharge.value = self.updateCharge(observer: observer, response: response, lastBatteryCharge: lastBatteryCharge.value)
+            } else if let cachedData = try? self.manager.vehicleStatus {
+                let response = cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
+                lastBatteryCharge.value = self.updateCharge(observer: observer, response: response, lastBatteryCharge: lastBatteryCharge.value)
             }
 
             Task {
-                let response = await self.carStatus(carId: carId)
+                await self.credentialsHandler.continueOrWaitForCredentials()
+                let response = await self.fetchCarStatus(carId: carId)
 
-                DispatchQueue.main.async {
-                    lastBatteryCharge = self.updateCharge(observer: observer, response: response, lastBatteryCharge: lastBatteryCharge)
+                await MainActor.run {
+                    lastBatteryCharge.value = self.updateCharge(observer: observer, response: response, lastBatteryCharge: lastBatteryCharge.value)
                 }
             }
         })
@@ -237,18 +185,5 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
         observer.didUpdate(getCarPowerLevelStatus: response)
         return response.chargePercentRemaining
     }
-
-    private func consumptionFormulaArguments() -> [String: Any] {
-        [
-            "vehicle_parameters": vehicleParameters.consumptionFormulaParameters,
-            "model_id": vehicleParameters.consumptionModelId,
-        ]
-    }
-
-    private func chargingFormulaArguments(maximumBatteryCapacity: Double, unit: UnitEnergy) -> [String: Any] {
-        [
-            "vehicle_parameters": vehicleParameters.chargingFormulaParameters(maximumBatteryCapacity: maximumBatteryCapacity, unit: unit),
-            "model_id": vehicleParameters.chargingModelId,
-        ]
-    }
 }
+

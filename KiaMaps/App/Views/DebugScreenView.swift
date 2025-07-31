@@ -167,13 +167,6 @@ struct DebugScreenView: View {
                     )
                     
                     testButton(
-                        title: "Test Keychain Access Group",
-                        subtitle: "Verify shared keychain functionality",
-                        icon: "key.radiowaves.forward",
-                        action: testKeychainAccessGroup
-                    )
-                    
-                    testButton(
                         title: "Test Darwin Notifications",
                         subtitle: "Verify IPC notification system",
                         icon: "bell.and.waves.left.and.right",
@@ -316,30 +309,13 @@ struct DebugScreenView: View {
             addTestResult("⚙️ Access Group ID: \(AppConfiguration.accessGroupId)")
             addTestResult("📡 API Brand: \(AppConfiguration.apiConfiguration.name)")
             addTestResult("🔐 Authorization Status: \(Authorization.isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
-            
-            // Test keychain functionality
-            addTestResult("🔑 Testing keychain access groups...")
-            CredentialSharingTest.testKeychainAccessGroup()
-            
+
             // Test Darwin notifications
             addTestResult("📡 Testing Darwin notifications...")
             let notificationTest = testDarwinNotificationSync()
             addTestResult(notificationTest)
             
             addTestResult("✅ All tests completed!")
-            isRunningTests = false
-        }
-    }
-    
-    private func testKeychainAccessGroup() {
-        guard !isRunningTests else { return }
-        
-        isRunningTests = true
-        addTestResult("🔑 Testing keychain access group...")
-        
-        Task {
-            CredentialSharingTest.testKeychainAccessGroup()
-            addTestResult("✅ Keychain access group test completed")
             isRunningTests = false
         }
     }

@@ -12,6 +12,7 @@ import SwiftUI
 struct MainErrorView: View {
     let error: Error
     let onRetry: () -> Void
+    let onLogout: () -> Void
     
     var body: some View {
         VStack(spacing: KiaDesign.Spacing.xl) {
@@ -38,13 +39,26 @@ struct MainErrorView: View {
                     .multilineTextAlignment(.center)
             }
             
-            KiaButton(
-                "Retry Connection",
-                icon: "arrow.clockwise",
-                style: .primary,
-                size: .large
-            ) {
-                onRetry()
+            VStack(spacing: KiaDesign.Spacing.medium) {
+                KiaButton(
+                    "Retry Connection",
+                    icon: "arrow.clockwise",
+                    style: .primary,
+                    size: .large,
+                    isFullWidth: true
+                ) {
+                    onRetry()
+                }
+                
+                KiaButton(
+                    "Logout",
+                    icon: "rectangle.portrait.and.arrow.right",
+                    style: .secondary,
+                    size: .large,
+                    isFullWidth: true
+                ) {
+                    onLogout()
+                }
             }
         }
         .padding(KiaDesign.Spacing.xl)
@@ -60,6 +74,9 @@ struct MainErrorView: View {
         error: NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unable to connect to vehicle. Please check your internet connection and try again."]),
         onRetry: {
             print("Retry tapped")
+        },
+        onLogout: {
+            print("Logout tapped")
         }
     )
 }

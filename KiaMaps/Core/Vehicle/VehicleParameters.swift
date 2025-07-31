@@ -59,6 +59,22 @@ protocol VehicleParameters {
 
 }
 
+extension VehicleParameters {
+    func consumptionFormulaArguments() -> [String: Any] {
+        [
+            "vehicle_parameters": consumptionFormulaParameters,
+            "model_id": consumptionModelId,
+        ]
+    }
+
+    func chargingFormulaArguments(maximumBatteryCapacity: Double, unit: UnitEnergy) -> [String: Any] {
+        [
+            "vehicle_parameters": chargingFormulaParameters(maximumBatteryCapacity: maximumBatteryCapacity, unit: unit),
+            "model_id": chargingModelId,
+        ]
+    }
+}
+
 // MARK: - Sample Data Documentation
 
 /*
