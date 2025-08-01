@@ -9,6 +9,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Register background tasks
         BackgroundTaskManager.shared.registerBackgroundTasks()
         
+        // Start Bluetooth scanning for vehicle head units
+        BluetoothManager.shared.startScanning()
+        
         // Start the local credential server
         LocalCredentialServer.shared.start { success in
             print("AppDelegate: Server start success: \(success)")

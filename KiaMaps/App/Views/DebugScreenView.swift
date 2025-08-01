@@ -142,6 +142,34 @@ struct DebugScreenView: View {
                             testResults.append("Loading view demo not yet implemented")
                         }
                     )
+                    
+                    NavigationLink(destination: BluetoothDevicesView()) {
+                        HStack(spacing: KiaDesign.Spacing.medium) {
+                            Image(systemName: "dot.radiowaves.left.and.right")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(KiaDesign.Colors.primary)
+                                .frame(width: 20)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Bluetooth Devices")
+                                    .font(KiaDesign.Typography.body)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(KiaDesign.Colors.textPrimary)
+                                
+                                Text("View connected automotive Bluetooth devices")
+                                    .font(KiaDesign.Typography.caption)
+                                    .foregroundStyle(KiaDesign.Colors.textSecondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(KiaDesign.Colors.textTertiary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }

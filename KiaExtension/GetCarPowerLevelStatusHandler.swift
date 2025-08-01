@@ -15,6 +15,7 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
     private let credentialsHandler: CredentialsHandler
     private var manager = VehicleManager(id: UUID())
     private var vehicleParameters: VehicleParameters { manager.vehicleParamter }
+    private var loginRetry: Bool = false
 
     private var timer: Timer?
     #if targetEnvironment(simulator)
@@ -37,6 +38,7 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
         let result: INGetCarPowerLevelStatusIntentResponse
 
         do {
+            loginRetry = false
             let status = try await api.vehicleCachedStatus(carId)
             // Fetched status is older than 5 minutes, try ask for refresh in next 5 mins
             if status.lastUpdateTime + 5 * 60 < Date.now {
@@ -46,27 +48,31 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
             }
             result = status.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
         } catch {
+            if let error = error as? ApiError {
+                switch (error, loginRetry) {
+                case (.unauthorized, false):
+                    do {
+                        try await credentialsHandler.reauthorize()
+                        result = await fetchCarStatus(carId: carId)
+                    } catch {
+                        result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
+                    }
+                case (.unauthorized, true):
+                    result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
+                case (.unexpectedStatusCode(400), false):
+                    result = .init(code: .success, userActivity: nil)
+                default:
+                    result = .init(code: .failure, userActivity: nil)
+                }
+            } else {
+                result = .init(code: .failure, userActivity: nil)
+            }
+
             manager.restoreOutdatedData()
             if let cachedData = try? manager.vehicleStatus {
                 return cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
             } else {
-                if let error = error as? ApiError {
-                    switch error {
-                    case .unauthorized:
-                        do {
-                            try await credentialsHandler.reauthorize()
-                            result = await fetchCarStatus(carId: carId)
-                        } catch {
-                            result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
-                        }
-                    case .unexpectedStatusCode(400):
-                        result = .init(code: .success, userActivity: nil)
-                    default:
-                        result = .init(code: .failure, userActivity: nil)
-                    }
-                } else {
-                    result = .init(code: .failure, userActivity: nil)
-                }
+                manager.removeLastUpdateDate()
             }
         }
         return result

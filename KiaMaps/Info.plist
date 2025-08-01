@@ -37,6 +37,12 @@
 	<true/>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Access to Bluetooth is used to start the app automatically as soon as you enter your vehicle.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This app uses Bluetooth to detect when you are in your vehicle for automatic connection.</string>
+	<key>UISupportedExternalAccessoryProtocols</key>
+	<array>
+		<string>com.apple.iap2</string>
+	</array>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_viwi-smartphone._tcp</string>

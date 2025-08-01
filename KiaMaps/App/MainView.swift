@@ -41,6 +41,7 @@ struct MainView: View {
     @State var isSelectedVahicleExpanded = true
     @State var lastUpdateDate: Date?
     @State var showingProfile = false
+    @State var loginRetry: Bool = false
 
     init(configuration: AppConfiguration.Type) {
         self.configuration = configuration
@@ -216,10 +217,7 @@ struct MainView: View {
                     let authorization = try await api.login(username: storedCredentials.username, password: storedCredentials.password)
                     Authorization.store(data: authorization)
                 } else {
-                    Authorization.remove()
-
-                    // Dismiss to return to root (login screen)
-                    dismiss()
+                    logoutAfterError()
                     return
                 }
             }
@@ -250,8 +248,35 @@ struct MainView: View {
             }
 
             state = .authorized
-        } catch {
-            state = .error(error)
+        } catch let error {
+            if let error = error as? ApiError {
+                switch (error, loginRetry) {
+                case (.unauthorized, false):
+                    guard let storedCredentials = LoginCredentialManager.retrieveCredentials() else {
+                        logoutAfterError()
+                        return
+                    }
+                    loginRetry = true
+
+                    do {
+                        let authorization = try await api.login(username: storedCredentials.username, password: storedCredentials.password)
+                        Authorization.store(data: authorization)
+                        
+                        await loadData()
+                    } catch {
+                        logoutAfterError()
+                        return
+                    }
+                case (.unauthorized, true):
+                    logoutAfterError()
+                case (.unexpectedStatusCode(400), false):
+                    state = .authorized
+                default:
+                    state = .error(error)
+                }
+            } else {
+                state = .error(error)
+            }
         }
     }
 
@@ -283,6 +308,13 @@ struct MainView: View {
         // Clear stored login credentials
         LoginCredentialManager.clearCredentials()
         
+        // Dismiss to return to root (login screen)
+        dismiss()
+    }
+
+    private func logoutAfterError() {
+        Authorization.remove()
+
         // Dismiss to return to root (login screen)
         dismiss()
     }

@@ -13,6 +13,7 @@ import UIKit
 class CarListHandler: NSObject, INListCarsIntentHandling, Handler {
     private let api: Api
     private let credentialsHandler: CredentialsHandler
+    private var loginRetry: Bool = false
 
     init(api: Api, credentialsHandler: CredentialsHandler) {
         self.api = api
@@ -30,14 +31,16 @@ class CarListHandler: NSObject, INListCarsIntentHandling, Handler {
             let result: INListCarsIntentResponse?
 
             do {
+                loginRetry = false
                 let cars = try await api.vehicles().vehicles
 
                 result = .init(code: .success, userActivity: nil)
                 result?.cars = cars.map { $0.car(with: api.configuration) }
             } catch let error  {
                 if let error = error as? ApiError {
-                    switch error {
-                    case .unauthorized:
+                    switch (error, loginRetry) {
+                    case (.unauthorized, false):
+                        loginRetry = true
                         do {
                             try await credentialsHandler.reauthorize()
                             result = nil
@@ -45,7 +48,9 @@ class CarListHandler: NSObject, INListCarsIntentHandling, Handler {
                         } catch {
                             result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
                         }
-                    case .unexpectedStatusCode(400):
+                    case (.unauthorized, true):
+                        result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
+                    case (.unexpectedStatusCode(400), false):
                         result = .init(code: .success, userActivity: nil)
                     default:
                         result = .init(code: .failure, userActivity: nil)
@@ -78,6 +83,11 @@ extension Vehicle {
         manager.store(type: configuration.name + "-" + detailInfo.saleCarmdlEnName)
 
         let supportedChargingConnectors = manager.vehicleParamter.supportedChargingConnectors
+        
+        // Get Bluetooth and iAP2 identifiers for this vehicle
+        let headUnitIds = headUnitIdentifiers()
+        print("CarListHandler: Vehicle '\(nickname)' - Bluetooth: \(headUnitIds.bluetooth ?? "none"), iAP2: \(headUnitIds.iap2 ?? "none")")
+        
         let car: INCar = .init(
             carIdentifier: vehicleId.uuidString,
             displayName: configuration.name + " - " + nickname,
@@ -85,7 +95,7 @@ extension Vehicle {
             make: configuration.name,
             model: vehicleName,
             color: UIColor.systemGreen.cgColor,
-            headUnit: .init(bluetoothIdentifier: nil, iAP2Identifier: nil),
+            headUnit: .init(bluetoothIdentifier: headUnitIds.bluetooth, iAP2Identifier: headUnitIds.iap2),
             supportedChargingConnectors: supportedChargingConnectors
         )
 
