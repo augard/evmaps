@@ -10,14 +10,14 @@ import SwiftUI
 
 /// Climate control page with temperature dial and status
 struct ClimatePageView: View {
-    let status: VehicleStatusResponse
+    let status: VehicleStatus
     let isActive: Bool
     
     var body: some View {
         ScrollView {
             VStack(spacing: KiaDesign.Spacing.xl) {
                 ClimateControlView(
-                    vehicleStatus: status.state.vehicle,
+                    vehicleStatus: status,
                     unit: .celsius
                 )
                 
@@ -73,7 +73,7 @@ struct ClimatePageView: View {
     // MARK: - Climate Data Properties
     
     private var interiorTemperatureValue: String {
-        let hvac = status.state.vehicle.cabin.hvac
+        let hvac = status.cabin.hvac
         let tempValue = hvac.row1.driver.temperature.value
         let tempUnit = hvac.row1.driver.temperature.unit
         
@@ -88,7 +88,7 @@ struct ClimatePageView: View {
     }
     
     private var hvacSystemStatus: String {
-        let hvac = status.state.vehicle.cabin.hvac
+        let hvac = status.cabin.hvac
         let isHvacOn = hvac.row1.driver.blower.speedLevel > 0
         
         if !isHvacOn {
@@ -100,24 +100,24 @@ struct ClimatePageView: View {
     }
     
     private var hvacSystemColor: Color {
-        let isHvacOn = status.state.vehicle.cabin.hvac.row1.driver.blower.speedLevel > 0
+        let isHvacOn = status.cabin.hvac.row1.driver.blower.speedLevel > 0
         return isHvacOn ? KiaDesign.Colors.success : KiaDesign.Colors.textSecondary
     }
     
     private var fanSpeedValue: String {
-        let speedLevel = status.state.vehicle.cabin.hvac.row1.driver.blower.speedLevel
+        let speedLevel = status.cabin.hvac.row1.driver.blower.speedLevel
         return speedLevel > 0 ? "Level \(speedLevel)" : "Off"
     }
     
     private var defrostStatus: String {
         // Defrost information not available in current HVAC API structure
         // Use air cleaning indicator from ventilation as a proxy
-        let airCleaning = status.state.vehicle.cabin.hvac.ventilation.airCleaning.indicator
+        let airCleaning = status.cabin.hvac.ventilation.airCleaning.indicator
         return airCleaning > 0 ? "Active" : "Off"
     }
     
     private var heatedSeatsStatus: String {
-        let seat = status.state.vehicle.cabin.seat
+        let seat = status.cabin.seat
         let driverState = seat.row1.driver.climate.state
         let passengerState = seat.row1.passenger.climate.state
         
@@ -159,7 +159,7 @@ struct ClimatePageView: View {
 
 #Preview("Climate Page View") {
     ClimatePageView(
-        status: MockVehicleData.standardResponse,
+        status: MockVehicleData.standard,
         isActive: true
     )
 }

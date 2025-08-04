@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Tesla-style quick action buttons for common vehicle operations
 struct QuickActionsView: View {
-    let vehicleStatus: VehicleStatusResponse
+    let vehicleStatus: VehicleStatus
     let onLockAction: () async -> Void
     let onClimateAction: () async -> Void
     let onHornAction: () async -> Void
@@ -12,7 +12,7 @@ struct QuickActionsView: View {
     
     private var isLocked: Bool {
         // Use actual lock status from cabin door data
-        let cabin = vehicleStatus.state.vehicle.cabin.door
+        let cabin = vehicleStatus.cabin.door
         return !cabin.row1.driver.lock && !cabin.row1.passenger.lock && !cabin.row2.left.lock && !cabin.row2.right.lock
     }
     
@@ -212,7 +212,7 @@ extension ActionButton {
 // MARK: - Preview
 #Preview("Quick Actions - Standard") {
     QuickActionsView(
-        vehicleStatus: MockVehicleData.standardResponse,
+        vehicleStatus: MockVehicleData.standard,
         onLockAction: { 
             print("🔒 Lock vehicle")
             try? await Task.sleep(nanoseconds: 1_000_000_000)
@@ -235,8 +235,8 @@ extension ActionButton {
 
 #Preview("Quick Actions - Charging") {
     QuickActionsView(
-        vehicleStatus: MockVehicleData.chargingResponse,
-        onLockAction: { 
+        vehicleStatus: MockVehicleData.charging,
+        onLockAction: {
             print("🔒 Lock vehicle")
             try? await Task.sleep(nanoseconds: 1_000_000_000)
         },
@@ -258,8 +258,8 @@ extension ActionButton {
 
 #Preview("Quick Actions - Low Battery") {
     QuickActionsView(
-        vehicleStatus: MockVehicleData.lowBatteryResponse,
-        onLockAction: { 
+        vehicleStatus: MockVehicleData.lowBattery,
+        onLockAction: {
             print("🔒 Lock vehicle")
             try? await Task.sleep(nanoseconds: 1_000_000_000)
         },

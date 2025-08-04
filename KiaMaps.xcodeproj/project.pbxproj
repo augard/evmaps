@@ -82,7 +82,32 @@
 		80CCB6792E3B9FA5002D8DA6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Api/Api.swift,
+				Api/ApiConfiguration.swift,
+				Api/ApiEndpoints.swift,
+				Api/ApiRequest.swift,
+				Api/ApiResponse.swift,
+				Api/Helpers/BoolPropertyWrapper.swift,
+				Api/Helpers/DatePropertyWrapper.swift,
+				Api/Models/AuthorizationResponse.swift,
+				Api/Models/ClimateControlModels.swift,
+				Api/Models/NewAuthenticationModels.swift,
+				Api/Models/NotificationRegistrationResponse.swift,
+				Api/Models/SignInResponse.swift,
+				Api/Models/UserIntegrationResponse.swift,
+				Api/Models/VehicleResponse.swift,
+				Api/Models/VehicleStatusResponse.swift,
+				Api/Models/VehicleTypes.swift,
+				Api/NewAuthenticationAPI.swift,
+				Authorization/Authorization.swift,
+				Authorization/DarwinNotificationHelper.swift,
+				Authorization/Keychain.swift,
+				Authorization/LoginCredentialsManager.swift,
+				Bluetooth/BluetoothManager.swift,
+				Encryption/RSAEncryptionService.swift,
+				LocalServer/LocalCredentialClient.swift,
 				LocalServer/LocalCredentialServer.swift,
+				Vehicle/VehicleManager.swift,
 			);
 			target = CDA8ADA222E8CF8700B1EAF8 /* KiaExtensionUI */;
 		};
@@ -93,13 +118,6 @@
 				Mock/MockVehicleData.swift,
 			);
 			target = CDA8AD9922E8CF8700B1EAF8 /* KiaExtension */;
-		};
-		80D82EAC2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				AppConfiguration.swift,
-			);
-			target = CDA8ADA222E8CF8700B1EAF8 /* KiaExtensionUI */;
 		};
 		80FC55C52E34C3F300DA8884 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -119,7 +137,7 @@
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		803D467E2E2E7413003EFC10 /* KiaTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = KiaTests; sourceTree = "<group>"; };
-		80D82E3A2E2EB44C008CE0E7 /* App */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (80D82EAB2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 80D82EAC2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = App; sourceTree = "<group>"; };
+		80D82E3A2E2EB44C008CE0E7 /* App */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (80D82EAB2E2EB548008CE0E7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = App; sourceTree = "<group>"; };
 		80D82E6C2E2EB457008CE0E7 /* Core */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (80CCB6782E3B9FA5002D8DA6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 80CCB6792E3B9FA5002D8DA6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Core; sourceTree = "<group>"; };
 		80FC55BF2E34C3E300DA8884 /* KiaExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (80FC55C52E34C3F300DA8884 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = KiaExtension; sourceTree = "<group>"; };
 		80FC55CB2E34C40000DA8884 /* KiaExtensionUI */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (80FC55CF2E34C41100DA8884 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = KiaExtensionUI; sourceTree = "<group>"; };
@@ -476,7 +494,6 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = N448G4S8S9;
@@ -509,7 +526,6 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = N448G4S8S9;

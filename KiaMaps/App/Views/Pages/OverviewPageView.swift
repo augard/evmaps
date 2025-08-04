@@ -11,7 +11,8 @@ import SwiftUI
 /// Overview page showing battery hero, quick actions, and vehicle status
 struct OverviewPageView: View {
     let vehicle: Vehicle
-    let status: VehicleStatusResponse
+    let status: VehicleStatus
+    let lastUpdateTime: Date
     let isActive: Bool
     let onRefresh: () async -> Void
     
@@ -106,7 +107,7 @@ struct OverviewPageView: View {
                 ScrollView {
                     VStack(spacing: KiaDesign.Spacing.xl) {
                         InteractiveVehicleSilhouetteView(
-                            vehicleStatus: status.state.vehicle
+                            vehicleStatus: status
                         )
                     }
                     .padding(KiaDesign.Spacing.large)
@@ -163,8 +164,8 @@ struct OverviewPageView: View {
     private var vehicleStatusGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: KiaDesign.Spacing.medium) {
             // Doors Status - using the available lock data from cabin
-            let row1 = status.state.vehicle.cabin.door.row1
-            let row2 = status.state.vehicle.cabin.door.row2
+            let row1 = status.cabin.door.row1
+            let row2 = status.cabin.door.row2
             let doorsLocked = !row1.driver.lock && !row1.passenger.lock && !row2.left.lock && !row2.right.lock
             
             statusCard(
@@ -178,12 +179,12 @@ struct OverviewPageView: View {
             statusCard(
                 icon: "power",
                 title: "Ready",
-                value: status.state.vehicle.drivingReady ? "Ready" : "Off",
-                color: status.state.vehicle.drivingReady ? KiaDesign.Colors.success : KiaDesign.Colors.textSecondary
+                value: status.drivingReady ? "Ready" : "Off",
+                color: status.drivingReady ? KiaDesign.Colors.success : KiaDesign.Colors.textSecondary
             )
             
             // Battery Health
-            let batteryHealth = status.state.vehicle.green.batteryManagement.soH.ratio / 100.0
+            let batteryHealth = status.green.batteryManagement.soH.ratio / 100.0
             statusCard(
                 icon: "battery.100",
                 title: "Health",
@@ -196,7 +197,7 @@ struct OverviewPageView: View {
             statusCard(
                 icon: "clock.fill",
                 title: "Updated",
-                value: timeAgoString(from: status.lastUpdateTime),
+                value: timeAgoString(from: lastUpdateTime),
                 color: KiaDesign.Colors.textSecondary
             )
         }
@@ -277,8 +278,8 @@ struct OverviewPageView: View {
                 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: KiaDesign.Spacing.small) {
                     // Real odometer data from API
-                    diagnosticItem("Odometer", formatDistance(status.state.vehicle.drivetrain.odometer))
-                    
+                    diagnosticItem("Odometer", formatDistance(status.drivetrain.odometer))
+
                     // Engine hours - not available in API for EVs
                     diagnosticItem("System Hours", "N/A")
                     
@@ -286,7 +287,7 @@ struct OverviewPageView: View {
                     diagnosticItem("Service Due", "Check app")
                     
                     // Last update time from API
-                    diagnosticItem("Last Updated", timeAgoString(from: status.lastUpdateTime))
+                    diagnosticItem("Last Updated", timeAgoString(from: lastUpdateTime))
                 }
             }
         }
@@ -302,23 +303,23 @@ struct OverviewPageView: View {
                 
                 VStack(spacing: KiaDesign.Spacing.xs) {
                     // Generate activity based on current vehicle status
-                    if status.state.vehicle.isCharging {
-                        let batteryLevel = Int(status.state.vehicle.green.batteryManagement.batteryRemain.ratio)
+                    if status.isCharging {
+                        let batteryLevel = Int(status.green.batteryManagement.batteryRemain.ratio)
                         activityItem("Currently charging (\(batteryLevel)%)", "Now", "bolt.circle.fill", KiaDesign.Colors.charging)
                     } else {
-                        let batteryLevel = Int(status.state.vehicle.green.batteryManagement.batteryRemain.ratio)
-                        activityItem("Battery at \(batteryLevel)%", timeAgoString(from: status.lastUpdateTime), "battery.100", KiaDesign.Colors.success)
+                        let batteryLevel = Int(status.green.batteryManagement.batteryRemain.ratio)
+                        activityItem("Battery at \(batteryLevel)%", timeAgoString(from: lastUpdateTime), "battery.100", KiaDesign.Colors.success)
                     }
                     
                     // Vehicle ready status
-                    if status.state.vehicle.drivingReady {
-                        activityItem("Vehicle ready", timeAgoString(from: status.lastUpdateTime), "car.fill", KiaDesign.Colors.primary)
+                    if status.drivingReady {
+                        activityItem("Vehicle ready", timeAgoString(from: lastUpdateTime), "car.fill", KiaDesign.Colors.primary)
                     } else {
-                        activityItem("Vehicle parked", timeAgoString(from: status.lastUpdateTime), "car.side.fill", KiaDesign.Colors.textSecondary)
+                        activityItem("Vehicle parked", timeAgoString(from: lastUpdateTime), "car.side.fill", KiaDesign.Colors.textSecondary)
                     }
                     
                     // Last status update
-                    activityItem("Status updated", timeAgoString(from: status.lastUpdateTime), "arrow.clockwise", KiaDesign.Colors.textSecondary)
+                    activityItem("Status updated", timeAgoString(from: lastUpdateTime), "arrow.clockwise", KiaDesign.Colors.textSecondary)
                 }
             }
         }
@@ -437,7 +438,8 @@ struct OverviewPageView: View {
 #Preview("Overview Page View") {
     OverviewPageView(
         vehicle: MockVehicleData.mockVehicle,
-        status: MockVehicleData.lowTirePressureResponse,
+        status: MockVehicleData.lowTirePressure,
+        lastUpdateTime: .now,
         isActive: true,
         onRefresh: {
             try? await Task.sleep(nanoseconds: 1_000_000_000)

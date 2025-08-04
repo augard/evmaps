@@ -76,8 +76,8 @@ final class UIComponentMockDataTests: XCTestCase {
             MockVehicleData.lowBattery,
             MockVehicleData.fullBattery
         ]
-        
-        for vehicleStatus in scenarios {
+
+        for (index, vehicleStatus) in scenarios.enumerated() {
             let view = BatteryHeroView(from: vehicleStatus)
             
             // View should be created successfully
@@ -91,6 +91,12 @@ final class UIComponentMockDataTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(batteryLevel, 0.0)
             XCTAssertLessThanOrEqual(batteryLevel, 1.0)
             XCTAssertGreaterThanOrEqual(estimatedRange, 0)
+
+            if index == 1 {
+                XCTAssertTrue(isCharging)
+            } else {
+                XCTAssertFalse(isCharging)
+            }
         }
     }
     

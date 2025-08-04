@@ -60,6 +60,89 @@ class Api {
     /// - Returns: Complete authorization data including tokens and device ID
     /// - Throws: Authentication errors, network errors, or validation failures
     func login(username: String, password: String) async throws -> AuthorizationData {
+        // Try enhanced authentication first if available
+        if shouldUseEnhancedAuth() {
+            do {
+                return try await loginEnhanced(username: username, password: password)
+            } catch {
+                print("Enhanced authentication failed, falling back to legacy: \(error)")
+                return try await loginLegacy(username: username, password: password)
+            }
+        } else {
+            return try await loginLegacy(username: username, password: password)
+        }
+    }
+    
+    /// Enhanced authentication with RSA encryption support
+    /// - Parameters:
+    ///   - username: User's login username/email
+    ///   - password: User's login password
+    /// - Returns: Complete authorization data including tokens and device ID
+    /// - Throws: Authentication errors, network errors, or validation failures
+    func loginEnhanced(username: String, password: String) async throws -> AuthorizationData {
+        cleanCookies()
+        let authAPI = NewAuthenticationAPI(configuration: configuration)
+        
+        // Step 0: Get connector authorization (handles 302 redirect to get nxt_uri)
+        let nextUri = try await authAPI.getConnectorAuthorization()
+        print("Retrieved next_uri: \(nextUri)")
+
+        // Step 1: Get client configuration
+        let clientConfig = try await authAPI.getClientConfiguration(referer: nextUri)
+        print("Client configured for: \(clientConfig.clientName)")
+        
+        // Step 2: Check if password encryption is enabled
+        let encryptionSettings = try await authAPI.getPasswordEncryptionSettings(referer: nextUri)
+        guard encryptionSettings.useEnabled && encryptionSettings.value1 == "true" else {
+            throw NewAuthenticationError.encryptionSettingsFailed
+        }
+        
+        // Step 3: Get RSA certificate for password encryption
+        let rsaKey = try await authAPI.getRSACertificate(referer: nextUri)
+
+        // Step 4: Initialize OAuth2 flow
+        let oauth2Result = try await authAPI.initializeOAuth2(referer: nextUri)
+
+        // Step 5: Sign in with encrypted password
+        let authCodeResult = try await authAPI.signIn(
+            referer: nextUri,
+            username: username,
+            password: password,
+            rsaKey: rsaKey,
+            oauth2Result: oauth2Result
+        )
+        
+        // Step 6: Exchange authorization code for tokens
+        let tokenResponse = try await authAPI.exchangeCodeForTokens(
+            authorizationCode: authCodeResult.code
+        )
+        
+        // Generate device ID and stamp for compatibility
+        let stamp = AuthorizationData.generateStamp(for: configuration)
+        let deviceId = try await deviceId(stamp: stamp)
+        
+        // Convert to existing AuthorizationData format
+        let authorizationData = AuthorizationData(
+            stamp: stamp,
+            deviceId: deviceId,
+            accessToken: tokenResponse.accessToken,
+            expiresIn: tokenResponse.expiresIn,
+            refreshToken: tokenResponse.refreshToken,
+            isCcuCCS2Supported: true
+        )
+        
+        provider.authorization = authorizationData
+        try await notificationRegister(deviceId: deviceId)
+        return authorizationData
+    }
+    
+    /// Legacy authentication method (original implementation)
+    /// - Parameters:
+    ///   - username: User's login username/email
+    ///   - password: User's login password
+    /// - Returns: Complete authorization data including tokens and device ID
+    /// - Throws: Authentication errors, network errors, or validation failures
+    private func loginLegacy(username: String, password: String) async throws -> AuthorizationData {
         let stamp = AuthorizationData.generateStamp(for: configuration)
         cleanCookies()
 
@@ -90,6 +173,14 @@ class Api {
         provider.authorization = authorizationData
         try await notificationRegister(deviceId: deviceId)
         return authorizationData
+    }
+    
+    /// Determine whether to use enhanced authentication
+    /// - Returns: True if enhanced authentication should be used
+    private func shouldUseEnhancedAuth() -> Bool {
+        // For now, always try enhanced auth first
+        // In production, this could be controlled by a feature flag
+        return true
     }
 
     /// Logout user and clean up session data

@@ -3,7 +3,7 @@ import SwiftUI
 /// Tesla-inspired modern vehicle status view integrating all new design components
 struct VehicleStatusModernView: View {
     let vehicle: Vehicle
-    let vehicleStatus: VehicleStatusResponse
+    let vehicleStatus: VehicleStatus
     let lastUpdateTime: Date
     
     @State private var refreshing = false
@@ -27,9 +27,8 @@ struct VehicleStatusModernView: View {
     
     /// Extract real efficiency data from API with fallback hierarchy
     private var realEfficiency: String {
-        let status = vehicleStatus.state.vehicle
-        let economy = status.drivetrain.fuelSystem.averageFuelEconomy
-        
+        let economy = vehicleStatus.drivetrain.fuelSystem.averageFuelEconomy
+
         if economy.drive > 0 {
             let numberFormatter = NumberFormatter()
             numberFormatter.numberStyle = .decimal
@@ -44,7 +43,7 @@ struct VehicleStatusModernView: View {
             return "\(formattedValue) \(economy.unit.unitTitle)"
         } else {
             // Final fallback to driving history average
-            let drivingHistory = status.green.drivingHistory
+            let drivingHistory = vehicleStatus.green.drivingHistory
             if drivingHistory.average > 0 {
                 return String(format: "%.1f km/kWh", drivingHistory.average)
             } else {
@@ -120,10 +119,10 @@ struct VehicleStatusModernView: View {
                 // Status indicators
                 HStack(spacing: KiaDesign.Spacing.small) {
                     KiaStatusIndicator(
-                        status: vehicleStatus.state.vehicle.drivingReady ? .ready : .warning("Not Ready")
+                        status: vehicleStatus.drivingReady ? .ready : .warning("Not Ready")
                     )
                     
-                    if vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio > 80 {
+                    if vehicleStatus.green.batteryManagement.batteryRemain.ratio > 80 {
                         KiaStatusIndicator(
                             status: .charging
                         )
@@ -201,7 +200,7 @@ struct VehicleStatusModernView: View {
                 statusCard(
                     icon: "speedometer",
                     title: "Range",
-                    value: "\(Int(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio * 3)) km",
+                    value: "\(Int(vehicleStatus.green.batteryManagement.batteryRemain.ratio * 3)) km",
                     color: KiaDesign.Colors.primary
                 )
                 
@@ -236,7 +235,7 @@ struct VehicleStatusModernView: View {
                         .foregroundStyle(KiaDesign.Colors.textPrimary)
                     
                     KiaProgressBar(
-                        value: Double(vehicleStatus.state.vehicle.green.batteryManagement.batteryRemain.ratio) / 100.0,
+                        value: Double(vehicleStatus.green.batteryManagement.batteryRemain.ratio) / 100.0,
                         style: .battery,
                         showPercentage: true
                     )
@@ -420,7 +419,7 @@ struct VehicleStatusModernView: View {
 #Preview("Modern Vehicle Status - Standard") {
     VehicleStatusModernView(
         vehicle: MockVehicleData.mockVehicle,
-        vehicleStatus: MockVehicleData.standardResponse,
+        vehicleStatus: MockVehicleData.standard,
         lastUpdateTime: Date().addingTimeInterval(-300) // 5 minutes ago
     )
 }
@@ -428,7 +427,7 @@ struct VehicleStatusModernView: View {
 #Preview("Modern Vehicle Status - Charging") {
     VehicleStatusModernView(
         vehicle: MockVehicleData.mockVehicle,
-        vehicleStatus: MockVehicleData.chargingResponse,
+        vehicleStatus: MockVehicleData.charging,
         lastUpdateTime: Date().addingTimeInterval(-60) // 1 minute ago
     )
 }
@@ -436,7 +435,7 @@ struct VehicleStatusModernView: View {
 #Preview("Modern Vehicle Status - Low Battery") {
     VehicleStatusModernView(
         vehicle: MockVehicleData.mockVehicle,
-        vehicleStatus: MockVehicleData.lowBatteryResponse,
+        vehicleStatus: MockVehicleData.lowBattery,
         lastUpdateTime: Date().addingTimeInterval(-1200) // 20 minutes ago
     )
 }

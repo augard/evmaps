@@ -109,7 +109,12 @@ struct MainView: View {
     @ViewBuilder
     var contentView: some View {
         if let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus {
-            OverviewPageView(vehicle: selectedVehicle, status: selectedVehicleStatus, isActive: true) {
+            OverviewPageView(
+                vehicle: selectedVehicle,
+                status: selectedVehicleStatus.state.vehicle,
+                lastUpdateTime: selectedVehicleStatus.lastUpdateTime,
+                isActive: true
+            ) {
                 await refreshData()
             }
         } else {

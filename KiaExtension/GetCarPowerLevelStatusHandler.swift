@@ -98,7 +98,11 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
                 }
                 manager.removeLastUpdateDate()
             }
-            completion(cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters))
+
+            let result = cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                completion(result)
+            }
         } else {
             // Get data from server
             Task {

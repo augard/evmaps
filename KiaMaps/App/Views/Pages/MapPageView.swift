@@ -17,7 +17,7 @@ struct MapPageView: View {
     var body: some View {
         VehicleMapView(
             vehicle: vehicle,
-            vehicleStatus: status
+            vehicleStatus: status.state.vehicle,
         )
         .background(KiaDesign.Colors.background)
     }
