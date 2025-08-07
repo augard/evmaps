@@ -106,14 +106,7 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
     }
 
     var loginUrl: String {
-        switch self {
-        case .kia:
-            "https://eu-account.kia.com"
-        case .hyundai:
-            "https://eu-account.hyundai.com"
-        case .genesis:
-            "https://accounts-eu.genesis.com"
-        }
+        "https://idpconnect-eu.\(key).com"
     }
 
     var serviceId: String {

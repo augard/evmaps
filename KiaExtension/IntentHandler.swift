@@ -9,7 +9,7 @@
 import Intents
 
 class IntentHandler: INExtension {
-    static let api: Api = Api(configuration: AppConfiguration.apiConfiguration)
+    static let api: Api = Api(configuration: AppConfiguration.apiConfiguration, rsaService: .init())
     static let credentialsHandler: CredentialsHandler = {
         CredentialsHandler(
             api: api,

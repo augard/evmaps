@@ -28,7 +28,7 @@ struct LoginView: View {
     let onLoginSuccess: (AuthorizationData) -> Void
     
     private var api: Api {
-        Api(configuration: configuration.apiConfiguration)
+        Api(configuration: configuration.apiConfiguration, rsaService: .init())
     }
     
     var body: some View {

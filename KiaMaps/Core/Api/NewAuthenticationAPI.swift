@@ -34,24 +34,24 @@ final class NewAuthenticationAPI: NSObject {
     
     func getConnectorAuthorization() async throws -> String {
         // Build the state parameter (base64 encoded JSON)
-        let stateJSON: [String: Any] = [
-            "scope": NSNull(),
-            "state": NSNull(),
-            "lang": NSNull(),
-            "cert": "",
-            "action": "idpc_auth_endpoint",
-            "client_id": clientId,
-            "redirect_uri": "https://idpconnect-eu.kia.com/auth/redirect",
-            "response_type": "code",
-            "signup_link": NSNull(),
-            "hmgid2_client_id": clientId,
-            "hmgid2_redirect_uri": redirectUri,
-            "hmgid2_scope": NSNull(),
-            "hmgid2_state": "ccsp",
-            "hmgid2_ui_locales": NSNull()
-        ]
+        let stateObject = ConnectorAuthorizationState(
+            scope: nil,
+            state: nil,
+            lang: nil,
+            cert: "",
+            action: "idpc_auth_endpoint",
+            clientId: clientId,
+            redirectUri: "https://idpconnect-eu.kia.com/auth/redirect",
+            responseType: "code",
+            signupLink: nil,
+            hmgid2ClientId: clientId,
+            hmgid2RedirectUri: redirectUri,
+            hmgid2Scope: nil,
+            hmgid2State: "ccsp",
+            hmgid2UiLocales: nil
+        )
         
-        let stateData = try JSONSerialization.data(withJSONObject: stateJSON)
+        let stateData = try JSONEncoder().encode(stateObject)
         let stateString = stateData.base64EncodedString()
         
         // Build URL components
@@ -88,7 +88,7 @@ final class NewAuthenticationAPI: NSObject {
             throw NewAuthenticationError.oauth2InitializationFailed
         }
         
-        // Extract nxt_uri from Location header
+        // Extract next_uri from Location header
         guard let location = httpResponse.value(forHTTPHeaderField: "Location"),
               let nxtUri = extractNextUri(from: location) else {
             throw NewAuthenticationError.oauth2InitializationFailed
@@ -230,7 +230,7 @@ final class NewAuthenticationAPI: NSObject {
         let cookies = HTTPCookieStorage.shared.cookies
 
         // Parse HTML response to extract CSRF token and session key
-        guard let htmlString = String(data: data, encoding: .utf8), let cookie = cookies?.first(where: { $0.name == "account" }) else {
+        guard let _ = String(data: data, encoding: .utf8), let cookie = cookies?.first(where: { $0.name == "account" }) else {
             throw NewAuthenticationError.oauth2InitializationFailed
         }
         
@@ -414,7 +414,7 @@ final class NewAuthenticationAPI: NSObject {
             return nil
         }
 
-        // Look for both nxt_uri and next_uri parameters
+        // Look for both next_uri parameters
         return queryItems.first(where: { $0.name == "connector_session_key" })?.value
     }
 
@@ -439,6 +439,43 @@ final class NewAuthenticationAPI: NSObject {
     
     private enum Constants {
         static let userAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148_CCS_APP_iOS"
+    }
+}
+
+// MARK: - Connector Authorization State
+
+/// State object for connector authorization request
+private struct ConnectorAuthorizationState: Codable {
+    let scope: String?
+    let state: String?
+    let lang: String?
+    let cert: String
+    let action: String
+    let clientId: String
+    let redirectUri: String
+    let responseType: String
+    let signupLink: String?
+    let hmgid2ClientId: String
+    let hmgid2RedirectUri: String
+    let hmgid2Scope: String?
+    let hmgid2State: String
+    let hmgid2UiLocales: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case scope
+        case state
+        case lang
+        case cert
+        case action
+        case clientId = "client_id"
+        case redirectUri = "redirect_uri"
+        case responseType = "response_type"
+        case signupLink = "signup_link"
+        case hmgid2ClientId = "hmgid2_client_id"
+        case hmgid2RedirectUri = "hmgid2_redirect_uri"
+        case hmgid2Scope = "hmgid2_scope"
+        case hmgid2State = "hmgid2_state"
+        case hmgid2UiLocales = "hmgid2_ui_locales"
     }
 }
 

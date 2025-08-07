@@ -225,7 +225,7 @@ struct ApiRequest {
     }
 
     private static func loginUrl(for configuration: ApiConfiguration) -> URL? {
-        URL(string: configuration.loginUrl + "/auth/realms/eu" + configuration.key + "idm/")
+        URL(string: configuration.loginUrl)
     }
 
     private static func spaUrl(for configuration: ApiConfiguration) -> URL? {
@@ -365,7 +365,7 @@ class ApiRequestProvider: NSObject {
 extension ApiRequestProvider: URLSessionTaskDelegate {
     func urlSession(_: URLSession, task: URLSessionTask, willPerformHTTPRedirection _: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
         let lastPathComponent = task.originalRequest?.url?.lastPathComponent
-        if ["authenticate"].contains(lastPathComponent) {
+        if ["signin", "authorize"].contains(lastPathComponent) {
             completionHandler(nil)
         } else {
             completionHandler(request)

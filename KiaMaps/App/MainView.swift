@@ -45,7 +45,7 @@ struct MainView: View {
 
     init(configuration: AppConfiguration.Type) {
         self.configuration = configuration
-        api = Api(configuration: configuration.apiConfiguration)
+        api = Api(configuration: configuration.apiConfiguration, rsaService: .init())
         state = .loading
     }
 

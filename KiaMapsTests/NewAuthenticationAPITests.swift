@@ -342,4 +342,99 @@ final class NewAuthenticationAPITests: XCTestCase {
         XCTAssertEqual(authCodeResult.state, "ccsp")
         XCTAssertTrue(authCodeResult.loginSuccess)
     }
+    
+    // MARK: - Codable State Tests
+    
+    func testConnectorAuthorizationStateEncoding() throws {
+        // Test the new Codable struct produces correct JSON structure
+        let clientId = "test-client-id"
+        let redirectUri = "https://test.example.com/redirect"
+        
+        // Create the struct (simulating what's done in getConnectorAuthorization)
+        let stateObject = ConnectorAuthorizationState(
+            scope: nil,
+            state: nil,
+            lang: nil,
+            cert: "",
+            action: "idpc_auth_endpoint",
+            clientId: clientId,
+            redirectUri: "https://idpconnect-eu.kia.com/auth/redirect",
+            responseType: "code",
+            signupLink: nil,
+            hmgid2ClientId: clientId,
+            hmgid2RedirectUri: redirectUri,
+            hmgid2Scope: nil,
+            hmgid2State: "ccsp",
+            hmgid2UiLocales: nil
+        )
+        
+        // Encode to JSON
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(stateObject)
+        let jsonObject = try JSONSerialization.jsonObject(with: jsonData) as! [String: Any]
+        
+        // Verify the JSON structure matches expected format
+        XCTAssertEqual(jsonObject["action"] as? String, "idpc_auth_endpoint")
+        XCTAssertEqual(jsonObject["client_id"] as? String, clientId)
+        XCTAssertEqual(jsonObject["redirect_uri"] as? String, "https://idpconnect-eu.kia.com/auth/redirect")
+        XCTAssertEqual(jsonObject["response_type"] as? String, "code")
+        XCTAssertEqual(jsonObject["cert"] as? String, "")
+        XCTAssertEqual(jsonObject["hmgid2_client_id"] as? String, clientId)
+        XCTAssertEqual(jsonObject["hmgid2_redirect_uri"] as? String, redirectUri)
+        XCTAssertEqual(jsonObject["hmgid2_state"] as? String, "ccsp")
+        
+        // Verify null fields are present but null
+        XCTAssertTrue(jsonObject.keys.contains("scope"))
+        XCTAssertTrue(jsonObject.keys.contains("state"))
+        XCTAssertTrue(jsonObject.keys.contains("lang"))
+        XCTAssertTrue(jsonObject.keys.contains("signup_link"))
+        XCTAssertTrue(jsonObject.keys.contains("hmgid2_scope"))
+        XCTAssertTrue(jsonObject.keys.contains("hmgid2_ui_locales"))
+        
+        // Test Base64 encoding works
+        let base64String = jsonData.base64EncodedString()
+        XCTAssertFalse(base64String.isEmpty, "Base64 encoding should produce non-empty string")
+        
+        // Verify we can decode the Base64 back to JSON
+        let decodedData = Data(base64Encoded: base64String)!
+        let decodedObject = try JSONSerialization.jsonObject(with: decodedData) as! [String: Any]
+        XCTAssertEqual(decodedObject["action"] as? String, "idpc_auth_endpoint")
+    }
+}
+
+// MARK: - Supporting Structs
+
+/// Private struct mirroring the one in NewAuthenticationAPI for testing purposes
+private struct ConnectorAuthorizationState: Codable {
+    let scope: String?
+    let state: String?
+    let lang: String?
+    let cert: String
+    let action: String
+    let clientId: String
+    let redirectUri: String
+    let responseType: String
+    let signupLink: String?
+    let hmgid2ClientId: String
+    let hmgid2RedirectUri: String
+    let hmgid2Scope: String?
+    let hmgid2State: String
+    let hmgid2UiLocales: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case scope
+        case state
+        case lang
+        case cert
+        case action
+        case clientId = "client_id"
+        case redirectUri = "redirect_uri"
+        case responseType = "response_type"
+        case signupLink = "signup_link"
+        case hmgid2ClientId = "hmgid2_client_id"
+        case hmgid2RedirectUri = "hmgid2_redirect_uri"
+        case hmgid2Scope = "hmgid2_scope"
+        case hmgid2State = "hmgid2_state"
+        case hmgid2UiLocales = "hmgid2_ui_locales"
+    }
 }

@@ -16,19 +16,10 @@ enum ApiEndpoint: CustomStringConvertible {
         case user
     }
 
-    case language
-    case signIn
-    case authorization
-    case authorizationToken
-    case loginPage
-    case loginAction(query: String)
-    case loginRedirect
     case logout
     case notificationRegister
     case notificationRegisterWithDeviceId(UUID)
 
-    case userIntegrationInfo
-    case userSession
     case userProfile
 
     case vehicles
@@ -43,32 +34,14 @@ enum ApiEndpoint: CustomStringConvertible {
 
     var path: (String, RelativeTo) {
         switch self {
-        case .language:
-            ("language", .user)
-        case .signIn:
-            ("silentsignin", .user)
-        case .authorization:
-            ("oauth2/authorize", .user)
-        case .authorizationToken:
-            ("oauth2/token", .user)
         case .notificationRegister:
             ("notifications/register", .spa)
         case let .notificationRegisterWithDeviceId(deviceId):
             ("notifications/\(deviceId.formatted)/register", .spa)
-        case .loginPage:
-            ("protocol/openid-connect/auth", .login)
-        case let .loginAction(query):
-            ("login-actions/authenticate\(query)", .login)
-        case .loginRedirect:
-            ("integration/redirect/login", .user)
         case .logout:
             ("devices/logout", .spa)
-        case .userIntegrationInfo:
-            ("integrationinfo", .user)
         case .userProfile:
             ("profile", .user)
-        case .userSession:
-            ("session", .user)
         case .vehicles:
             ("vehicles", .spa)
         case let .refreshVehicle(vehicleId):
@@ -88,30 +61,12 @@ enum ApiEndpoint: CustomStringConvertible {
 
     var description: String {
         switch self {
-        case .language:
-            "language"
-        case .signIn:
-            "signIn"
-        case .authorization:
-            "authorization"
-        case .authorizationToken:
-            "authorizationToken"
-        case .loginPage:
-            "loginPage"
-        case .loginAction:
-            "loginAction"
-        case .loginRedirect:
-            "loginRedirect"
         case .logout:
             "logout"
         case .notificationRegister:
             "notificationRegister"
         case .notificationRegisterWithDeviceId:
             "notificationRegisterWithDeviceId"
-        case .userIntegrationInfo:
-            "userIntegrationInfo"
-        case .userSession:
-            "userSession"
         case .userProfile:
             "userProfile"
         case .vehicles:

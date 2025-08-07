@@ -371,6 +371,6 @@ struct UserProfileView: View {
 
 #Preview("User Profile") {
     UserProfileView(
-        api: Api(configuration: AppConfiguration.apiConfiguration)
+        api: Api(configuration: AppConfiguration.apiConfiguration, rsaService: .init())
     )
 }
