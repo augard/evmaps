@@ -103,8 +103,11 @@ struct ApiRequest {
         var headers = headers
         if headers["Content-type"] == nil {
             headers["Content-type"] = "application/json"
+            headers["Accept"] = "application/json"
         }
         headers["User-Agent"] = caller.configuration.userAgent
+        headers["Accept"] = "*/*"
+        headers["Accept-Language"] = "en-GB,en;q=0.9"
         self.caller = caller
         self.method = method ?? .post
         self.endpoint = endpoint
@@ -124,7 +127,13 @@ struct ApiRequest {
         timeout: TimeInterval
     ) {
         var headers = headers
+        if headers["Content-type"] == nil {
+            headers["Content-type"] = "application/json"
+            headers["Accept"] = "application/json"
+        }
         headers["User-Agent"] = caller.configuration.userAgent
+        headers["Accept"] = "*/*"
+        headers["Accept-Language"] = "en-GB,en;q=0.9"
         self.caller = caller
         self.method = method ?? (body == nil ? .get : .post)
         self.endpoint = endpoint
@@ -144,8 +153,10 @@ struct ApiRequest {
         timeout: TimeInterval
     ) {
         var headers = headers
+        headers["Content-Type"] = "application/x-www-form-urlencoded; charset=utf-8"
         headers["User-Agent"] = caller.configuration.userAgent
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
+        headers["Accept"] = "*/*"
+        headers["Accept-Language"] = "en-GB,en;q=0.9"
         let formData = form
             .map { ($0.key + "=" + $0.value).addingPercentEncoding(withAllowedCharacters: Self.formCharset) ?? "" }
             .joined(separator: "&")
@@ -185,6 +196,11 @@ struct ApiRequest {
         return response.result
     }
 
+    func responseValue<Data: Decodable>(acceptStatusCode: Int = 200) async throws -> Data {
+        let response: ApiResponseValue<Data> = try await data(acceptStatusCode: acceptStatusCode)
+        return response.returnValue
+    }
+
     func responseEmpty(acceptStatusCode: Int = 200) async throws -> ApiResponseEmpty {
         try await data(acceptStatusCode: acceptStatusCode)
     }
@@ -202,6 +218,15 @@ struct ApiRequest {
         return string
     }
 
+    func httpResponse(acceptStatusCode: Int = 200) async throws -> HTTPURLResponse {
+        let (_, response) = try await callRequest(acceptStatusCode: acceptStatusCode)
+        print("\(endpoint) - result: \(response)")
+        guard let response = response as? HTTPURLResponse else {
+            throw URLError(.cannotDecodeContentData)
+        }
+        return response
+    }
+
     func data<Data: Decodable>(acceptStatusCode: Int = 200) async throws -> Data {
         let (data, _) = try await callRequest(acceptStatusCode: acceptStatusCode)
         let result = try JSONDecoders.default.decode(Data.self, from: data)
@@ -210,9 +235,8 @@ struct ApiRequest {
     }
 
     func referalUrl(acceptStatusCode: Int = 302) async throws -> URL {
-        let (_, response) = try await callRequest(acceptStatusCode: acceptStatusCode)
-        guard let response = response as? HTTPURLResponse,
-              let location = response.allHeaderFields["Location"] as? String,
+        let httpResponse = try await httpResponse(acceptStatusCode: acceptStatusCode)
+        guard let location = httpResponse.allHeaderFields["Location"] as? String,
               let url = URL(string: location)
         else {
             throw URLError(.cannotDecodeContentData)
@@ -221,7 +245,7 @@ struct ApiRequest {
     }
 
     private static func baseUrl(for configuration: ApiConfiguration) -> URL? {
-        URL(string: configuration.baseUrl + ":\(configuration.port)" + "/api/v1/")
+        URL(string: configuration.baseUrl + ":\(configuration.port)")
     }
 
     private static func loginUrl(for configuration: ApiConfiguration) -> URL? {

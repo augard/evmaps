@@ -132,9 +132,28 @@ struct ConnectorTokenInfo: Codable {
     }
 }
 
+struct AuthorizationResponse: Decodable {
+    let accessToken: String
+    let tokenType: TokenType
+    let refreshToken: String
+    let expiresIn: Int
+
+    enum TokenType: String, Codable {
+        case bearer = "Bearer"
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case accessToken = "access_token"
+        case tokenType = "token_type"
+        case refreshToken = "refresh_token"
+        case expiresIn = "expires_in"
+    }
+}
+
 // MARK: - Authentication Errors
 
-enum NewAuthenticationError: LocalizedError {
+enum AuthenticationError: LocalizedError {
+    case connectorAuthorizationFailed
     case clientConfigurationFailed
     case encryptionSettingsFailed
     case certificateRetrievalFailed
@@ -142,38 +161,31 @@ enum NewAuthenticationError: LocalizedError {
     case signInFailed
     case authorizationCodeNotFound
     case tokenExchangeFailed
-    case rsaEncryptionFailed(String)
     case csrfTokenNotFound
     case sessionKeyNotFound
-    case invalidResponse
-    case networkError(String)
     
     var errorDescription: String? {
         switch self {
+        case .connectorAuthorizationFailed:
+            "Client connector authorization failed"
         case .clientConfigurationFailed:
-            return "Failed to retrieve client configuration"
+            "Failed to retrieve client configuration"
         case .encryptionSettingsFailed:
-            return "Failed to retrieve encryption settings or encryption is disabled"
+            "Failed to retrieve encryption settings or encryption is disabled"
         case .certificateRetrievalFailed:
-            return "Failed to retrieve RSA certificate"
+            "Failed to retrieve RSA certificate"
         case .oauth2InitializationFailed:
-            return "Failed to initialize OAuth2 flow"
+            "Failed to initialize OAuth2 flow"
         case .signInFailed:
-            return "Sign in failed"
+            "Sign in failed"
         case .authorizationCodeNotFound:
-            return "Authorization code not found in response"
+            "Authorization code not found in response"
         case .tokenExchangeFailed:
-            return "Failed to exchange authorization code for tokens"
-        case .rsaEncryptionFailed(let message):
-            return "RSA encryption failed: \(message)"
+            "Failed to exchange authorization code for tokens"
         case .csrfTokenNotFound:
-            return "CSRF token not found in response"
+            "CSRF token not found in response"
         case .sessionKeyNotFound:
-            return "Session key not found in response"
-        case .invalidResponse:
-            return "Invalid response from server"
-        case .networkError(let message):
-            return "Network error: \(message)"
+            "Session key not found in response"
         }
     }
 }

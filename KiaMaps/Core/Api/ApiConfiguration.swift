@@ -6,7 +6,7 @@
 //  Copyright © 2024 Lukas Foldyna. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 enum ApiBrand: String {
     case kia
@@ -87,7 +87,8 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
     }
 
     var userAgent: String {
-        "EU_BlueLink/2.1.18 (com.kia.connect.eu; build:10560; iOS 17.5.1) Alamofire/5.8.0"
+        let device = UIDevice.current
+        return "EU_BlueLink/2.1.18 (com.kia.connect.eu; build:10560; \(device.systemName) \(device.systemVersion)) Alamofire/5.8.0"
     }
 
     var acceptHeader: String {

@@ -68,42 +68,55 @@ class Api {
     /// - Throws: Authentication errors, network errors, or validation failures
     func login(username: String, password: String) async throws -> AuthorizationData {
         cleanCookies()
-        let authAPI = NewAuthenticationAPI(configuration: configuration)
-        
         // Step 0: Get connector authorization (handles 302 redirect to get next_uri)
-        let nextUri = try await authAPI.getConnectorAuthorization()
-        print("Retrieved next_uri: \(nextUri)")
+        let referer: String
+        do {
+            referer = try await fetchConnectorAuthorization()
+            print("Retrieved referer: \(referer)")
+        } catch {
+            print("Client connector authorization failed \(error.localizedDescription)")
+            throw AuthenticationError.clientConfigurationFailed
+        }
 
         // Step 1: Get client configuration
-        let clientConfig = try await authAPI.getClientConfiguration(referer: nextUri)
+        let clientConfig = try await fetchClientConfiguration(referer: referer)
         print("Client configured for: \(clientConfig.clientName)")
         
         // Step 2: Check if password encryption is enabled
-        let encryptionSettings = try await authAPI.getPasswordEncryptionSettings(referer: nextUri)
+        let encryptionSettings = try await fetchPasswordEncryptionSettings(referer: referer)
         guard encryptionSettings.useEnabled && encryptionSettings.value1 == "true" else {
-            throw NewAuthenticationError.encryptionSettingsFailed
+            throw AuthenticationError.encryptionSettingsFailed
         }
         
         // Step 3: Get RSA certificate for password encryption
-        let rsaKey = try await authAPI.getRSACertificate(referer: nextUri)
-
+        let rsaKey: RSAEncryptionService.RSAKeyData
+        do {
+            rsaKey = try await fetchRSACertificate(referer: referer)
+        } catch {
+            print("Fetch RSA Certificate failed \(error.localizedDescription)")
+            throw AuthenticationError.certificateRetrievalFailed
+        }
         // Step 4: Initialize OAuth2 flow
-        let oauth2Result = try await authAPI.initializeOAuth2(referer: nextUri)
+        let csrfToken = try await initializeOAuth2(referer: referer)
 
         // Step 5: Sign in with encrypted password
-        let authCodeResult = try await authAPI.signIn(
-            referer: nextUri,
+        let authorizationCode = try await signIn(
+            referer: referer,
             username: username,
             password: password,
             rsaKey: rsaKey,
-            oauth2Result: oauth2Result
+            csrfToken: csrfToken
         )
         
         // Step 6: Exchange authorization code for tokens
-        let tokenResponse = try await authAPI.exchangeCodeForTokens(
-            authorizationCode: authCodeResult.code
-        )
-        
+        let tokenResponse: TokenResponse
+        do {
+            tokenResponse = try await exchangeCodeForTokens(authorizationCode: authorizationCode)
+        } catch {
+            print("Exchange code for token failed \(error.localizedDescription)")
+            throw AuthenticationError.tokenExchangeFailed
+        }
+
         // Generate device ID and stamp for compatibility
         let stamp = AuthorizationData.generateStamp(for: configuration)
         let deviceId = try await deviceId(stamp: stamp)
@@ -127,7 +140,7 @@ class Api {
     /// - Throws: Network errors (non-critical - cleanup continues regardless)
     func logout() async throws {
         do {
-            try await provider.request(endpoint: .logout).empty()
+            try await provider.request(with: .post, endpoint: .logout).empty()
             print("Successfully logout")
         } catch {
             print("Failed to logout: " + error.localizedDescription)
@@ -225,6 +238,169 @@ class Api {
 }
 
 private extension Api {
+    /// Login - Step 0: Get Connector Authorization
+    func fetchConnectorAuthorization() async throws -> String {
+        // Build the state parameter (base64 encoded JSON)
+        let stateObject = ConnectorAuthorizationState(
+            scope: nil,
+            state: nil,
+            lang: nil,
+            cert: "",
+            action: "idpc_auth_endpoint",
+            clientId: configuration.serviceId,
+            redirectUri: try makeRedirectUri(endpoint: .loginRedirect),
+            responseType: "code",
+            signupLink: nil,
+            hmgid2ClientId: configuration.authClientId,
+            hmgid2RedirectUri: try makeRedirectUri(),
+            hmgid2Scope: nil,
+            hmgid2State: "ccsp",
+            hmgid2UiLocales: nil
+        )
+        let stateData = try JSONEncoder().encode(stateObject)
+
+        let queryItems = [
+            URLQueryItem(name: "client_id", value: configuration.serviceId),
+            URLQueryItem(name: "redirect_uri", value: try makeRedirectUri(endpoint: .loginRedirect).absoluteString),
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "state", value: stateData.base64EncodedString()),
+            URLQueryItem(name: "cert", value: ""),
+            URLQueryItem(name: "action", value: "idpc_auth_endpoint"),
+            URLQueryItem(name: "sso_session_reset", value: "true")
+        ]
+
+        let referalUrl = try await provider.request(
+            endpoint: .oauth2ConnectorAuthorize,
+            queryItems: queryItems,
+            headers: commonNavigationHeaders()
+        ).referalUrl()
+
+        // Extract next_uri from Location header
+        guard let nextUri = extractNextUri(from: referalUrl) else {
+            throw AuthenticationError.oauth2InitializationFailed
+        }
+        return nextUri
+    }
+
+    /// Login - Step 1: Get Client Configuration
+    func fetchClientConfiguration(referer: String) async throws -> ClientConfiguration {
+        try await provider.request(
+            endpoint: .loginConnectorClients(configuration.serviceId),
+            headers: commonJSONHeaders()
+        ).responseValue()
+    }
+
+    /// Login - Step 2: Check Password Encryption Settings
+    func fetchPasswordEncryptionSettings(referer: String) async throws -> PasswordEncryptionSettings {
+        try await provider.request(
+            endpoint: .loginCodes,
+            headers: commonJSONHeaders(referer: referer)
+        ).responseValue()
+    }
+
+    /// Login - Step 3: Get RSA Certificate
+    func fetchRSACertificate(referer: String) async throws -> RSAEncryptionService.RSAKeyData {
+        let certificate: RSACertificateResponse = try await provider.request(
+            endpoint: .loginCertificates,
+            headers: commonJSONHeaders(referer: referer)
+        ).responseValue()
+
+        return RSAEncryptionService.RSAKeyData(
+            keyType: certificate.kty,
+            exponent: certificate.e,
+            keyId: certificate.kid,
+            modulus: certificate.n
+        )
+    }
+
+    /// Login - Step 4: Initialize OAuth2 Flow
+    func initializeOAuth2(referer: String) async throws -> String {
+        let queryItems = [
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "client_id", value: configuration.serviceId),
+            URLQueryItem(name: "redirect_uri", value: try makeRedirectUri().absoluteString),
+            URLQueryItem(name: "lang", value: "en"),
+            URLQueryItem(name: "state", value: "ccsp")
+        ]
+
+        _ = try await provider.request(
+            endpoint: .oauth2UserAuthorize,
+            queryItems: queryItems,
+            headers: commonNavigationHeaders(referer: referer)
+        ).empty(acceptStatusCode: 302)
+
+        let cookies = HTTPCookieStorage.shared.cookies
+
+        // Parse HTML response to extract CSRF token and session key
+        guard let cookie = cookies?.first(where: { $0.name == "account" }) else {
+            throw AuthenticationError.csrfTokenNotFound
+        }
+        return cookie.value
+    }
+
+    /// Login - Step 5: Encrypted Sign-In
+    func signIn(referer: String, username: String, password: String, rsaKey: RSAEncryptionService.RSAKeyData, csrfToken: String) async throws -> String {
+        // Encrypt password
+        let encryptedPassword = try rsaService.encryptPassword(password, with: rsaKey)
+
+        guard let connectorSessionKey = extractConnectorSessionKey(from: referer) else {
+            throw AuthenticationError.sessionKeyNotFound
+        }
+
+        // Prepare form data
+        let form: [String: String] = [
+            "client_id": configuration.serviceId,
+            "encryptedPassword": "true",
+            "orgHmgSid": "",
+            "password": encryptedPassword,
+            "kid": rsaKey.keyId,
+            "redirect_uri": try makeRedirectUri().absoluteString,
+            "scope": "",
+            "nonce": "",
+            "state": "ccsp",
+            "username": username,
+            "remember_me": "false",
+            "connector_session_key": connectorSessionKey,
+            "_csrf": csrfToken
+        ]
+
+        let referalUrl = try await provider.request(
+            with: .post,
+            endpoint: .loginSignin,
+            headers: [
+                "Sec-Fetch-Site": "same-origin",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Dest": "document",
+                "Origin": "https://idpconnect-eu.\(configuration.key).com",
+                "Referer": referer
+            ],
+            form: form
+        ).referalUrl()
+
+        let (code, _, loginSuccess) = try extractAuthorizationCode(from: referalUrl)
+        guard loginSuccess else {
+            throw AuthenticationError.signInFailed
+        }
+        return code
+    }
+
+    /// Login - Step 6: Exchange Authorization Code for Tokens
+    func exchangeCodeForTokens(authorizationCode: String) async throws -> TokenResponse {
+        let form: [String: String] = [
+            "client_id": configuration.serviceId,
+            "client_secret": "secret", // TODO: something generated
+            "code": authorizationCode,
+            "grant_type": "authorization_code",
+            "redirect_uri": try makeRedirectUri().absoluteString
+        ]
+
+        return try await provider.request(
+            with: .post,
+            endpoint: .loginToken,
+            form: form
+        ).data()
+    }
+
     /// Register device and retrieve device ID for push notifications
     /// - Parameter stamp: Authorization stamp for device registration
     /// - Returns: Unique device ID for this installation
@@ -265,6 +441,73 @@ private extension Api {
         try await provider.request(with: .post, endpoint: .notificationRegisterWithDeviceId(deviceId), headers: headers).empty(acceptStatusCode: 200)
     }
 
+    // MARK: - Helpers
+
+    func makeRedirectUri(endpoint: ApiEndpoint = .oauth2Redirect) throws -> URL {
+        try ApiRequest.url(for: endpoint, configuration: configuration)
+    }
+
+    func extractNextUri(from location: URL) -> String? {
+        guard let components = URLComponents(url: location, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems else {
+            return nil
+        }
+
+        // Look for next_uri parameters
+        return queryItems.first(where: {  $0.name == "next_uri" })?.value
+    }
+
+    func extractConnectorSessionKey(from location: String) -> String? {
+        guard let url = URL(string: location),
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems else {
+            return nil
+        }
+
+        // Look for both next_uri parameters
+        return queryItems.first(where: { $0.name == "connector_session_key" })?.value
+    }
+
+    func extractAuthorizationCode(from location: URL) throws -> (code: String, state: String, loginSuccess: Bool) {
+        guard let components = URLComponents(url: location, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems else {
+            throw AuthenticationError.authorizationCodeNotFound
+        }
+
+        guard let code = queryItems.first(where: { $0.name == "code" })?.value else {
+            throw AuthenticationError.authorizationCodeNotFound
+        }
+
+        let state = queryItems.first(where: { $0.name == "state" })?.value ?? "ccsp"
+        let loginSuccess = queryItems.first(where: { $0.name == "login_success" })?.value == "y"
+
+        return (code: code, state: state, loginSuccess: loginSuccess)
+    }
+
+    private func commonJSONHeaders(referer: String? = nil) -> [String: String] {
+        var headers = [
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Dest": "empty",
+        ]
+        if let referer = referer {
+            headers["Referer"] = referer
+        }
+        return headers
+    }
+
+    func commonNavigationHeaders(referer: String? = nil) -> [String: String] {
+        var headers = [
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Dest": "document",
+
+        ]
+        if let referer = referer {
+            headers["Referer"] = referer
+        }
+        return headers
+    }
 
     /// Clear all HTTP cookies to ensure clean authentication state
     func cleanCookies() {

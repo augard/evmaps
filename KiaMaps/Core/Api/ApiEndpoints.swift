@@ -16,6 +16,17 @@ enum ApiEndpoint: CustomStringConvertible {
         case user
     }
 
+    case oauth2ConnectorAuthorize
+    case oauth2UserAuthorize
+    case oauth2Redirect
+
+    case loginConnectorClients(_ clinetId: String)
+    case loginCodes
+    case loginCertificates
+    case loginSignin
+    case loginToken
+    case loginRedirect
+
     case logout
     case notificationRegister
     case notificationRegisterWithDeviceId(UUID)
@@ -34,6 +45,24 @@ enum ApiEndpoint: CustomStringConvertible {
 
     var path: (String, RelativeTo) {
         switch self {
+        case .oauth2ConnectorAuthorize:
+            ("api/v1/user/oauth2/connector/common/authorize", .base)
+        case .oauth2UserAuthorize:
+            ("auth/api/v2/user/oauth2/authorize", .login)
+        case .oauth2Redirect:
+            ("api/v1/user/oauth2/redirect", .base)
+        case let .loginConnectorClients(clientId):
+            ("api/v1/clients/\(clientId)", .login)
+        case .loginCodes:
+            ("api/v1/commons/codes/HMG_DYNAMIC_CODE/details/PASSWORD_ENCRYPTION", .login)
+        case .loginCertificates:
+            ("auth/api/v1/accounts/certs", .login)
+        case .loginSignin:
+            ("auth/account/signin", .login)
+        case .loginToken:
+            ("auth/api/v2/user/oauth2/token", .login)
+        case .loginRedirect:
+            ("auth/redirect", .login)
         case .notificationRegister:
             ("notifications/register", .spa)
         case let .notificationRegisterWithDeviceId(deviceId):
@@ -61,6 +90,24 @@ enum ApiEndpoint: CustomStringConvertible {
 
     var description: String {
         switch self {
+        case .oauth2ConnectorAuthorize:
+            "oauth2Authorize"
+        case .oauth2UserAuthorize:
+            "oauth2UserAuthorize"
+        case .oauth2Redirect:
+            "oauth2Authorize"
+        case .loginConnectorClients:
+            "loginConnectorClients"
+        case .loginCodes:
+            "loginCodes"
+        case .loginCertificates:
+            "loginCertificates"
+        case .loginSignin:
+            "loginSignin"
+        case .loginToken:
+            "loginToken"
+        case .loginRedirect:
+            "loginRedirect"
         case .logout:
             "logout"
         case .notificationRegister:
