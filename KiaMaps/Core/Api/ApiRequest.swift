@@ -45,20 +45,160 @@ enum ApiError: Error {
     }
 }
 
-struct ApiRequest {
+enum ApiMethod: String {
+    case get = "GET"
+    case post = "POST"
+    case put = "PUT"
+}
+
+let ApiDefaultTimeout: TimeInterval = 60
+
+extension ApiConfiguration {
+    func url(for endpoint: ApiEndpoint) throws -> URL {
+        let result: URL?
+        let (path, base) = endpoint.path
+        switch base {
+        case .base:
+            result = URL(string: path, relativeTo: baseUrl)
+        case .login:
+            result = URL(string: path, relativeTo: loginUrl)
+        case .spa:
+            result = URL(string: path, relativeTo: spaUrl)
+        case .user:
+            result = URL(string: path, relativeTo: userUrl)
+        }
+        guard let result = result else { throw URLError(.badURL) }
+        return result
+    }
+
+    private var baseUrl: URL? {
+        URL(string: baseHost + ":\(port)")
+    }
+
+    private var loginUrl: URL? {
+        URL(string: loginHost)
+    }
+
+    private var spaUrl: URL? {
+        URL(string: baseHost + ":\(port)" + "/api/v1/spa/")
+    }
+
+    private var userUrl: URL? {
+        URL(string: baseHost + ":\(port)" + "/api/v1/user/")
+    }
+}
+
+protocol ApiRequest {
     typealias Headers = [String: String]
     typealias Form = [String: String]
 
-    static let DefaultTimeout: TimeInterval = 60
+    init(
+        caller: ApiCaller,
+        method: ApiMethod?,
+        endpoint: ApiEndpoint,
+        queryItems: [URLQueryItem],
+        headers: Headers,
+        encodable: Encodable,
+        timeout: TimeInterval
+    ) throws
 
-    enum Method: String {
-        case get = "GET"
-        case post = "POST"
-        case put = "PUT"
+    init(
+        caller: ApiCaller,
+        method: ApiMethod?,
+        endpoint: ApiEndpoint,
+        queryItems: [URLQueryItem],
+        headers: Headers,
+        body: Data?,
+        timeout: TimeInterval
+    )
+
+    init(
+        caller: ApiCaller,
+        method: ApiMethod?,
+        endpoint: ApiEndpoint,
+        queryItems: [URLQueryItem],
+        headers: Headers,
+        form: Form,
+        timeout: TimeInterval
+    )
+
+    var urlRequest: URLRequest { get throws }
+
+    func response<Data: Decodable>() async throws -> Data
+    func response<Data: Decodable>(acceptStatusCode: Int) async throws -> Data
+
+    func responseValue<Data: Decodable>() async throws -> Data
+    func responseValue<Data: Decodable>(acceptStatusCode: Int) async throws -> Data
+
+    func responseEmpty() async throws -> ApiResponseEmpty
+    func responseEmpty(acceptStatusCode: Int) async throws -> ApiResponseEmpty
+
+    func empty() async throws
+    func empty(acceptStatusCode: Int) async throws
+
+    func string() async throws -> String
+    func string(acceptStatusCode: Int) async throws -> String
+
+    func httpResponse() async throws -> HTTPURLResponse
+    func httpResponse(acceptStatusCode: Int) async throws -> HTTPURLResponse
+
+    func data<Data: Decodable>() async throws -> Data
+    func data<Data: Decodable>(acceptStatusCode: Int) async throws -> Data
+
+    func referalUrl() async throws -> URL
+    func referalUrl(acceptStatusCode: Int) async throws -> URL
+}
+
+extension ApiRequest {
+    static var commonJsonHeaders: Headers {
+        var headers: Headers = [:]
+        headers["Content-type"] = "application/json"
+        headers["Accept"] = "application/json"
+        return headers
     }
 
-    let caller: ApiRequestProvider.Caller
-    let method: Method
+    static var commonFormHeaders: Headers {
+        var headers: Headers = [:]
+        headers["Content-Type"] = "application/x-www-form-urlencoded; charset=utf-8"
+        return headers
+    }
+
+    func response<Data: Decodable>() async throws -> Data {
+        try await response(acceptStatusCode: 200)
+    }
+
+    func responseValue<Data: Decodable>() async throws -> Data {
+        try await responseValue(acceptStatusCode: 200)
+    }
+
+    func responseEmpty() async throws -> ApiResponseEmpty {
+        try await responseEmpty(acceptStatusCode: 200)
+    }
+
+    func empty() async throws {
+        try await empty(acceptStatusCode: 204)
+    }
+
+    func string() async throws -> String {
+        try await string(acceptStatusCode: 200)
+    }
+
+    func httpResponse() async throws -> HTTPURLResponse {
+        try await httpResponse(acceptStatusCode: 200)
+    }
+
+    func data<Data: Decodable>() async throws -> Data {
+        try await data(acceptStatusCode: 200)
+    }
+
+    func referalUrl() async throws -> URL {
+        try await referalUrl(acceptStatusCode: 302)
+    }
+}
+
+struct ApiRequestImpl: ApiRequest {
+    let caller: ApiCaller
+    let method: ApiMethod
     let endpoint: ApiEndpoint
     let queryItems: [URLQueryItem]
     let headers: Headers
@@ -74,26 +214,9 @@ struct ApiRequest {
         return charset
     }()
 
-    static func url(for endpoint: ApiEndpoint, configuration: ApiConfiguration) throws -> URL {
-        let result: URL?
-        let (path, base) = endpoint.path
-        switch base {
-        case .base:
-            result = URL(string: path, relativeTo: baseUrl(for: configuration))
-        case .login:
-            result = URL(string: path, relativeTo: loginUrl(for: configuration))
-        case .spa:
-            result = URL(string: path, relativeTo: spaUrl(for: configuration))
-        case .user:
-            result = URL(string: path, relativeTo: userUrl(for: configuration))
-        }
-        guard let result = result else { throw URLError(.badURL) }
-        return result
-    }
-
     init(
-        caller: ApiRequestProvider.Caller,
-        method: Method?,
+        caller: ApiCaller,
+        method: ApiMethod?,
         endpoint: ApiEndpoint,
         queryItems: [URLQueryItem],
         headers: Headers,
@@ -102,9 +225,11 @@ struct ApiRequest {
     ) throws {
         var headers = headers
         if headers["Content-type"] == nil {
-            headers["Content-type"] = "application/json"
+            headers.merge(Self.commonJsonHeaders) { _, new in new }
         }
         headers["User-Agent"] = caller.configuration.userAgent
+        headers["Accept"] = "*/*"
+        headers["Accept-Language"] = "en-GB,en;q=0.9"
         self.caller = caller
         self.method = method ?? .post
         self.endpoint = endpoint
@@ -115,8 +240,8 @@ struct ApiRequest {
     }
 
     init(
-        caller: ApiRequestProvider.Caller,
-        method: Method?,
+        caller: ApiCaller,
+        method: ApiMethod?,
         endpoint: ApiEndpoint,
         queryItems: [URLQueryItem],
         headers: Headers,
@@ -124,7 +249,12 @@ struct ApiRequest {
         timeout: TimeInterval
     ) {
         var headers = headers
+        if headers["Content-type"] == nil {
+            headers.merge(Self.commonJsonHeaders) { _, new in new }
+        }
         headers["User-Agent"] = caller.configuration.userAgent
+        headers["Accept"] = "*/*"
+        headers["Accept-Language"] = "en-GB,en;q=0.9"
         self.caller = caller
         self.method = method ?? (body == nil ? .get : .post)
         self.endpoint = endpoint
@@ -135,17 +265,18 @@ struct ApiRequest {
     }
 
     init(
-        caller: ApiRequestProvider.Caller,
-        method: Method?,
+        caller: ApiCaller,
+        method: ApiMethod?,
         endpoint: ApiEndpoint,
         queryItems: [URLQueryItem],
         headers: Headers,
         form: Form,
         timeout: TimeInterval
     ) {
-        var headers = headers
+        var headers = Self.commonFormHeaders
         headers["User-Agent"] = caller.configuration.userAgent
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
+        headers["Accept"] = "*/*"
+        headers["Accept-Language"] = "en-GB,en;q=0.9"
         let formData = form
             .map { ($0.key + "=" + $0.value).addingPercentEncoding(withAllowedCharacters: Self.formCharset) ?? "" }
             .joined(separator: "&")
@@ -162,7 +293,7 @@ struct ApiRequest {
 
     var urlRequest: URLRequest {
         get throws {
-            var url = try Self.url(for: endpoint, configuration: caller.configuration)
+            var url = try caller.configuration.url(for: endpoint)
             if !queryItems.isEmpty {
                 url.append(queryItems: queryItems)
             }
@@ -180,20 +311,25 @@ struct ApiRequest {
         }
     }
 
-    func response<Data: Decodable>(acceptStatusCode: Int = 200) async throws -> Data {
+    func response<Data: Decodable>(acceptStatusCode: Int) async throws -> Data {
         let response: ApiResponse<Data> = try await data(acceptStatusCode: acceptStatusCode)
         return response.result
     }
 
-    func responseEmpty(acceptStatusCode: Int = 200) async throws -> ApiResponseEmpty {
+    func responseValue<Data: Decodable>(acceptStatusCode: Int) async throws -> Data {
+        let response: ApiResponseValue<Data> = try await data(acceptStatusCode: acceptStatusCode)
+        return response.returnValue
+    }
+
+    func responseEmpty(acceptStatusCode: Int) async throws -> ApiResponseEmpty {
         try await data(acceptStatusCode: acceptStatusCode)
     }
 
-    func empty(acceptStatusCode: Int = 204) async throws {
+    func empty(acceptStatusCode: Int) async throws {
         try await callRequest(acceptStatusCode: acceptStatusCode)
     }
 
-    func string(acceptStatusCode: Int = 200) async throws -> String {
+    func string(acceptStatusCode: Int) async throws -> String {
         let (data, _) = try await callRequest(acceptStatusCode: acceptStatusCode)
         guard let string = String(data: data, encoding: .utf8) else {
             throw URLError(.cannotDecodeContentData)
@@ -202,38 +338,30 @@ struct ApiRequest {
         return string
     }
 
-    func data<Data: Decodable>(acceptStatusCode: Int = 200) async throws -> Data {
+    func httpResponse(acceptStatusCode: Int) async throws -> HTTPURLResponse {
+        let (_, response) = try await callRequest(acceptStatusCode: acceptStatusCode)
+        print("\(endpoint) - result: \(response)")
+        guard let response = response as? HTTPURLResponse else {
+            throw URLError(.cannotDecodeContentData)
+        }
+        return response
+    }
+
+    func data<Data: Decodable>(acceptStatusCode: Int) async throws -> Data {
         let (data, _) = try await callRequest(acceptStatusCode: acceptStatusCode)
         let result = try JSONDecoders.default.decode(Data.self, from: data)
         print("\(endpoint) - result: \(result)")
         return result
     }
 
-    func referalUrl(acceptStatusCode: Int = 302) async throws -> URL {
-        let (_, response) = try await callRequest(acceptStatusCode: acceptStatusCode)
-        guard let response = response as? HTTPURLResponse,
-              let location = response.allHeaderFields["Location"] as? String,
+    func referalUrl(acceptStatusCode: Int) async throws -> URL {
+        let httpResponse = try await httpResponse(acceptStatusCode: acceptStatusCode)
+        guard let location = httpResponse.allHeaderFields["Location"] as? String,
               let url = URL(string: location)
         else {
             throw URLError(.cannotDecodeContentData)
         }
         return url
-    }
-
-    private static func baseUrl(for configuration: ApiConfiguration) -> URL? {
-        URL(string: configuration.baseUrl + ":\(configuration.port)" + "/api/v1/")
-    }
-
-    private static func loginUrl(for configuration: ApiConfiguration) -> URL? {
-        URL(string: configuration.loginUrl + "/auth/realms/eu" + configuration.key + "idm/")
-    }
-
-    private static func spaUrl(for configuration: ApiConfiguration) -> URL? {
-        URL(string: configuration.baseUrl + ":\(configuration.port)" + "/api/v1/spa/")
-    }
-
-    private static func userUrl(for configuration: ApiConfiguration) -> URL? {
-        URL(string: configuration.baseUrl + ":\(configuration.port)" + "/api/v1/user/")
     }
 
     @discardableResult
@@ -259,34 +387,57 @@ struct ApiRequest {
     }
 }
 
+protocol ApiCaller {
+    var configuration: ApiConfiguration { get }
+    var urlSession: URLSession { get }
+    var authorization: AuthorizationData? { get }
+
+    init(configuration: ApiConfiguration, urlSession: URLSession, authorization: AuthorizationData?)
+}
+
 class ApiRequestProvider: NSObject {
-    struct Caller {
+    private struct Caller: ApiCaller {
         let configuration: ApiConfiguration
         let urlSession: URLSession
         let authorization: AuthorizationData?
+
+        init(configuration: ApiConfiguration, urlSession: URLSession, authorization: AuthorizationData?) {
+            self.configuration = configuration
+            self.urlSession = urlSession
+            self.authorization = authorization
+        }
     }
 
     var authorization: AuthorizationData?
-
-    private let configuration: ApiConfiguration
-    private lazy var urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
-    private var caller: Caller {
-        .init(configuration: configuration, urlSession: urlSession, authorization: authorization)
+    var caller: ApiCaller {
+        callerType.init(configuration: configuration, urlSession: urlSession, authorization: authorization)
     }
+    
+    let configuration: ApiConfiguration
+    let callerType: ApiCaller.Type
+    let requestType: ApiRequest.Type
 
-    init(configuration: ApiConfiguration) {
+    private lazy var urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+
+    init(
+        configuration: ApiConfiguration,
+        callerType: ApiCaller.Type = Caller.self,
+        requestType: ApiRequest.Type = ApiRequestImpl.self
+    ) {
         self.configuration = configuration
+        self.callerType = callerType
+        self.requestType = requestType
     }
 
     func request(
-        with method: ApiRequest.Method? = nil,
+        with method: ApiMethod? = nil,
         endpoint: ApiEndpoint,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         encodable: Encodable,
-        timeout: TimeInterval = ApiRequest.DefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout
     ) throws -> ApiRequest {
-        try ApiRequest(
+        try requestType.init(
             caller: caller,
             method: method,
             endpoint: endpoint,
@@ -298,14 +449,14 @@ class ApiRequestProvider: NSObject {
     }
 
     func request(
-        with method: ApiRequest.Method? = nil,
+        with method: ApiMethod? = nil,
         endpoint: ApiEndpoint,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         body: Data? = nil,
-        timeout: TimeInterval = ApiRequest.DefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout
     ) -> ApiRequest {
-        ApiRequest(
+        requestType.init(
             caller: caller,
             method: method,
             endpoint: endpoint,
@@ -317,14 +468,14 @@ class ApiRequestProvider: NSObject {
     }
 
     func request(
-        with method: ApiRequest.Method? = nil,
+        with method: ApiMethod? = nil,
         endpoint: ApiEndpoint,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         string: String,
-        timeout: TimeInterval = ApiRequest.DefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout
     ) -> ApiRequest {
-        ApiRequest(
+        requestType.init(
             caller: caller,
             method: method,
             endpoint: endpoint,
@@ -336,14 +487,14 @@ class ApiRequestProvider: NSObject {
     }
 
     func request(
-        with method: ApiRequest.Method? = nil,
+        with method: ApiMethod? = nil,
         endpoint: ApiEndpoint,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         form: ApiRequest.Form,
-        timeout: TimeInterval = ApiRequest.DefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout
     ) -> ApiRequest {
-        ApiRequest(
+        requestType.init(
             caller: caller,
             method: method,
             endpoint: endpoint,
@@ -365,10 +516,11 @@ class ApiRequestProvider: NSObject {
 extension ApiRequestProvider: URLSessionTaskDelegate {
     func urlSession(_: URLSession, task: URLSessionTask, willPerformHTTPRedirection _: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
         let lastPathComponent = task.originalRequest?.url?.lastPathComponent
-        if ["authenticate"].contains(lastPathComponent) {
+        if ["signin", "authorize"].contains(lastPathComponent) {
             completionHandler(nil)
         } else {
             completionHandler(request)
         }
     }
 }
+

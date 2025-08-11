@@ -13,14 +13,14 @@ DEVELOPMENT_TEAM = YOUR_TEAM_ID
 
 // Bundle ID Configuration
 // Base bundle identifier for the app
-PRODUCT_BUNDLE_IDENTIFIER_BASE = com.porsche
+PRODUCT_BUNDLE_IDENTIFIER_BASE = com.porsche.one
 
 // Main app bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = $(PRODUCT_BUNDLE_IDENTIFIER_BASE).kiamaps
+PRODUCT_BUNDLE_IDENTIFIER = $(PRODUCT_BUNDLE_IDENTIFIER_BASE)
 
 // Extension bundle identifiers
-EXTENSION_BUNDLE_IDENTIFIER = $(PRODUCT_BUNDLE_IDENTIFIER).extension
-EXTENSION_UI_BUNDLE_IDENTIFIER = $(PRODUCT_BUNDLE_IDENTIFIER).extension-ui
+EXTENSION_BUNDLE_IDENTIFIER = $(PRODUCT_BUNDLE_IDENTIFIER).voltron-extension
+EXTENSION_UI_BUNDLE_IDENTIFIER = $(PRODUCT_BUNDLE_IDENTIFIER).voltron-extension-ui
 
 // Provisioning Profile Names
 // Replace these with the exact names of your provisioning profiles from developer.apple.com

@@ -6,7 +6,7 @@
 //  Copyright © 2024 Lukas Foldyna. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 enum ApiBrand: String {
     case kia
@@ -36,8 +36,8 @@ protocol ApiConfiguration {
     var serviceAgent: String { get }
     var userAgent: String { get }
     var acceptHeader: String { get }
-    var baseUrl: String { get }
-    var loginUrl: String { get }
+    var baseHost: String { get }
+    var loginHost: String { get }
     var serviceId: String { get }
     var appId: String { get }
     var senderId: Int { get }
@@ -87,14 +87,15 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
     }
 
     var userAgent: String {
-        "EU_BlueLink/2.1.18 (com.kia.connect.eu; build:10560; iOS 17.5.1) Alamofire/5.8.0"
+        let device = UIDevice.current
+        return "EU_BlueLink/2.1.18 (com.kia.connect.eu; build:10560; \(device.systemName) \(device.systemVersion)) Alamofire/5.8.0"
     }
 
     var acceptHeader: String {
         "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
     }
 
-    var baseUrl: String {
+    var baseHost: String {
         switch self {
         case .kia:
             "https://prd.eu-ccapi.kia.com"
@@ -105,15 +106,8 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
         }
     }
 
-    var loginUrl: String {
-        switch self {
-        case .kia:
-            "https://eu-account.kia.com"
-        case .hyundai:
-            "https://eu-account.hyundai.com"
-        case .genesis:
-            "https://accounts-eu.genesis.com"
-        }
+    var loginHost: String {
+        "https://idpconnect-eu.\(key).com"
     }
 
     var serviceId: String {
@@ -179,4 +173,29 @@ enum ApiRegion {
     case canada
     case china
     case korea
+}
+
+// MARK: - Mock Configuration for Testing
+
+extension ApiConfiguration where Self == MockApiConfiguration {
+    static var mock: MockApiConfiguration {
+        MockApiConfiguration()
+    }
+}
+
+struct MockApiConfiguration: ApiConfiguration {
+    var key: String = "mock"
+    var name: String = "Mock Configuration"
+    var port: Int = 8080
+    var serviceAgent: String = "MockAgent/1.0.0"
+    var userAgent: String = "MockUserAgent/1.0.0 (com.test.mock; build:1; iOS 17.0) Test/1.0"
+    var acceptHeader: String = "application/json, text/html"
+    var baseHost: String = "https://mock.test.com"
+    var loginHost: String = "https://idpconnect-mock.test.com"
+    var serviceId: String = "mock-service-id-123"
+    var appId: String = "mock-app-id-456"
+    var senderId: Int = 123456789
+    var authClientId: String = "mock-auth-client-789"
+    var cfb: String = "mockCfbToken123="
+    var pushType: String = "MOCK"
 }

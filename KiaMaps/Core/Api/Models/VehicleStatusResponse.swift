@@ -9,16 +9,62 @@
 import Foundation
 import CoreLocation
 
-// MARK: - ResMsg
+// MARK: - VehicleStatusResponse
 
+/// Represents the complete vehicle status response from the API, containing detailed information
+/// about the vehicle's current state including location, battery, climate, doors, and more.
+///
+/// This structure maps to the response from the vehicle status API endpoint that provides
+/// real-time vehicle telemetry data for electric vehicles.
+///
+/// ## Example API Response Structure
+/// ```json
+/// {
+///   "retCode": "S",
+///   "resCode": "0000",
+///   "resMsg": {
+///     "resCode": "0000",
+///     "ServiceNo": "RVS-K", 
+///     "RetCode": "S",
+///     "lastUpdateTime": "1753344063251",
+///     "state": {
+///       "Vehicle": {
+///         "Location": { ... },
+///         "Body": { ... },
+///         "Cabin": { ... },
+///         "Green": { ... }
+///       }
+///     }
+///   },
+///   "msgId": "c86a2dc0-6866-11f0-bc51-4c1fe9b3080a"
+/// }
+/// ```
+///
+/// ## Usage
+/// ```swift
+/// let response = try JSONDecoder().decode(VehicleStatusResponse.self, from: data)
+/// let batteryLevel = response.state.vehicle.green.batteryManagement.batteryRemain.ratio
+/// let isCharging = response.state.vehicle.isCharging
+/// ```
 struct VehicleStatusResponse: Codable {
+    /// API result code indicating success/failure ("S" for success)
     let resultCode: String
+    
+    /// Service number identifier (e.g., "RVS-K")
     let serviceNumber: String
+    
+    /// Return code within the response
     let returnCode: String
+    
+    /// Timestamp of when the vehicle status was last updated
     @DateValue<TimeIntervalDateFormatter> private(set) var lastUpdateTime: Date
+    
+    /// The complete vehicle state information
     let state: State
 
+    /// Wrapper for the main vehicle status data
     struct State: Codable {
+        /// The detailed vehicle status information
         let vehicle: VehicleStatus
 
         enum CodingKeys: String, CodingKey {
@@ -35,25 +81,66 @@ struct VehicleStatusResponse: Codable {
     }
 }
 
-// MARK: - Vehicle
+// MARK: - VehicleStatus
 
+/// Represents the complete vehicle status containing all subsystem information.
+/// This is the main data structure that holds real-time information about the vehicle's
+/// current state across all systems including location, body, cabin, chassis, and electric systems.
 struct VehicleStatus: Codable {
+    /// Vehicle body status including doors, lights, hood, trunk, and windshield systems
     let body: VehicleBody
-    let cabin: VehicleCabin
-    let chassis: VehicleChassis
-    let drivetrain: VehicleDrivetrain
-    let electronics: VehicleElectronics
-    let green: VehicleGreen
-    let service: Service
-    let remoteControl: RemoteControl
-    let connectedService: ConnectedService
-    @BoolValue private(set) var drivingReady: Bool
-    let version: String
-    @DateValue<TimeIntervalDateFormatter> private(set) var date: Date
-    let offset: String
-    let location: Location
     
+    /// Vehicle cabin status including HVAC, doors, seats, windows, and steering wheel
+    let cabin: VehicleCabin
+    
+    /// Vehicle chassis information including tires, brakes, and driving mode
+    let chassis: VehicleChassis
+    
+    /// Drivetrain status including fuel system, odometer, and transmission
+    let drivetrain: VehicleDrivetrain
+    
+    /// Electronic systems status including battery, power supply, and FOB
+    let electronics: VehicleElectronics
+    
+    /// Electric vehicle specific systems including charging, battery management, and energy information
+    let green: VehicleGreen
+    
+    /// Connected car services status
+    let service: Service
+    
+    /// Remote control capabilities and sleep mode status
+    let remoteControl: RemoteControl
+    
+    /// Connected services including OTA updates
+    let connectedService: ConnectedService
+    
+    /// Whether the vehicle is ready to drive (true if ready)
+    @BoolValue private(set) var drivingReady: Bool
+    
+    /// Version string for this status data format
+    let version: String
+    
+    /// Date and time when this status was generated
+    @DateValue<TimeIntervalDateFormatter> private(set) var date: Date
+    
+    /// Timezone offset for the timestamp
+    let offset: String
+    
+    /// Vehicle GPS location and movement information
+    let location: Location
+
+    /// Computed property that determines if the vehicle is currently charging
+    /// Returns true if both the charging connector is fastened and the charging door is open
+    var isCharging: Bool {
+        let chargingInfo = green.chargingInformation
+        let isConnectorFastened = chargingInfo.connectorFastening.state > 0
+        let chargingDoorOpen = green.chargingDoor.state == .open
+        return isConnectorFastened && chargingDoorOpen
+    }
+
+    /// Remote control capabilities for the vehicle
     struct RemoteControl: Codable {
+        /// Whether the vehicle's remote control system is in sleep mode
         @BoolValue private(set) var sleepMode: Bool
 
         enum CodingKeys: String, CodingKey {
@@ -61,10 +148,14 @@ struct VehicleStatus: Codable {
         }
     }
     
+    /// Connected services status including over-the-air updates
     struct ConnectedService: Codable {
+        /// Over-the-air update system status
         let ota: Ota
 
+        /// OTA (Over-The-Air) update system information
         struct Ota: Codable {
+            /// Whether the OTA controller is active
             @BoolValue private(set) var controllerStatus: Bool
 
             enum CodingKeys: String, CodingKey {
@@ -95,16 +186,29 @@ struct VehicleStatus: Codable {
     }
 }
 
-// MARK: - Body
+// MARK: - VehicleBody
 
+/// Represents the vehicle's body systems including external components and their status.
+/// Contains information about doors, lights, hood, trunk, windshield, and sunroof systems.
 struct VehicleBody: Codable {
+    /// Windshield defog, heat, and washer fluid systems
     let windshield: Windshield
+    
+    /// Hood and frunk (front trunk) status
     let hood: Hood
+    
+    /// All vehicle lighting systems (headlights, taillights, turn signals, hazards)
     let lights: VehicleLights
+    
+    /// Sunroof status (optional, not all vehicles have sunroofs)
     let sunroof: Sunroof?
+    
+    /// Trunk open/closed status
     let trunk: Trunk
 
+    /// Trunk/tailgate status
     struct Trunk: Codable {
+        /// Whether the trunk is currently open
         @BoolValue private(set) var open: Bool
 
         enum CodingKeys: String, CodingKey {
@@ -112,7 +216,9 @@ struct VehicleBody: Codable {
         }
     }
 
+    /// Sunroof system status
     struct Sunroof: Codable {
+        /// Glass panel status (uses same structure as trunk for open/closed state)
         let glass: Trunk
 
         enum CodingKeys: String, CodingKey {
@@ -120,11 +226,17 @@ struct VehicleBody: Codable {
         }
     }
 
+    /// Windshield systems including defog, heating, and washer fluid
     struct Windshield: Codable {
+        /// Front windshield systems
         let front: WindshieldFront
+        
+        /// Rear windshield systems
         let rear: WindshieldRear
         
+        /// Generic state mode structure for boolean states
         struct StateMode: Codable {
+            /// Whether this system is currently active
             @BoolValue private(set) var state: Bool
 
             enum CodingKeys: String, CodingKey {
@@ -132,7 +244,9 @@ struct VehicleBody: Codable {
             }
         }
 
+        /// Rear windshield defog system
         struct WindshieldRear: Codable {
+            /// Rear windshield defog status
             let defog: StateMode
 
             enum CodingKeys: String, CodingKey {
@@ -140,12 +254,20 @@ struct VehicleBody: Codable {
             }
         }
 
+        /// Front windshield systems including heating, defog, and washer fluid
         struct WindshieldFront: Codable {
+            /// Front windshield heating system status
             let heat: StateMode
+            
+            /// Front windshield defog system status
             let defog: StateMode
+            
+            /// Washer fluid level information
             let washerFluid: WasherFluid
 
+            /// Windshield washer fluid system status
             struct WasherFluid: Codable {
+                /// Whether the washer fluid level is low (true if low)
                 @BoolValue private(set) var levelLow: Bool
 
                 enum CodingKeys: String, CodingKey {
@@ -779,22 +901,47 @@ struct VehicleElectronics: Codable {
     }
 }
 
-// MARK: - Green
+// MARK: - VehicleGreen (Electric Vehicle Systems)
 
+/// Contains all electric vehicle specific systems including battery management, charging, and energy information.
+/// This is the core structure for EV-specific data that differentiates electric vehicles from traditional vehicles.
 struct VehicleGreen: Codable {
+    /// Whether the electric drivetrain is ready for driving
     @BoolValue private(set) var drivingReady: Bool
+    
+    /// Power consumption predictions and climate impact
     let powerConsumption: VehiclePowerConsumption
+    
+    /// Battery management system including state of health, capacity, and remaining charge
     let batteryManagement: VehicleBatteryManagement
+    
+    /// Smart grid and vehicle-to-load/grid capabilities
     let electric: Electric
+    
+    /// Charging status, times, and connector information
     let chargingInformation: VehicleChargingInformation
+    
+    /// Charging and climate scheduling reservations
     let reservation: Reservation
+    
+    /// Energy consumption and distance-to-empty information
     let energyInformation: EnergyInformation
+    
+    /// Charging port door status and error information
     let chargingDoor: ChargingDoor
+    
+    /// Plug & Charge authentication and contract information
     let plugAndCharge: PlugAndCharge
+    
+    /// Historical driving efficiency data
     let drivingHistory: DrivingHistory
     
+    /// Charging port door status and diagnostics
     struct ChargingDoor: Codable {
+        /// Current state of the charging door (open/closed)
         let state: ChargeDoorStatus
+        
+        /// Error state code (0 = no error)
         let errorState: Int
 
         enum CodingKeys: String, CodingKey {
@@ -817,16 +964,29 @@ struct VehicleGreen: Codable {
     }
 }
 
-// MARK: - BatteryManagement
+// MARK: - VehicleBatteryManagement
 
+/// Battery management system containing all battery-related status and health information.
+/// This system monitors battery condition, remaining capacity, and thermal management.
 struct VehicleBatteryManagement: Codable {
+    /// State of Health - overall battery condition and degradation level
     let soH: SoH
+    
+    /// Current battery charge remaining in both absolute and percentage values
     let batteryRemain: BatteryRemain
+    
+    /// Whether battery thermal conditioning is currently active
     @BoolValue private(set) var batteryConditioning: Bool
+    
+    /// Battery pre-conditioning status for optimal charging/performance
     let batteryPreCondition: BatteryPreCondition
+    
+    /// Total battery capacity information
     let batteryCapacity: BatteryCapacity
 
+    /// State of Health information indicating battery degradation
     struct SoH: Codable {
+        /// Battery health percentage (100% = new battery, lower values indicate degradation)
         let ratio: Double
 
         enum CodingKeys: String, CodingKey {
@@ -834,10 +994,13 @@ struct VehicleBatteryManagement: Codable {
         }
     }
 
+    /// Current battery charge information
     struct BatteryRemain: Codable {
-        /// This value looks like it's lower than ratio, but ratio is value that is display in app
-        let value: Double // 127324.8, kiloJoules
-        let ratio: Double // 39, %
+        /// Remaining battery energy in kiloJoules (absolute value)
+        let value: Double // e.g., 127324.8 kJ
+        
+        /// Remaining battery charge as percentage (0-100%)
+        let ratio: Double // e.g., 39%
 
         enum CodingKeys: String, CodingKey {
             case value = "Value"
@@ -1208,24 +1371,55 @@ struct Reservation: Codable {
 
 // MARK: - Location
 
+/// Vehicle GPS location and movement information.
+/// Contains precise positioning data, movement direction, speed, and timestamp information.
 struct Location: Codable {
+    /// Date and time when this location was recorded
     @DateValue<TimeIntervalDateFormatter> private(set) var date: Date
+    
+    /// Timezone offset for the timestamp
     let offset: Int
+    
+    /// GPS service state (0 = normal operation)
     let servicestate: Int
+    
+    /// Detailed timestamp breakdown
     let timeStamp: TimeStamp
+    
+    /// Version string for location data format
     let version: String
+    
+    /// GPS coordinates including latitude, longitude, and altitude
     let geoCoordinate: GeoCoordinate
+    
+    /// Vehicle heading/direction in degrees (0-360°, 0 = North)
     let heading: Double
+    
+    /// Current vehicle speed
     let speed: Speed
 
+    /// Detailed timestamp information broken down into components
     struct TimeStamp: Codable {
+        /// Day of the month (1-31)
         let day: Int
+        
+        /// Month of the year (1-12)
         let month: Int
+        
+        /// Year (e.g., 2025)
         let year: Int
+        
+        /// Hour in 24-hour format (0-23)
         let hour: Int
+        
+        /// Minute (0-59)
         let minute: Int
+        
+        /// Seconds (0-59)
         let seconds: Int
 
+        /// Converts the timestamp components to a Date object
+        /// - Returns: Date object constructed from the timestamp components, or nil if invalid
         var toDate: Date? {
             var components = DateComponents()
             components.day = day
@@ -1247,12 +1441,22 @@ struct Location: Codable {
         }
     }
 
+    /// GPS coordinate information with altitude
     struct GeoCoordinate: Codable {
+        /// Altitude above sea level in meters
         let altitude: Double
+        
+        /// Latitude coordinate in degrees (-90 to +90)
         let latitude: Double
+        
+        /// Longitude coordinate in degrees (-180 to +180)
         let longitude: Double
+        
+        /// Coordinate type identifier (0 = standard GPS coordinates)
         let type: Int
 
+        /// Converts GPS coordinates to CoreLocation CLLocation object
+        /// - Returns: CLLocation object with GPS coordinates and altitude
         var location: CLLocation {
             .init(
                 coordinate: .init(latitude: latitude, longitude: longitude),
@@ -1271,8 +1475,12 @@ struct Location: Codable {
         }
     }
 
+    /// Vehicle speed information
     struct Speed: Codable {
+        /// Speed unit (0 = km/h, 1 = mph)
         let unit: SpeedUnit
+        
+        /// Current speed value in the specified unit
         let value: Double
 
         enum CodingKeys: String, CodingKey {

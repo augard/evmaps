@@ -62,15 +62,28 @@ enum Authorization {
 
     static func store(data: AuthorizationData) {
         Keychain<Key>.store(value: data, path: .authorization)
+        // Notify extensions that credentials have been updated
+        //DarwinNotificationHelper.post(name: DarwinNotificationHelper.NotificationName.credentialsUpdated)
+        // Post local notification for UI updates
+        NotificationCenter.default.post(name: .authorizationDidChange, object: nil)
     }
 
     static func setCcuCCS2Protocol(isSupported: Bool) {
         guard var data = authorization else { return }
         data.isCcuCCS2Supported = isSupported
         store(data: data)
+        // Note: store() already posts the update notification
     }
 
     static func remove() {
         Keychain<Key>.removeVakue(at: .authorization)
+        // Notify extensions that credentials have been cleared
+        //DarwinNotificationHelper.post(name: DarwinNotificationHelper.NotificationName.credentialsCleared)
+        // Post local notification for UI updates
+        NotificationCenter.default.post(name: .authorizationDidChange, object: nil)
     }
+}
+
+extension Notification.Name {
+    static let authorizationDidChange = Notification.Name("authorizationDidChange")
 }

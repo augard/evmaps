@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "WebFetch(domain:evkx.net)",
+      "Bash(xcodebuild:*)",
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(git filter-branch:*)",
+      "WebFetch(domain:github.com)",
+      "mcp__github__get_file_contents",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__firecrawl-mcp__firecrawl_scrape",
+      "Bash(mkdir:*)",
+      "Bash(grep:*)",
+      "Bash(-project KiaMaps.xcodeproj )",
+      "Bash(-scheme KiaMaps )",
+      "Bash(-destination 'platform=iOS Simulator,id=6FC001A4-5FEE-473C-AAF4-7C2C9B645534' )",
+      "Bash(test)",
+      "Bash(-project KiaMaps.xcodeproj )",
+      "Bash(-scheme KiaMaps )",
+      "Bash(-destination 'platform=iOS Simulator,id=6FC001A4-5FEE-473C-AAF4-7C2C9B645534' )",
+      "Bash(swift:*)",
+      "Bash(find:*)",
+      "Bash(timeout:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": []
+  }
+}

@@ -19,3 +19,4 @@ xcuserdata/
 # App Files
 KiaMaps/App/AppConfiguration.swift
 /Config/Signing.xcconfig
+build

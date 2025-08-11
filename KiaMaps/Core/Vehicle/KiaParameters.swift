@@ -43,7 +43,7 @@ enum KiaParameters: String, VehicleParameters {
     /// Unique identifier for this vehicle's consumption model
     /// Used for server-side route calculations and energy estimations
     var consumptionModelId: Int {
-        12_582_913  // EV9-specific model ID (updated from Taycan placeholder)
+        12_582_912
     }
 
     /// Energy consumption parameters for route planning
@@ -84,7 +84,7 @@ enum KiaParameters: String, VehicleParameters {
     /// Unique identifier for this vehicle's charging model
     /// Used for server-side charging curve calculations
     var chargingModelId: Int {
-        12_582_917  // EV9-specific charging model ID (updated from Taycan placeholder)
+        12_582_916
     }
 
     /// Charging curve parameters defining how the vehicle charges at different battery levels  

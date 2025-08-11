@@ -12,43 +12,56 @@ import UIKit
 
 class CarListHandler: NSObject, INListCarsIntentHandling, Handler {
     private let api: Api
+    private let credentialsHandler: CredentialsHandler
+    private var loginRetry: Bool = false
 
-    init(api: Api) {
+    init(api: Api, credentialsHandler: CredentialsHandler) {
         self.api = api
+        self.credentialsHandler = credentialsHandler
+        super.init()
     }
 
     func canHandle(_ intent: INIntent) -> Bool {
         return intent is INListCarsIntent
     }
 
-    func cars() async throws -> [Vehicle] {
-        if Authorization.isAuthorized {
-            api.authorization = Authorization.authorization
-        } else {
-            let authorization = try await api.login(
-                username: AppConfiguration.username,
-                password: AppConfiguration.password
-            )
-            Authorization.store(data: authorization)
-        }
-        return try await api.vehicles().vehicles
-    }
-
     func handle(completion: @escaping (INListCarsIntentResponse) -> Void) {
-        // completion(.init(code: .inProgress, userActivity:  nil))
-
         Task {
-            let result: INListCarsIntentResponse
+            await credentialsHandler.continueOrWaitForCredentials()
+            let result: INListCarsIntentResponse?
 
             do {
-                let cars = try await cars()
+                loginRetry = false
+                let cars = try await api.vehicles().vehicles
 
                 result = .init(code: .success, userActivity: nil)
-                result.cars = cars.map { $0.car(with: api.configuration) }
-            } catch {
-                result = .init(code: .failure, userActivity: nil)
+                result?.cars = cars.map { $0.car(with: api.configuration) }
+            } catch let error  {
+                if let error = error as? ApiError {
+                    switch (error, loginRetry) {
+                    case (.unauthorized, false):
+                        loginRetry = true
+                        do {
+                            try await credentialsHandler.reauthorize()
+                            result = nil
+                            handle(completion: completion)
+                        } catch {
+                            result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
+                        }
+                    case (.unauthorized, true):
+                        result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
+                    case (.unexpectedStatusCode(400), false):
+                        result = .init(code: .success, userActivity: nil)
+                    default:
+                        result = .init(code: .failure, userActivity: nil)
+                    }
+                } else {
+                    result = .init(code: .failure, userActivity: nil)
+                }
             }
-            DispatchQueue.main.async {
+
+            guard let result = result else { return }
+            await MainActor.run {
                 completion(result)
             }
         }
@@ -70,6 +83,11 @@ extension Vehicle {
         manager.store(type: configuration.name + "-" + detailInfo.saleCarmdlEnName)
 
         let supportedChargingConnectors = manager.vehicleParamter.supportedChargingConnectors
+        
+        // Get Bluetooth and iAP2 identifiers for this vehicle
+        let headUnitIds = headUnitIdentifiers()
+        print("CarListHandler: Vehicle '\(nickname)' - Bluetooth: \(headUnitIds.bluetooth ?? "none"), iAP2: \(headUnitIds.iap2 ?? "none")")
+        
         let car: INCar = .init(
             carIdentifier: vehicleId.uuidString,
             displayName: configuration.name + " - " + nickname,
@@ -77,16 +95,16 @@ extension Vehicle {
             make: configuration.name,
             model: vehicleName,
             color: UIColor.systemGreen.cgColor,
-            headUnit: .init(bluetoothIdentifier: nil, iAP2Identifier: nil),
+            headUnit: .init(bluetoothIdentifier: headUnitIds.bluetooth, iAP2Identifier: headUnitIds.iap2),
             supportedChargingConnectors: supportedChargingConnectors
         )
 
         for connector in supportedChargingConnectors {
-            if let power = manager.vehicleParamter.maximumPower(for: connector) {
-                car.setMaximumPower(.init(value: power, unit: .kilowatts), for: connector)
+            guard let power = manager.vehicleParamter.maximumPower(for: connector) else {
+                continue
             }
+            car.setMaximumPower(.init(value: power, unit: .kilowatts), for: connector)
         }
-
         return car
     }
 }

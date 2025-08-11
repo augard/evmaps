@@ -8,6 +8,27 @@
 
 import Foundation
 
+final class SharedVehicleManager: ObservableObject {
+    static let shared = SharedVehicleManager()
+    
+    // Global selected vehicle VIN for sharing with extensions
+    @Published var selectedVehicleVIN: String? {
+        didSet {
+            UserDefaults.standard.set(selectedVehicleVIN, forKey: "selectedVehicleVIN")
+        }
+    }
+    
+    private init() {
+        // Load selected VIN from UserDefaults
+        selectedVehicleVIN = UserDefaults.standard.string(forKey: "selectedVehicleVIN")
+    }
+    
+    /// Gets vehicle manager for a specific vehicle
+    func manager(for vehicleID: UUID) -> VehicleManager {
+        VehicleManager(id: vehicleID)
+    }
+}
+
 struct VehicleManager {
     let id: UUID
 
@@ -51,8 +72,12 @@ struct VehicleManager {
         UserDefaults.standard.synchronize()
     }
 
-    func deleteStatus() {
+    func removeLastUpdateDate() {
         setValue(with: .vehicleLastUpdateDate, value: Date.distantPast)
+    }
+
+    func restoreOutdatedData() {
+        setValue(with: .vehicleLastUpdateDate, value: Date.now)
     }
 
     private func setValue(with key: CacheKey, value: Any) {

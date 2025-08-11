@@ -1,5 +1,5 @@
 //
-//  ApiResponse.swift
+//  ApiResponseValue.swift
 //  KiaMaps
 //
 //  Created by Lukas Foldyna on 31.05.2024.
@@ -19,6 +19,24 @@ struct ApiResponse<Result: Decodable>: Decodable {
         case resultCode = "resCode"
         case result = "resMsg"
         case resultId = "msgId"
+    }
+}
+
+struct ApiResponseValue<Result: Decodable>: Decodable {
+    let returnCode: Int
+    let returnValue: Result
+    let resultCode: Int?
+    let resultMessage: String?
+    let resultSubMessage: String?
+    let resultId: UUID
+
+    private enum CodingKeys: String, CodingKey {
+        case returnCode = "retCode"
+        case returnValue = "retValue"
+        case resultCode = "resCode"
+        case resultMessage = "resMsg"
+        case resultSubMessage = "resSubMsg"
+        case resultId = "retId"
     }
 }
 

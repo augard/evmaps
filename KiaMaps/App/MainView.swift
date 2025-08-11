@@ -11,10 +11,11 @@ import SwiftUI
 struct MainView: View {
     let configuration: AppConfiguration.Type
     var api: Api
+    
+    @Environment(\.dismiss) private var dismiss
 
     enum ViewState {
         case loading
-        case unauthorized
         case authorized
         case error(Error)
     }
@@ -39,118 +40,175 @@ struct MainView: View {
     @State var selectedVehicleStatus: VehicleStatusResponse? = nil
     @State var isSelectedVahicleExpanded = true
     @State var lastUpdateDate: Date?
+    @State var showingProfile = false
+    @State var loginRetry: Bool = false
 
     init(configuration: AppConfiguration.Type) {
         self.configuration = configuration
-        api = Api(configuration: configuration.apiConfiguration)
-        state = Authorization.isAuthorized ? .loading : .unauthorized
+        api = Api(configuration: configuration.apiConfiguration, rsaService: .init())
+        state = .loading
     }
 
     var body: some View {
         Group {
             switch state {
             case .loading:
-                loadingView
+                MainLoadingView()
                     .task {
                         await loadData()
                     }
-            case .unauthorized:
-                loginView
             case .authorized:
                 contentView
                     .toolbar(content: {
-                        ToolbarItem(id: "logout", placement: .topBarTrailing) {
-                            Button("Logout", action: {
-                                Task {
-                                    await logout()
-                                }
-                            })
+                        ToolbarItem(id: "profile", placement: .topBarLeading) {
+                            Button(action: {
+                                showingProfile = true
+                            }) {
+                                Image(systemName: "person.circle")
+                                    .font(.title2)
+                                    .foregroundStyle(KiaDesign.Colors.primary)
+                            }
+                        }
+                        
+                        // Enhanced vehicle status in toolbar when vehicle is selected
+                        if selectedVehicle != nil, let selectedVehicleStatus = selectedVehicleStatus {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                vehicleStatusIcons(status: selectedVehicleStatus)
+                            }
                         }
                     })
             case let .error(error):
-                errorView(error: error)
-            }
-        }
-        .navigationTitle(api.configuration.name)
-    }
-
-    var loadingView: some View {
-        VStack {
-            Text("Loading...")
-                .font(.body)
-                .multilineTextAlignment(.center)
-        }
-    }
-
-    var loginView: some View {
-        HStack(alignment: .center) {
-            Button("Login", role: .none, action: { login() })
-        }
-    }
-
-    var contentView: some View {
-        List {
-            Section {
-                vehiclesView
-            }
-
-            Section {
-                selectedVehicleView
-            }
-        }
-        .listStyle(.grouped)
-        .refreshable {
-            await refreshData()
-        }
-    }
-
-    var vehiclesView: some View {
-        DisclosureGroup("Vehicles") {
-            ForEach(vehicles) { vehicle in
-                vehicleRow(vehicle)
-            }
-        }
-    }
-
-    @ViewBuilder
-    var selectedVehicleView: some View {
-        if let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus {
-            DisclosureGroup("Selected vehicle", isExpanded: $isSelectedVahicleExpanded) {
-                VehicleStatusView(
-                    brand: api.configuration.name,
-                    vehicle: selectedVehicle,
-                    vehicleStatus: selectedVehicleStatus.state.vehicle,
-                    lastUpdateTime: selectedVehicleStatus.lastUpdateTime
+                MainErrorView(
+                    error: error,
+                    onRetry: {
+                        Task {
+                            state = .loading
+                            await loadData()
+                        }
+                    },
+                    onLogout: {
+                        Task {
+                            await logout()
+                        }
+                    }
                 )
+            }
+        }
+        .navigationTitle(navigationTitle)
+        .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(KiaDesign.Colors.background, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .sheet(isPresented: $showingProfile) {
+            UserProfileView(api: api)
+        }
+    }
+
+
+    // MARK: - Modern Tesla-Inspired Content View
+    
+    @ViewBuilder
+    var contentView: some View {
+        if let selectedVehicle = selectedVehicle, let selectedVehicleStatus = selectedVehicleStatus {
+            OverviewPageView(
+                vehicle: selectedVehicle,
+                status: selectedVehicleStatus.state.vehicle,
+                lastUpdateTime: selectedVehicleStatus.lastUpdateTime,
+                isActive: true
+            ) {
+                await refreshData()
+            }
+        } else {
+            // Vehicle Selection (Pre-Authorization)
+            VehicleSelectionView(vehicles: vehicles) {
+                await refreshData()
             }
         }
     }
     
-    private func vehicleRow(_ vehicle: Vehicle) -> some View {
-        DataRowView(icon: .car, label: api.configuration.name + " - " + vehicle.nickname + " (" + vehicle.year + ")") {
-            Text("VIN: " + vehicle.vin)
-        }
-    }
-
-    func errorView(error: Error) -> some View {
-        VStack(spacing: 16) {
-            HStack {
-                Text(error.localizedDescription)
-                    .font(.body)
-                    .multilineTextAlignment(.center)
+    // MARK: - Vehicle Status Icons (for toolbar)
+    
+    private func vehicleStatusIcons(status: VehicleStatusResponse) -> some View {
+        HStack(spacing: KiaDesign.Spacing.small) {
+            // Last update indicator
+            VStack(spacing: 2) {
+                Image(systemName: "clock.fill")
+                    .font(.caption2)
+                    .foregroundStyle(KiaDesign.Colors.textTertiary)
+                
+                Text(timeAgoString(from: status.lastUpdateTime))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(KiaDesign.Colors.textTertiary)
             }
-
-            Button(
-                action: {
-                    Task {
-                        state = .loading
-                        await loadData()
-                    }
-                },
-                label: {
-                    Text("Retry...")
+            
+            // Battery status
+            let batteryLevel = status.state.vehicle.green.batteryManagement.batteryRemain.ratio
+            VStack(spacing: 2) {
+                if batteryLevel > 80 {
+                    Image(systemName: "battery.100percent")
+                        .font(.caption)
+                        .foregroundStyle(KiaDesign.Colors.success)
+                } else if batteryLevel < 20 {
+                    Image(systemName: "battery.25")
+                        .font(.caption)
+                        .foregroundStyle(KiaDesign.Colors.warning)
+                } else {
+                    Image(systemName: "battery.75")
+                        .font(.caption)
+                        .foregroundStyle(KiaDesign.Colors.textSecondary)
                 }
-            )
+                
+                Text("\(Int(batteryLevel))%")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(KiaDesign.Colors.textSecondary)
+            }
+            
+            // Charging status (if applicable)
+            if status.state.vehicle.isCharging {
+                VStack(spacing: 2) {
+                    Image(systemName: "bolt.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(KiaDesign.Colors.charging)
+                    
+                    Text("Charging")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(KiaDesign.Colors.charging)
+                }
+            }
+        }
+        .padding(.horizontal, KiaDesign.Spacing.small)
+        .padding(.vertical, 4)
+        .background(
+            Group {
+                if #available(iOS 26.0, *) {
+                    EmptyView()
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(KiaDesign.Colors.cardBackground)
+                        .opacity(0.7)
+                }
+            }
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Vehicle status: \(Int(status.state.vehicle.green.batteryManagement.batteryRemain.ratio))% battery, \(status.state.vehicle.drivingReady ? "ready" : "not ready"), updated \(timeAgoString(from: status.lastUpdateTime))")
+    }
+    
+    // MARK: - Helper Views
+    
+    private func timeAgoString(from date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.dateTimeStyle = .named
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+    
+    private var navigationTitle: String {
+        switch state {
+        case .authorized:
+            if let vehicle = selectedVehicle {
+                return vehicle.nickname
+            }
+            return api.configuration.name
+        default:
+            return api.configuration.name
         }
     }
 
@@ -159,12 +217,18 @@ struct MainView: View {
             if let authorization = Authorization.authorization {
                 api.authorization = authorization
             } else {
-                let authorization = try await api.login(username: configuration.username, password: configuration.password)
-                Authorization.store(data: authorization)
+                // Try to restore login with stored credentials first
+                if let storedCredentials = LoginCredentialManager.retrieveCredentials() {
+                    let authorization = try await api.login(username: storedCredentials.username, password: storedCredentials.password)
+                    Authorization.store(data: authorization)
+                } else {
+                    logoutAfterError()
+                    return
+                }
             }
 
             // let profile = try await api.profile()
-            vehicles = try await api.vehicles().vehicles
+            vehicles = try await api.vehiclesWithAutoRefresh().vehicles
             let selectedVehicle = vehicles.vehicle(with: configuration.vehicleVin) ?? vehicles.first
 
             guard !vehicles.isEmpty else {
@@ -176,21 +240,45 @@ struct MainView: View {
                 return
             }
             self.selectedVehicle = vehicle
-            let manager = VehicleManager(id: vehicle.vehicleId)
+            SharedVehicleManager.shared.selectedVehicleVIN = vehicle.vin
+            let manager = SharedVehicleManager.shared.manager(for: vehicle.vehicleId)
             manager.store(type: configuration.apiConfiguration.name + "-" + vehicle.detailInfo.saleCarmdlEnName)
 
             if let cachedVehicle = try? manager.vehicleStatus {
                 selectedVehicleStatus = cachedVehicle
             } else {
-                let vehicleStatus = try await api.vehicleCachedStatus(vehicle.vehicleId)
+                let vehicleStatus = try await api.vehicleCachedStatusWithAutoRefresh(vehicle.vehicleId)
                 try manager.store(status: vehicleStatus)
                 selectedVehicleStatus = vehicleStatus
             }
 
             state = .authorized
-        } catch {
-            if let error = error as? ApiError, case .unauthorized = error {
-                await logout()
+        } catch let error {
+            if let error = error as? ApiError {
+                switch (error, loginRetry) {
+                case (.unauthorized, false):
+                    guard let storedCredentials = LoginCredentialManager.retrieveCredentials() else {
+                        logoutAfterError()
+                        return
+                    }
+                    loginRetry = true
+
+                    do {
+                        let authorization = try await api.login(username: storedCredentials.username, password: storedCredentials.password)
+                        Authorization.store(data: authorization)
+                        
+                        await loadData()
+                    } catch {
+                        logoutAfterError()
+                        return
+                    }
+                case (.unauthorized, true):
+                    logoutAfterError()
+                case (.unexpectedStatusCode(400), false):
+                    state = .authorized
+                default:
+                    state = .error(error)
+                }
             } else {
                 state = .error(error)
             }
@@ -208,27 +296,31 @@ struct MainView: View {
                     print("Updated")
                 }
             } else {
-                _ = try await api.refreshVehicle(selectedVehicle.vehicleId)
+                _ = try await api.refreshVehicleWithAutoRefresh(selectedVehicle.vehicleId)
                 lastUpdateDate = selectedVehicleStatus.lastUpdateTime
             }
-            let manager = VehicleManager(id: selectedVehicle.vehicleId)
-            manager.deleteStatus()
+            let manager = SharedVehicleManager.shared.manager(for: selectedVehicle.vehicleId)
+            manager.removeLastUpdateDate()
         } catch {
-            if let error = error as? ApiError, case .unauthorized = error {
-                await logout()
-            } else {
-                state = .error(error)
-            }
+            state = .error(error)
         }
     }
 
-    private func login() {
-        state = .loading
+    private func logout() async {
+        try? await api.logoutWithAutoRefresh()
+        Authorization.remove()
+        
+        // Clear stored login credentials
+        LoginCredentialManager.clearCredentials()
+        
+        // Dismiss to return to root (login screen)
+        dismiss()
     }
 
-    private func logout() async {
-        try? await api.logout()
+    private func logoutAfterError() {
         Authorization.remove()
-        state = .unauthorized
+
+        // Dismiss to return to root (login screen)
+        dismiss()
     }
 }

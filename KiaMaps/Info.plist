@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.kiamaps.server-maintenance</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>
@@ -11,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Kia</string>
+	<string>Kia Maps</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
@@ -33,12 +37,27 @@
 	<true/>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Access to Bluetooth is used to start the app automatically as soon as you enter your vehicle.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This app uses Bluetooth to detect when you are in your vehicle for automatic connection.</string>
+	<key>UISupportedExternalAccessoryProtocols</key>
+	<array>
+		<string>com.apple.iap2</string>
+	</array>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_viwi-smartphone._tcp</string>
 		<string>_viwi._tcp</string>
 		<string>_bonjour._tcp</string>
 		<string>_lnp._tcp.</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Extension sharing</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>background-processing</string>
+		<string>background-fetch</string>
+		<string>fetch</string>
+		<string>processing</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

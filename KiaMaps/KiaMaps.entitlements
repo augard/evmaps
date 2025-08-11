@@ -3,12 +3,12 @@
 <plist version="1.0">
 <dict>
 	<key>application-identifier</key>
-	<string>N448G4S8S9.com.porsche.one</string>
+	<string>$(AppIdentifierPrefix)com.porsche.one</string>
 	<key>com.apple.developer.siri</key>
 	<true/>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>N448G4S8S9.com.porsche.one.shared</string>
+		<string>$(AppIdentifierPrefix)com.porsche.one.shared</string>
 	</array>
 </dict>
 </plist>
