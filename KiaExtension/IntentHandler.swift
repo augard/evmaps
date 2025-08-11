@@ -16,6 +16,13 @@ class IntentHandler: INExtension {
             credentialClient: LocalCredentialClient(extensionIdentifier: "KiaExtension")
         )
     }()
+    
+    override init() {
+        super.init()
+        // Configure extension logger on startup
+        ExtensionLogger.configure()
+        ExtensionLogger.info("IntentHandler initialized", category: "Lifecycle")
+    }
 
     private lazy var intentHandlers: [Handler] = [
         CarListHandler(api: Self.api, credentialsHandler: Self.credentialsHandler),

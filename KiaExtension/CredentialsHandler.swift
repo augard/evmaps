@@ -38,7 +38,7 @@ class CredentialsHandler {
         }
         
         do {
-            os_log(.info, log: Logger.extension, "CredentialsHandler: Using credentials from local server for reauthorization")
+            ExtensionLogger.info("CredentialsHandler: Using credentials from local server for reauthorization", category: "Credentials")
             let authorization = try await api.login(
                 username: credentials.username,
                 password: credentials.password
@@ -56,7 +56,7 @@ class CredentialsHandler {
     }
 
     private func updateCredentials() async {
-        os_log(.info, log: Logger.extension, "CredentialsHandler: Updating credentials")
+        ExtensionLogger.info("CredentialsHandler: Updating credentials", category: "Credentials")
 
         if let credentials = try? await credentialClient.fetchCredentials() {
             api.authorization = credentials.authorization
@@ -68,7 +68,7 @@ class CredentialsHandler {
             
             // Store username and password if available for future use
             if let username = credentials.username, let password = credentials.password {
-                os_log(.info, log: Logger.extension, "CredentialsHandler: Successfully received username and password from local server")
+                ExtensionLogger.info("CredentialsHandler: Successfully received username and password from local server", category: "Credentials")
                 LoginCredentialManager.store(
                     credentials: LoginCredentials(
                         username: username,
@@ -76,9 +76,9 @@ class CredentialsHandler {
                     )
                 )
             }
-            os_log(.info, log: Logger.extension, "CredentialsHandler: Successfully updated authorization from local server")
+            ExtensionLogger.info("CredentialsHandler: Successfully updated authorization from local server", category: "Credentials")
         } else {
-            os_log(.default, log: Logger.extension, "CredentialsHandler: Failed to fetch credentials from local server")
+            ExtensionLogger.warning("CredentialsHandler: Failed to fetch credentials from local server", category: "Credentials")
             // Fallback to locally stored in keychain
             api.authorization = Authorization.authorization
         }

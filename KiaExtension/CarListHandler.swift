@@ -87,7 +87,7 @@ extension Vehicle {
         
         // Get Bluetooth and iAP2 identifiers for this vehicle
         let headUnitIds = headUnitIdentifiers()
-        os_log(.debug, log: Logger.extension, "CarListHandler: Vehicle '%{public}@' - Bluetooth: %{public}@, iAP2: %{public}@", nickname, headUnitIds.bluetooth ?? "none", headUnitIds.iap2 ?? "none")
+        ExtensionLogger.debug("CarListHandler: Vehicle '%@' - Bluetooth: %@, iAP2: %@", category: "CarList", nickname, headUnitIds.bluetooth ?? "none", headUnitIds.iap2 ?? "none")
         
         let car: INCar = .init(
             carIdentifier: vehicleId.uuidString,
