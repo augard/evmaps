@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import os.log
 
 struct MainView: View {
     let configuration: AppConfiguration.Type
@@ -293,7 +294,7 @@ struct MainView: View {
                 await loadData()
                 if lastUpdateDate < selectedVehicleStatus.lastUpdateTime {
                     self.lastUpdateDate = nil
-                    print("Updated")
+                    os_log(.debug, log: Logger.ui, "Vehicle status updated")
                 }
             } else {
                 _ = try await api.refreshVehicleWithAutoRefresh(selectedVehicle.vehicleId)

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import os.log
 
 struct LoginView: View {
     @State private var username: String = ""
@@ -291,6 +292,6 @@ struct KiaTextFieldStyle: TextFieldStyle {
 
 #Preview {
     LoginView(configuration: AppConfiguration.self) { authData in
-        print("Login successful with user: \(authData)")
+        os_log(.info, log: Logger.auth, "Login successful for user")
     }
 }

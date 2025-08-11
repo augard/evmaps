@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os.log
 
 /**
  * Api - Main interface for Kia/Hyundai/Genesis vehicle API communication
@@ -76,15 +77,15 @@ class Api {
         let referer: String
         do {
             referer = try await fetchConnectorAuthorization()
-            print("Retrieved referer: \(referer)")
+            os_log(.info, log: Logger.api, "Retrieved referer: %{public}@", referer)
         } catch {
-            print("Client connector authorization failed \(error.localizedDescription)")
+            os_log(.error, log: Logger.api, "Client connector authorization failed: %{public}@", error.localizedDescription)
             throw AuthenticationError.clientConfigurationFailed
         }
 
         // Step 1: Get client configuration
         let clientConfig = try await fetchClientConfiguration(referer: referer)
-        print("Client configured for: \(clientConfig.clientName)")
+        os_log(.info, log: Logger.api, "Client configured for: %{public}@", clientConfig.clientName)
         
         // Step 2: Check if password encryption is enabled
         let encryptionSettings = try await fetchPasswordEncryptionSettings(referer: referer)
@@ -97,7 +98,7 @@ class Api {
         do {
             rsaKey = try await fetchRSACertificate(referer: referer)
         } catch {
-            print("Fetch RSA Certificate failed \(error.localizedDescription)")
+            os_log(.error, log: Logger.api, "Fetch RSA Certificate failed: %{public}@", error.localizedDescription)
             throw AuthenticationError.certificateRetrievalFailed
         }
         // Step 4: Initialize OAuth2 flow
@@ -117,7 +118,7 @@ class Api {
         do {
             tokenResponse = try await exchangeCodeForTokens(authorizationCode: authorizationCode)
         } catch {
-            print("Exchange code for token failed \(error.localizedDescription)")
+            os_log(.error, log: Logger.api, "Exchange code for token failed: %{public}@", error.localizedDescription)
             throw AuthenticationError.tokenExchangeFailed
         }
 
@@ -145,9 +146,9 @@ class Api {
     func logout() async throws {
         do {
             try await provider.request(with: .post, endpoint: .logout).empty()
-            print("Successfully logout")
+            os_log(.info, log: Logger.auth, "Successfully logout")
         } catch {
-            print("Failed to logout: " + error.localizedDescription)
+            os_log(.error, log: Logger.auth, "Failed to logout: %{public}@", error.localizedDescription)
         }
         provider.authorization = nil
         cleanCookies()

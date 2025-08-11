@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os.log
 
 struct SignInResponse: Decodable {
     let redirectUrl: URL
@@ -30,7 +31,7 @@ struct SignInResponse: Decodable {
                 return String(string[range]).replacingOccurrences(of: "&amp;", with: "&")
             }
         } catch {
-            print("Invalid regex: \(error.localizedDescription)")
+            os_log(.error, log: Logger.api, "Invalid regex: %{public}@", error.localizedDescription)
         }
         return nil
     }

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os.log
 
 struct AuthorizationData: Codable {
     var stamp: String
@@ -35,7 +36,7 @@ struct AuthorizationData: Codable {
               cfb.count == rawString.count,
               let rawData = rawString.data(using: .utf8)
         else {
-            print("cfb and raw length not equal")
+            os_log(.error, log: Logger.auth, "CFB and raw length not equal")
             return ""
         }
 
