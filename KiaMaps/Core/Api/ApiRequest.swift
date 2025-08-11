@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os.log
 
 public enum JSONDecoders {
     public static let `default`: JSONDecoder = {
@@ -334,13 +335,13 @@ struct ApiRequestImpl: ApiRequest {
         guard let string = String(data: data, encoding: .utf8) else {
             throw URLError(.cannotDecodeContentData)
         }
-        print("\(endpoint) - result: \(string)")
+        os_log(.debug, log: Logger.api, "%{public}@ - result: %{private}@", String(describing: endpoint), string)
         return string
     }
 
     func httpResponse(acceptStatusCode: Int) async throws -> HTTPURLResponse {
         let (_, response) = try await callRequest(acceptStatusCode: acceptStatusCode)
-        print("\(endpoint) - result: \(response)")
+        os_log(.debug, log: Logger.api, "%{public}@ - result: %{private}@", String(describing: endpoint), String(describing: response))
         guard let response = response as? HTTPURLResponse else {
             throw URLError(.cannotDecodeContentData)
         }
@@ -350,7 +351,7 @@ struct ApiRequestImpl: ApiRequest {
     func data<Data: Decodable>(acceptStatusCode: Int) async throws -> Data {
         let (data, _) = try await callRequest(acceptStatusCode: acceptStatusCode)
         let result = try JSONDecoders.default.decode(Data.self, from: data)
-        print("\(endpoint) - result: \(result)")
+        os_log(.debug, log: Logger.api, "%{public}@ - result: %{private}@", String(describing: endpoint), String(describing: result))
         return result
     }
 
@@ -367,10 +368,10 @@ struct ApiRequestImpl: ApiRequest {
     @discardableResult
     private func callRequest(acceptStatusCode: Int) async throws -> (Data, URLResponse) {
         let urlRequest = try self.urlRequest
-        print("\(endpoint) - request: \(String(describing: urlRequest.url)) \(String(describing: urlRequest.allHTTPHeaderFields))")
+        os_log(.debug, log: Logger.api, "%{public}@ - request: %{private}@ %{private}@", String(describing: endpoint), String(describing: urlRequest.url), String(describing: urlRequest.allHTTPHeaderFields))
 
         let (data, response) = try await caller.urlSession.data(for: urlRequest)
-        print("\(endpoint) - response: \(response)")
+        os_log(.debug, log: Logger.api, "%{public}@ - response: %{private}@", String(describing: endpoint), String(describing: response))
 
         guard (200 ... 399).contains(response.status ?? 0) else {
             if response.status == 401 {

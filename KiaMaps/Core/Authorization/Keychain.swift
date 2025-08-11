@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os.log
 
 private enum KeychainSecurityKeys: String {
     case className
@@ -82,7 +83,7 @@ struct Keychain<Key: RawRepresentable> {
                 checkForErrors("Store failed to delete value at path: \(path).", status: deleteStatus)
                 checkForErrors("Store failed to add value at path: \(path).", status: addStatus)
             } catch {
-                print("Failed to encode: \(value)")
+                os_log(.error, log: Logger.keychain, "Failed to encode a value for storing into the keychain.")
             }
         } else {
             removeVakue(at: path)
@@ -125,14 +126,14 @@ struct Keychain<Key: RawRepresentable> {
         }
 
         guard let data = retrievedData as? Data else {
-            print("Failed to cast value at path: \(path) to type Data.")
+            os_log(.error, log: Logger.keychain, "Failed to cast value at path: %{public}@ to type Data", String(describing: path))
             return nil
         }
 
         do {
             return try JSONDecoders.default.decode(Content.self, from: data)
         } catch {
-            print("Failed to decode value at path: \(path) from type Data. \(error)")
+            os_log(.error, log: Logger.keychain, "Failed to decode value at path: %{public}@ from type Data: %{public}@", String(describing: path), error.localizedDescription)
             return nil
         }
     }
@@ -147,7 +148,7 @@ struct Keychain<Key: RawRepresentable> {
         ].compactMap { $0 }
 
         guard !ignoredStatuses.contains(status) else { return }
-        print(message + ", error: \(status)")
+        os_log(.error, log: Logger.keychain, "%{public}@, error: %{public}d", message, status)
     }
 }
 

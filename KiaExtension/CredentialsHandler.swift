@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os.log
 
 class CredentialsHandler {
     private let api: Api
@@ -37,7 +38,7 @@ class CredentialsHandler {
         }
         
         do {
-            print("CredentialsHandler: Using credentials from local server for reauthorization")
+            os_log(.info, log: Logger.extension, "CredentialsHandler: Using credentials from local server for reauthorization")
             let authorization = try await api.login(
                 username: credentials.username,
                 password: credentials.password
@@ -55,7 +56,7 @@ class CredentialsHandler {
     }
 
     private func updateCredentials() async {
-        print("CredentialsHandler: Updating credentials")
+        os_log(.info, log: Logger.extension, "CredentialsHandler: Updating credentials")
 
         if let credentials = try? await credentialClient.fetchCredentials() {
             api.authorization = credentials.authorization
@@ -67,7 +68,7 @@ class CredentialsHandler {
             
             // Store username and password if available for future use
             if let username = credentials.username, let password = credentials.password {
-                print("CredentialsHandler: Successfully received username and password from local server")
+                os_log(.info, log: Logger.extension, "CredentialsHandler: Successfully received username and password from local server")
                 LoginCredentialManager.store(
                     credentials: LoginCredentials(
                         username: username,
@@ -75,9 +76,9 @@ class CredentialsHandler {
                     )
                 )
             }
-            print("CredentialsHandler: Successfully updated authorization from local server")
+            os_log(.info, log: Logger.extension, "CredentialsHandler: Successfully updated authorization from local server")
         } else {
-            print("CredentialsHandler: Failed to fetch credentials from local server")
+            os_log(.default, log: Logger.extension, "CredentialsHandler: Failed to fetch credentials from local server")
             // Fallback to locally stored in keychain
             api.authorization = Authorization.authorization
         }

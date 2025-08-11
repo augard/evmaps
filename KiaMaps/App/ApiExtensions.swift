@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os.log
 
 /// Extension to Api class that handles automatic token refresh and retry logic
 extension Api {
@@ -22,15 +23,15 @@ extension Api {
         } catch {
             // Check if this is an unauthorized error (401) indicating expired token
             if let apiError = error as? ApiError, case .unauthorized = apiError {
-                print("ApiAutoRefresh: Detected expired token, attempting automatic login retry")
+                os_log(.info, log: Logger.auth, "Detected expired token, attempting automatic login retry")
                 
                 // Try to refresh the token using stored credentials
                 if await refreshTokenIfPossible() {
-                    print("ApiAutoRefresh: Token refreshed successfully, retrying operation")
+                    os_log(.info, log: Logger.auth, "Token refreshed successfully, retrying operation")
                     // Retry the operation with fresh token
                     return try await operation()
                 } else {
-                    print("ApiAutoRefresh: Token refresh failed, throwing original error")
+                    os_log(.error, log: Logger.auth, "Token refresh failed, throwing original error")
                     // If refresh failed, throw the original unauthorized error
                     throw error
                 }
@@ -46,18 +47,18 @@ extension Api {
     private func refreshTokenIfPossible() async -> Bool {
         // Check if we have stored login credentials
         guard let storedCredentials = LoginCredentialManager.retrieveCredentials() else {
-            print("ApiAutoRefresh: No stored credentials available for token refresh")
+            os_log(.default, log: Logger.auth, "No stored credentials available for token refresh")
             return false
         }
         
         // Check if current token is actually expired before attempting refresh
         if let currentAuth = authorization, !isTokenExpired(currentAuth) {
-            print("ApiAutoRefresh: Current token is not expired, no refresh needed")
+            os_log(.debug, log: Logger.auth, "Current token is not expired, no refresh needed")
             return true
         }
         
         do {
-            print("ApiAutoRefresh: Attempting to login with stored credentials")
+            os_log(.info, log: Logger.auth, "Attempting to login with stored credentials")
             let newAuthData = try await login(
                 username: storedCredentials.username,
                 password: storedCredentials.password
@@ -67,15 +68,15 @@ extension Api {
             Authorization.store(data: newAuthData)
             self.authorization = newAuthData
             
-            print("ApiAutoRefresh: Successfully refreshed token")
+            os_log(.info, log: Logger.auth, "Successfully refreshed token")
             return true
             
         } catch {
-            print("ApiAutoRefresh: Failed to refresh token with error: \(error)")
+            os_log(.error, log: Logger.auth, "Failed to refresh token with error: %{public}@", error.localizedDescription)
             
             // If login fails, clear the stored credentials as they might be invalid
             if error is ApiError {
-                print("ApiAutoRefresh: Clearing invalid stored credentials")
+                os_log(.default, log: Logger.auth, "Clearing invalid stored credentials")
                 LoginCredentialManager.clearCredentials()
             }
             

@@ -9,6 +9,7 @@
 import Foundation
 import CoreBluetooth
 import ExternalAccessory
+import os.log
 
 /// Manages Bluetooth device discovery and identifies potential vehicle head units
 class BluetoothManager: NSObject {
@@ -47,7 +48,7 @@ class BluetoothManager: NSObject {
                     name: accessory.name,
                     identifier: accessory.serialNumber
                 ))
-                print("BluetoothManager: Found automotive accessory: \(accessory.name) - \(accessory.serialNumber)")
+                os_log(.info, log: Logger.bluetooth, "Found automotive accessory: %{public}@ - %{private}@", accessory.name, accessory.serialNumber)
             }
         }
         
@@ -117,7 +118,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOn:
-            print("BluetoothManager: Bluetooth is powered on")
+            os_log(.info, log: Logger.bluetooth, "Bluetooth is powered on")
             // Retrieve connected peripherals
             let connectedPeripherals = central.retrieveConnectedPeripherals(withServices: [])
             self.connectedDevices = connectedPeripherals
@@ -127,17 +128,17 @@ extension BluetoothManager: CBCentralManagerDelegate {
                 let name = peripheral.name ?? "Unknown Device"
                 let identifier = peripheral.identifier.uuidString
                 deviceIdentifiers[name] = identifier
-                print("BluetoothManager: Connected device: \(name) - \(identifier)")
+                os_log(.info, log: Logger.bluetooth, "Connected device: %{public}@ - %{private}@", name, identifier)
             }
             
         case .poweredOff:
-            print("BluetoothManager: Bluetooth is powered off")
+            os_log(.info, log: Logger.bluetooth, "Bluetooth is powered off")
         case .unauthorized:
-            print("BluetoothManager: Bluetooth access is unauthorized")
+            os_log(.error, log: Logger.bluetooth, "Bluetooth access is unauthorized")
         case .unsupported:
-            print("BluetoothManager: Bluetooth is not supported")
+            os_log(.error, log: Logger.bluetooth, "Bluetooth is not supported")
         default:
-            print("BluetoothManager: Bluetooth state: \(central.state.rawValue)")
+            os_log(.debug, log: Logger.bluetooth, "Bluetooth state: %{public}d", central.state.rawValue)
         }
     }
 }
