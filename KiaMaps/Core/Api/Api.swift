@@ -50,14 +50,18 @@ class Api {
     }
 
     private let rsaService: RSAEncryptionService
-    private let loginRedirectUri: String
     private let provider: ApiRequestProvider
 
     init(configuration: ApiConfiguration, rsaService: RSAEncryptionService) {
         self.configuration = configuration
         self.rsaService = rsaService
-        self.loginRedirectUri = "\(configuration.baseUrl):\(configuration.port)/api/v1/user/oauth2/redirect"
         provider = ApiRequestProvider(configuration: configuration)
+    }
+
+    init(configuration: ApiConfiguration, rsaService: RSAEncryptionService, provider: ApiRequestProvider) {
+        self.configuration = configuration
+        self.rsaService = rsaService
+        self.provider = provider
     }
 
     /// Authenticate user and establish session with vehicle API using RSA-encrypted authentication
@@ -237,7 +241,7 @@ class Api {
     }
 }
 
-private extension Api {
+extension Api {
     /// Login - Step 0: Get Connector Authorization
     func fetchConnectorAuthorization() async throws -> String {
         // Build the state parameter (base64 encoded JSON)
@@ -444,7 +448,7 @@ private extension Api {
     // MARK: - Helpers
 
     func makeRedirectUri(endpoint: ApiEndpoint = .oauth2Redirect) throws -> URL {
-        try ApiRequest.url(for: endpoint, configuration: configuration)
+        try provider.configuration.url(for: endpoint)
     }
 
     func extractNextUri(from location: URL) -> String? {
@@ -484,7 +488,7 @@ private extension Api {
         return (code: code, state: state, loginSuccess: loginSuccess)
     }
 
-    private func commonJSONHeaders(referer: String? = nil) -> [String: String] {
+    func commonJSONHeaders(referer: String? = nil) -> [String: String] {
         var headers = [
             "Sec-Fetch-Site": "same-origin",
             "Sec-Fetch-Mode": "cors",
@@ -517,3 +521,4 @@ private extension Api {
         }
     }
 }
+

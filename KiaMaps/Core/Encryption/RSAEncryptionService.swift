@@ -131,7 +131,7 @@ final class RSAEncryptionService {
 
 // MARK: - RSA Errors
 
-enum RSAError: LocalizedError {
+enum RSAError: LocalizedError, Equatable {
     case invalidKeyType
     case invalidKeyData
     case invalidPassword

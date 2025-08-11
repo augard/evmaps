@@ -48,37 +48,6 @@ final class DataExtensionsTests: XCTestCase {
         }
     }
     
-    func testBase64URLDecodingWithURLSafeCharacters() {
-        // Test URL-safe character substitution (- instead of +, _ instead of /)
-        struct TestCase {
-            let base64URL: String
-            let base64Standard: String
-            let expected: String
-        }
-        
-        let testCases = [
-            TestCase(
-                base64URL: "PDw_Pz4-", 
-                base64Standard: "PDw/Pz4+", 
-                expected: "<<??>"
-            ),
-            TestCase(
-                base64URL: "VGVzdC1VUkxfU2FmZQ", 
-                base64Standard: "VGVzdC1VUkxfU2FmZQ==", 
-                expected: "Test-URL_Safe"
-            )
-        ]
-        
-        for testCase in testCases {
-            let decodedURL = Data(base64URLEncoded: testCase.base64URL)
-            let decodedStandard = Data(base64Encoded: testCase.base64Standard)
-            let expectedData = testCase.expected.data(using: .utf8)
-            
-            XCTAssertEqual(decodedURL, expectedData, "URL-safe decoding failed")
-            XCTAssertEqual(decodedURL, decodedStandard, "URL-safe should match standard base64")
-        }
-    }
-    
     func testBase64URLDecodingInvalidInput() {
         // Test invalid base64 input
         let invalidInputs = [

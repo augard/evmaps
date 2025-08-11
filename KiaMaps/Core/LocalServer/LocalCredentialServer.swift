@@ -17,7 +17,7 @@ final class LocalCredentialServer {
     private let serverPassword: String
     
     /// Shared instance of the credential server
-    static let shared = LocalCredentialServer()
+    static let shared = LocalCredentialServer(password: ProcessInfo.processInfo.environment[Configuration.serverPasswordKey])
     
     /// Check if server is currently running
     var isRunning: Bool {
@@ -51,10 +51,10 @@ final class LocalCredentialServer {
         let extensionIdentifier: String
     }
     
-    private init(port: UInt16 = Configuration.defaultPort) {
+    init(port: UInt16 = Configuration.defaultPort, password: String?) {
         self.port = port
         // Use compile-time password from environment variable or fallback
-        self.serverPassword = ProcessInfo.processInfo.environment[Configuration.serverPasswordKey] ?? Configuration.serverPasswordFallback
+        self.serverPassword = password ?? Configuration.serverPasswordFallback
     }
     
     /// Starts the local server

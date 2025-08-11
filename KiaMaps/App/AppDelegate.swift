@@ -161,10 +161,14 @@ struct Application: App {
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack(path: $navigationPath) {
-                RootView(configuration: configuration, navigationPath: $navigationPath)
+            if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+                EmptyView()
+            } else {
+                NavigationStack(path: $navigationPath) {
+                    RootView(configuration: configuration, navigationPath: $navigationPath)
+                }
+                .environmentObject(backgroundManager)
             }
-            .environmentObject(backgroundManager)
         }
         .onChange(of: scenePhase) { _, newPhase in
             handleScenePhaseChange(newPhase)

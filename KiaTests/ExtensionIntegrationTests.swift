@@ -48,16 +48,19 @@ final class ExtensionIntegrationTests: XCTestCase {
         
         // Simulate extension requesting credentials
         let extensionClient = LocalCredentialClient(extensionIdentifier: "IntegrationTestExtension")
-        
-        if let receivedCredentials = extensionClient.fetchAuthorizationSync() {
-            XCTAssertEqual(receivedCredentials.accessToken, "integration-test-token")
-            XCTAssertEqual(receivedCredentials.refreshToken, "integration-test-refresh")
-            XCTAssertEqual(receivedCredentials.expiresIn, 7200)
-            XCTAssertFalse(receivedCredentials.isCcuCCS2Supported)
-            expectation.fulfill()
-        } else {
-            XCTFail("Extension failed to receive credentials from main app")
-        }
+
+        extensionClient.fetchCredentials(completion: { result in
+            switch result {
+            case .success(let result):
+                XCTAssertEqual(result.authorization?.accessToken, "integration-test-token")
+                XCTAssertEqual(result.authorization?.refreshToken, "integration-test-refresh")
+                XCTAssertEqual(result.authorization?.expiresIn, 7200)
+                XCTAssertFalse(result.authorization?.isCcuCCS2Supported ?? false)
+                expectation.fulfill()
+            case .failure:
+                XCTFail("Extension failed to receive credentials from main app")
+            }
+        })
         
         wait(for: [expectation], timeout: 5.0)
     }
@@ -84,24 +87,21 @@ final class ExtensionIntegrationTests: XCTestCase {
         
         // Extension requests credentials and VIN
         let extensionClient = LocalCredentialClient(extensionIdentifier: "VINTestExtension")
-        
-        // Note: The current LocalCredentialClient's fetchAuthorizationSync only returns AuthorizationData
-        // In a full implementation, we'd need to modify it to also return the VIN
-        // For now, test that credentials are received successfully
-        if let response = extensionClient.fetchCredentialsSync() {
-            XCTAssertNotNil(response.authorization)
-            XCTAssertEqual(response.selectedVIN, testVIN)
-            expectation.fulfill()
-        } else {
-            XCTFail("Failed to receive credentials")
-        }
-        
+        extensionClient.fetchCredentials(completion: { result in
+            switch result {
+            case .success(let result):
+                XCTAssertNotNil(result.authorization)
+                XCTAssertEqual(result.selectedVIN, testVIN)
+                expectation.fulfill()
+            case .failure:
+                XCTFail("Failed to receive credentials")
+            }
+        })
+
         wait(for: [expectation], timeout: 5.0)
     }
     
     func testServerRestartReliability() throws {
-        let expectation = XCTestExpectation(description: "Server handles restart gracefully")
-        
         // Store test credentials
         let testAuth = AuthorizationData(
             stamp: "restart-test-stamp",
@@ -114,23 +114,42 @@ final class ExtensionIntegrationTests: XCTestCase {
         Authorization.store(data: testAuth)
         
         // Test initial connection
+        let expectation = XCTestExpectation(description: "Test initial connection")
+
         let client = LocalCredentialClient(extensionIdentifier: "RestartTestExtension")
-        let credentials1 = client.fetchAuthorizationSync()
-        XCTAssertNotNil(credentials1)
-        
+        var credentials: LocalCredentialClient.CredentialResponse? = nil
+        client.fetchCredentials(completion: { result in
+            switch result {
+            case .success(let result):
+                XCTAssertNotNil(result)
+                credentials = result
+            case .failure:
+                XCTFail("Failed to fetch credentials")
+            }
+        })
+        wait(for: [expectation], timeout: 5.0)
+
         // Restart server
         LocalCredentialServer.shared.stop()
         Thread.sleep(forTimeInterval: 0.5)
         LocalCredentialServer.shared.start()
         Thread.sleep(forTimeInterval: 0.5)
-        
+
+        let expectation2 = XCTestExpectation(description: "Server handles restart gracefully")
+
         // Test connection after restart
-        let credentials2 = client.fetchAuthorizationSync()
-        XCTAssertNotNil(credentials2)
-        XCTAssertEqual(credentials2?.accessToken, credentials1?.accessToken)
-        
-        expectation.fulfill()
-        wait(for: [expectation], timeout: 5.0)
+        client.fetchCredentials(completion: { result in
+            switch result {
+            case .success(let result):
+                XCTAssertNotNil(result)
+                XCTAssertEqual(result.authorization?.accessToken, credentials?.authorization?.accessToken)
+
+                expectation.fulfill()
+            case .failure:
+                XCTFail("Failed to fetch credentials")
+            }
+        })
+        wait(for: [expectation2], timeout: 5.0)
     }
     
     func testSecurityPasswordValidation() throws {
@@ -149,13 +168,16 @@ final class ExtensionIntegrationTests: XCTestCase {
         
         // Test with correct password (default client)
         let validClient = LocalCredentialClient(extensionIdentifier: "SecurityTestExtension")
-        let credentialsValid = validClient.fetchAuthorizationSync()
-        XCTAssertNotNil(credentialsValid, "Valid client should receive credentials")
-        
-        // Note: Testing invalid password would require modifying LocalCredentialClient
-        // to accept custom passwords, which is beyond the scope of this test
-        
-        expectation.fulfill()
+        validClient.fetchCredentials(completion: { result in
+            switch result {
+            case .success(let result):
+                XCTAssertNotNil(result, "Valid client should receive credentials")
+                expectation.fulfill()
+            case .failure:
+                XCTFail("Failed to fetch credentials")
+            }
+        })
+
         wait(for: [expectation], timeout: 5.0)
     }
 }

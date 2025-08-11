@@ -66,7 +66,7 @@ final class RSAEncryptionServiceTests: XCTestCase {
         
         // When
         XCTAssertNoThrow {
-            let encryptedPassword = try rsaService.encryptPassword(password, with: keyData)
+            let encryptedPassword = try self.rsaService.encryptPassword(password, with: keyData)
             
             // Then
             XCTAssertFalse(encryptedPassword.isEmpty, "Encrypted password should not be empty")
@@ -103,7 +103,7 @@ final class RSAEncryptionServiceTests: XCTestCase {
         
         // When/Then
         XCTAssertNoThrow {
-            let encryptedPassword = try rsaService.encryptPassword(password, with: keyData)
+            let encryptedPassword = try self.rsaService.encryptPassword(password, with: keyData)
             XCTAssertFalse(encryptedPassword.isEmpty, "Even empty passwords should produce encrypted output")
         }
     }
@@ -115,7 +115,7 @@ final class RSAEncryptionServiceTests: XCTestCase {
         
         // When/Then
         XCTAssertNoThrow {
-            let encryptedPassword = try rsaService.encryptPassword(password, with: keyData)
+            let encryptedPassword = try self.rsaService.encryptPassword(password, with: keyData)
             XCTAssertFalse(encryptedPassword.isEmpty)
             XCTAssertNotEqual(encryptedPassword, password)
         }
@@ -128,7 +128,7 @@ final class RSAEncryptionServiceTests: XCTestCase {
         
         // When/Then
         XCTAssertNoThrow {
-            let encryptedPassword = try rsaService.encryptPassword(password, with: keyData)
+            let encryptedPassword = try self.rsaService.encryptPassword(password, with: keyData)
             XCTAssertFalse(encryptedPassword.isEmpty)
             XCTAssertNotEqual(encryptedPassword, password)
         }

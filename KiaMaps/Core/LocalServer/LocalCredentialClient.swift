@@ -9,6 +9,10 @@
 import Foundation
 import Network
 
+enum LocalCredentialClientError: Error {
+    case noCredentials
+}
+
 /// Universal client for retrieving credentials from the main app's local server
 /// Used by both the main app and extensions
 final class LocalCredentialClient {
@@ -43,12 +47,17 @@ final class LocalCredentialClient {
     }
 
     /// Convenience initializer for extensions
-    convenience init(extensionIdentifier: String) {
-        self.init(extensionIdentifier: extensionIdentifier, serverPassword: nil, maxRetryAttempts: 3)
+    convenience init(extensionIdentifier: String, serverPassword: String? = nil) {
+        self.init(extensionIdentifier: extensionIdentifier, serverPassword: serverPassword, maxRetryAttempts: 3)
     }
 
     /// Fetches credentials from the local server
     func fetchCredentials(completion: @escaping (Result<CredentialResponse, Error>) -> Void) {
+        guard !serverPassword.isEmpty else {
+            completion(.failure(LocalCredentialClientError.noCredentials))
+            return
+        }
+
         let connection = NWConnection(
             host: NWEndpoint.Host(serverHost),
             port: NWEndpoint.Port(integerLiteral: serverPort),

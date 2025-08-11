@@ -17,7 +17,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		803D46812E2E7413003EFC10 /* PBXContainerItemProxy */ = {
+		80D4A4FD2E4A0A720044B0BD /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CDA8AD7922E8CF7B00B1EAF8 /* Project object */;
 			proxyType = 1;
@@ -246,7 +246,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				803D46822E2E7413003EFC10 /* PBXTargetDependency */,
+				80D4A4FE2E4A0A720044B0BD /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				803D467E2E2E7413003EFC10 /* KiaTests */,
@@ -458,10 +458,10 @@
 			isa = PBXTargetDependency;
 			productRef = 55DE31842C11EC7F001D7302 /* KeychainAccess */;
 		};
-		803D46822E2E7413003EFC10 /* PBXTargetDependency */ = {
+		80D4A4FE2E4A0A720044B0BD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = CDA8AD8022E8CF7B00B1EAF8 /* KiaMaps */;
-			targetProxy = 803D46812E2E7413003EFC10 /* PBXContainerItemProxy */;
+			targetProxy = 80D4A4FD2E4A0A720044B0BD /* PBXContainerItemProxy */;
 		};
 		CDA8ADAF22E8CF8700B1EAF8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
