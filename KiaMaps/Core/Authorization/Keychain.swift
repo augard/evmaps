@@ -83,7 +83,7 @@ struct Keychain<Key: RawRepresentable> {
                 checkForErrors("Store failed to delete value at path: \(path).", status: deleteStatus)
                 checkForErrors("Store failed to add value at path: \(path).", status: addStatus)
             } catch {
-                os_log(.error, log: Logger.keychain, "Failed to encode value: %{public}@", String(describing: value))
+                os_log(.error, log: Logger.keychain, "Failed to encode a value for storing into the keychain.")
             }
         } else {
             removeVakue(at: path)

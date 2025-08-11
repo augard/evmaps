@@ -77,7 +77,7 @@ class Api {
         let referer: String
         do {
             referer = try await fetchConnectorAuthorization()
-            os_log(.info, log: Logger.api, "Retrieved referer: %{public}@", referer)
+            os_log(.info, log: Logger.api, "Retrieved referer: %{private}@", referer)
         } catch {
             os_log(.error, log: Logger.api, "Client connector authorization failed: %{public}@", error.localizedDescription)
             throw AuthenticationError.clientConfigurationFailed

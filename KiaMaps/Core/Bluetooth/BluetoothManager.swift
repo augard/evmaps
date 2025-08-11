@@ -48,7 +48,7 @@ class BluetoothManager: NSObject {
                     name: accessory.name,
                     identifier: accessory.serialNumber
                 ))
-                os_log(.info, log: Logger.bluetooth, "Found automotive accessory: %{public}@ - %{public}@", accessory.name, accessory.serialNumber)
+                os_log(.info, log: Logger.bluetooth, "Found automotive accessory: %{public}@ - %{private}@", accessory.name, accessory.serialNumber)
             }
         }
         
@@ -128,7 +128,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
                 let name = peripheral.name ?? "Unknown Device"
                 let identifier = peripheral.identifier.uuidString
                 deviceIdentifiers[name] = identifier
-                os_log(.info, log: Logger.bluetooth, "Connected device: %{public}@ - %{public}@", name, identifier)
+                os_log(.info, log: Logger.bluetooth, "Connected device: %{public}@ - %{private}@", name, identifier)
             }
             
         case .poweredOff:
