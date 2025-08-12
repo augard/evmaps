@@ -112,12 +112,4 @@ enum ExtensionLogger {
             info("Remote logging disabled for extension")
         }
     }
-    
-    /// Check if remote logging is enabled from UserDefaults on startup
-    static func configure() {
-        let enabled = UserDefaults.standard.bool(forKey: "RemoteLoggingEnabled")
-        RemoteLogger.shared.setEnabled(enabled)
-        
-        info("Extension logger configured - Remote logging: %@", enabled ? "enabled" : "disabled")
-    }
 }

@@ -60,6 +60,8 @@ protocol VehicleParameters {
 }
 
 extension VehicleParameters {
+    /// Creates consumption formula arguments for server API requests
+    /// - Returns: Dictionary containing vehicle parameters and model ID for consumption calculations
     func consumptionFormulaArguments() -> [String: Any] {
         [
             "vehicle_parameters": consumptionFormulaParameters,
@@ -67,6 +69,11 @@ extension VehicleParameters {
         ]
     }
 
+    /// Creates charging formula arguments for server API requests
+    /// - Parameters:
+    ///   - maximumBatteryCapacity: Total battery capacity
+    ///   - unit: Energy unit for the capacity
+    /// - Returns: Dictionary containing vehicle parameters and model ID for charging calculations
     func chargingFormulaArguments(maximumBatteryCapacity: Double, unit: UnitEnergy) -> [String: Any] {
         [
             "vehicle_parameters": chargingFormulaParameters(maximumBatteryCapacity: maximumBatteryCapacity, unit: unit),

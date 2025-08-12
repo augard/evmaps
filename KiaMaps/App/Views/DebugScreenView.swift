@@ -14,6 +14,8 @@ struct DebugScreenView: View {
     @State private var testResults: [String] = []
     @State private var isRunningTests = false
     @State private var showingVehicleStatus = false
+    @State private var showingDebugLogs = false
+    @AppStorage("RemoteLoggingEnabled") private var remoteLoggingEnabled = false
     
     var body: some View {
         NavigationView {
@@ -24,7 +26,10 @@ struct DebugScreenView: View {
                     
                     // Configuration Info
                     configurationSection
-                    
+
+                    // Remote logger info
+                    remoteLoggerSection
+
                     // UI Debug
                     uiDebugSection
                     
@@ -71,6 +76,9 @@ struct DebugScreenView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingDebugLogs) {
+                DebugLogsView()
+            }
         }
     }
     
@@ -101,9 +109,10 @@ struct DebugScreenView: View {
                     configRow(title: "API Brand", value: AppConfiguration.apiConfiguration.name)
                     configRow(title: "Authorization Status", 
                              value: Authorization.isAuthorized ? "✅ Authorized" : "❌ Not Authorized")
-                    
+                    configRow(title: "Device ID", value: UIDevice.current.identifierForVendor?.uuidString ?? "Unknown")
+
                     if let auth = Authorization.authorization {
-                        configRow(title: "Device ID", value: String(auth.deviceId.uuidString.prefix(20)) + "...")
+                        configRow(title: "Auth Device ID", value: String(auth.deviceId.uuidString.prefix(20)) + "...")
                         configRow(title: "CCS2 Support", value: auth.isCcuCCS2Supported ? "✅ Enabled" : "❌ Disabled")
                         configRow(title: "Access Token", value: String(auth.accessToken.prefix(20)) + "...")
                     }
@@ -111,7 +120,54 @@ struct DebugScreenView: View {
             }
         }
     }
-    
+
+    // MARK: - Developer Section
+
+    private var remoteLoggerSection: some View {
+        KiaCard {
+            VStack(spacing: KiaDesign.Spacing.medium) {
+                sectionHeader(title: "Remote Logging", icon: "hammer")
+
+                VStack(spacing: KiaDesign.Spacing.small) {
+                    // Remote logging toggle
+                    HStack(spacing: KiaDesign.Spacing.medium) {
+                        Image(systemName: "antenna.radiowaves.left.and.right")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(KiaDesign.Colors.kiaLimeGreen)
+                            .frame(width: 20)
+
+                        Text("Remote Logging")
+                            .font(KiaDesign.Typography.body)
+                            .foregroundStyle(KiaDesign.Colors.textPrimary)
+
+                        Spacer()
+
+                        Toggle("", isOn: $remoteLoggingEnabled)
+                            .labelsHidden()
+                            .onChange(of: remoteLoggingEnabled) { _, enabled in
+                                // Enable/disable remote logging in extensions
+                                UserDefaults.standard.set(enabled, forKey: "RemoteLoggingEnabled")
+
+                                // Start/stop server in main app
+                                enabled ? RemoteLoggingServer.shared.start() : RemoteLoggingServer.shared.stop()
+                            }
+                    }
+                    .padding(.vertical, 2)
+
+                    // Debug logs viewer
+                    testButton(
+                        title: "Debug Logs",
+                        subtitle: "Open the original vehicle status interface",
+                        icon: "car.2",
+                        action: {
+                            showingDebugLogs = true
+                        }
+                    )
+                }
+            }
+        }
+    }
+
     // MARK: - UI Debug Section
     
     private var uiDebugSection: some View {

@@ -42,8 +42,7 @@ struct MainView: View {
     @State var isSelectedVahicleExpanded = true
     @State var lastUpdateDate: Date?
     @State var showingProfile = false
-    @State var showingSettings = false
-    @State var loginRetry: Bool = false
+    @State var loginRetry = false
 
     init(configuration: AppConfiguration.Type) {
         self.configuration = configuration
@@ -67,16 +66,6 @@ struct MainView: View {
                                 showingProfile = true
                             }) {
                                 Image(systemName: "person.circle")
-                                    .font(.title2)
-                                    .foregroundStyle(KiaDesign.Colors.primary)
-                            }
-                        }
-                        
-                        ToolbarItem(id: "settings", placement: .topBarLeading) {
-                            Button(action: {
-                                showingSettings = true
-                            }) {
-                                Image(systemName: "gearshape")
                                     .font(.title2)
                                     .foregroundStyle(KiaDesign.Colors.primary)
                             }
@@ -112,9 +101,6 @@ struct MainView: View {
         .toolbarBackground(.visible, for: .navigationBar)
         .sheet(isPresented: $showingProfile) {
             UserProfileView(api: api)
-        }
-        .sheet(isPresented: $showingSettings) {
-            DeveloperSettingsView()
         }
     }
 

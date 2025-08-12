@@ -123,6 +123,7 @@ final class ExtensionIntegrationTests: XCTestCase {
             case .success(let result):
                 XCTAssertNotNil(result)
                 credentials = result
+                expectation.fulfill()
             case .failure:
                 XCTFail("Failed to fetch credentials")
             }
@@ -144,7 +145,7 @@ final class ExtensionIntegrationTests: XCTestCase {
                 XCTAssertNotNil(result)
                 XCTAssertEqual(result.authorization?.accessToken, credentials?.authorization?.accessToken)
 
-                expectation.fulfill()
+                expectation2.fulfill()
             case .failure:
                 XCTFail("Failed to fetch credentials")
             }

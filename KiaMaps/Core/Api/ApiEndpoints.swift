@@ -8,41 +8,51 @@
 
 import Foundation
 
+/// Defines all API endpoints for vehicle communication
+/// Organized by endpoint type and relative base URL
 enum ApiEndpoint: CustomStringConvertible {
+    /// Specifies which base URL an endpoint is relative to
     enum RelativeTo {
-        case base
-        case login
-        case spa
-        case user
+        case base    // Main API base host
+        case login   // Authentication host
+        case spa     // Single Page Application API host
+        case user    // User profile host
     }
 
-    case oauth2ConnectorAuthorize
-    case oauth2UserAuthorize
-    case oauth2Redirect
+    // MARK: - OAuth2 Authentication Endpoints
+    case oauth2ConnectorAuthorize       // Initial OAuth2 authorization with connector
+    case oauth2UserAuthorize           // User-specific OAuth2 authorization
+    case oauth2Redirect               // OAuth2 redirect callback handler
 
-    case loginConnectorClients(_ clinetId: String)
-    case loginCodes
-    case loginCertificates
-    case loginSignin
-    case loginToken
-    case loginRedirect
+    // MARK: - Login and Authentication Endpoints
+    case loginConnectorClients(_ clinetId: String)  // Fetch client configuration for authentication
+    case loginCodes                                 // Get password encryption settings
+    case loginCertificates                         // Retrieve RSA certificate for password encryption
+    case loginSignin                              // Submit login credentials
+    case loginToken                              // Exchange authorization code for access token
+    case loginRedirect                          // Handle login redirect
 
-    case logout
-    case notificationRegister
-    case notificationRegisterWithDeviceId(UUID)
+    // MARK: - Session Management
+    case logout                                   // End user session
+    case notificationRegister                    // Register device for push notifications
+    case notificationRegisterWithDeviceId(UUID) // Register with specific device ID
 
-    case userProfile
+    // MARK: - User Profile
+    case userProfile                             // Retrieve user profile information
 
-    case vehicles
-    case refreshVehicle(UUID)
-    case refreshCCS2Vehicle(UUID)
-    case vehicleCachedStatus(UUID)
-    case vehicleCachedCCS2Status(UUID)
+    // MARK: - Vehicle Data Endpoints
+    case vehicles                               // List all user vehicles
+    case refreshVehicle(UUID)                  // Request fresh vehicle status update
+    case refreshCCS2Vehicle(UUID)             // Request fresh status (CCS2 protocol)
+    case vehicleCachedStatus(UUID)           // Get cached vehicle status
+    case vehicleCachedCCS2Status(UUID)      // Get cached status (CCS2 protocol)
     
-    // Climate control endpoints
-    case startClimate(UUID)
-    case stopClimate(UUID)
+    // MARK: - Climate Control Endpoints
+    case startClimate(UUID)                   // Start climate control with settings
+    case stopClimate(UUID)                   // Stop climate control
 
+    /// Returns the endpoint path and its relative base URL
+    /// - Returns: Tuple containing the path string and which base URL it's relative to
     var path: (String, RelativeTo) {
         switch self {
         case .oauth2ConnectorAuthorize:
@@ -88,6 +98,7 @@ enum ApiEndpoint: CustomStringConvertible {
         }
     }
 
+    /// Human-readable description of the endpoint for logging and debugging
     var description: String {
         switch self {
         case .oauth2ConnectorAuthorize:
@@ -135,6 +146,7 @@ enum ApiEndpoint: CustomStringConvertible {
 }
 
 private extension UUID {
+    /// Formats UUID for use in API endpoints (lowercase string representation)
     var formatted: String {
         uuidString.lowercased()
     }

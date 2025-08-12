@@ -9,7 +9,9 @@
 import Foundation
 import os.log
 
+/// Centralized JSON decoders for consistent date parsing across the app
 public enum JSONDecoders {
+    /// Default JSON decoder with custom date formatting for API responses
     public static let `default`: JSONDecoder = {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
@@ -20,7 +22,9 @@ public enum JSONDecoders {
     }()
 }
 
+/// Centralized JSON encoders for consistent API request formatting
 enum JSONEncoders {
+    /// Default JSON encoder with ISO8601 dates and sorted keys for debugging
     public static let `default`: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -29,11 +33,16 @@ enum JSONEncoders {
     }()
 }
 
+/// API-specific errors that can occur during HTTP requests
 enum ApiError: Error {
+    /// No data received in response
     case noData
+    /// Unexpected HTTP status code received
     case unexpectedStatusCode(Int?)
+    /// Authentication failed (401 status)
     case unauthorized
 
+    /// Human-readable error descriptions
     var localizedDescription: String {
         switch self {
         case .noData:
@@ -46,15 +55,21 @@ enum ApiError: Error {
     }
 }
 
+/// HTTP methods supported by the API client
 enum ApiMethod: String {
     case get = "GET"
     case post = "POST"
     case put = "PUT"
 }
 
+/// Default timeout for API requests in seconds
 let ApiDefaultTimeout: TimeInterval = 60
 
 extension ApiConfiguration {
+    /// Generates the complete URL for a given API endpoint
+    /// - Parameter endpoint: The endpoint to generate URL for
+    /// - Returns: Complete URL for the endpoint
+    /// - Throws: URLError.badURL if URL construction fails
     func url(for endpoint: ApiEndpoint) throws -> URL {
         let result: URL?
         let (path, base) = endpoint.path
@@ -72,27 +87,45 @@ extension ApiConfiguration {
         return result
     }
 
+    /// Base API URL constructed from host and port
     private var baseUrl: URL? {
         URL(string: baseHost + ":\(port)")
     }
 
+    /// Login URL for authentication flows
     private var loginUrl: URL? {
         URL(string: loginHost)
     }
 
+    /// Single Page Application API URL
     private var spaUrl: URL? {
         URL(string: baseHost + ":\(port)" + "/api/v1/spa/")
     }
 
+    /// User-specific API URL
     private var userUrl: URL? {
         URL(string: baseHost + ":\(port)" + "/api/v1/user/")
     }
 }
 
+/// Protocol defining the interface for HTTP API requests with various response types
+/// Supports JSON, form data, and raw body requests with flexible response handling
 protocol ApiRequest {
+    /// Type alias for HTTP headers dictionary
     typealias Headers = [String: String]
+    /// Type alias for form data dictionary
     typealias Form = [String: String]
 
+    /// Initializer for requests with Codable body data
+    /// - Parameters:
+    ///   - caller: API caller with configuration and authentication
+    ///   - method: HTTP method (defaults to POST for body data)
+    ///   - endpoint: API endpoint to call
+    ///   - queryItems: URL query parameters
+    ///   - headers: HTTP headers
+    ///   - encodable: Codable object to encode as JSON body
+    ///   - timeout: Request timeout in seconds
+    /// - Throws: Encoding errors if encodable cannot be serialized
     init(
         caller: ApiCaller,
         method: ApiMethod?,
@@ -103,6 +136,15 @@ protocol ApiRequest {
         timeout: TimeInterval
     ) throws
 
+    /// Initializer for requests with raw Data body
+    /// - Parameters:
+    ///   - caller: API caller with configuration and authentication
+    ///   - method: HTTP method (defaults based on body presence)
+    ///   - endpoint: API endpoint to call
+    ///   - queryItems: URL query parameters
+    ///   - headers: HTTP headers
+    ///   - body: Raw data for request body
+    ///   - timeout: Request timeout in seconds
     init(
         caller: ApiCaller,
         method: ApiMethod?,
@@ -113,6 +155,15 @@ protocol ApiRequest {
         timeout: TimeInterval
     )
 
+    /// Initializer for form-encoded requests
+    /// - Parameters:
+    ///   - caller: API caller with configuration and authentication
+    ///   - method: HTTP method (defaults to POST)
+    ///   - endpoint: API endpoint to call
+    ///   - queryItems: URL query parameters
+    ///   - headers: HTTP headers
+    ///   - form: Form data dictionary
+    ///   - timeout: Request timeout in seconds
     init(
         caller: ApiCaller,
         method: ApiMethod?,
@@ -123,34 +174,52 @@ protocol ApiRequest {
         timeout: TimeInterval
     )
 
+    /// The configured URLRequest ready for execution
     var urlRequest: URLRequest { get throws }
 
+    /// Executes request expecting 200 status and ApiResponse wrapper
     func response<Data: Decodable>() async throws -> Data
+    /// Executes request with custom status code and ApiResponse wrapper
     func response<Data: Decodable>(acceptStatusCode: Int) async throws -> Data
 
+    /// Executes request expecting 200 status and ApiResponseValue wrapper
     func responseValue<Data: Decodable>() async throws -> Data
+    /// Executes request with custom status code and ApiResponseValue wrapper
     func responseValue<Data: Decodable>(acceptStatusCode: Int) async throws -> Data
 
+    /// Executes request expecting 200 status and empty response
     func responseEmpty() async throws -> ApiResponseEmpty
+    /// Executes request with custom status code and empty response
     func responseEmpty(acceptStatusCode: Int) async throws -> ApiResponseEmpty
 
+    /// Executes request expecting 204 status with no response data
     func empty() async throws
+    /// Executes request with custom status code and no response data
     func empty(acceptStatusCode: Int) async throws
 
+    /// Executes request expecting 200 status and returns raw string
     func string() async throws -> String
+    /// Executes request with custom status code and returns raw string
     func string(acceptStatusCode: Int) async throws -> String
 
+    /// Executes request expecting 200 status and returns HTTPURLResponse
     func httpResponse() async throws -> HTTPURLResponse
+    /// Executes request with custom status code and returns HTTPURLResponse
     func httpResponse(acceptStatusCode: Int) async throws -> HTTPURLResponse
 
+    /// Executes request expecting 200 status and returns decoded data directly
     func data<Data: Decodable>() async throws -> Data
+    /// Executes request with custom status code and returns decoded data directly
     func data<Data: Decodable>(acceptStatusCode: Int) async throws -> Data
 
+    /// Executes request expecting 302 redirect and returns redirect URL
     func referalUrl() async throws -> URL
+    /// Executes request with custom status code and returns redirect URL
     func referalUrl(acceptStatusCode: Int) async throws -> URL
 }
 
 extension ApiRequest {
+    /// Standard headers for JSON requests
     static var commonJsonHeaders: Headers {
         var headers: Headers = [:]
         headers["Content-type"] = "application/json"
@@ -158,6 +227,7 @@ extension ApiRequest {
         return headers
     }
 
+    /// Standard headers for form-encoded requests
     static var commonFormHeaders: Headers {
         var headers: Headers = [:]
         headers["Content-Type"] = "application/x-www-form-urlencoded; charset=utf-8"
@@ -197,15 +267,25 @@ extension ApiRequest {
     }
 }
 
+/// Concrete implementation of ApiRequest protocol
+/// Handles HTTP request construction, execution, and response parsing
 struct ApiRequestImpl: ApiRequest {
+    /// API caller providing configuration and authentication
     let caller: ApiCaller
+    /// HTTP method for the request
     let method: ApiMethod
+    /// API endpoint to call
     let endpoint: ApiEndpoint
+    /// URL query parameters
     let queryItems: [URLQueryItem]
+    /// HTTP headers
     let headers: Headers
+    /// Request body data
     let body: Data?
+    /// Request timeout in seconds
     let timeout: TimeInterval
 
+    /// Character set used for form data encoding
     private static let formCharset: CharacterSet = {
         var charset = CharacterSet.alphanumerics
         charset.insert("=")
@@ -388,15 +468,28 @@ struct ApiRequestImpl: ApiRequest {
     }
 }
 
+/// Protocol defining the context needed for API requests
+/// Provides configuration, network session, and authentication data
 protocol ApiCaller {
+    /// API configuration with endpoints and credentials
     var configuration: ApiConfiguration { get }
+    /// URL session for network requests
     var urlSession: URLSession { get }
+    /// Optional authorization data for authenticated requests
     var authorization: AuthorizationData? { get }
 
+    /// Initializer for API caller instances
+    /// - Parameters:
+    ///   - configuration: API configuration
+    ///   - urlSession: URL session for requests
+    ///   - authorization: Optional authorization data
     init(configuration: ApiConfiguration, urlSession: URLSession, authorization: AuthorizationData?)
 }
 
+/// Main API request factory and provider
+/// Manages URL session, configuration, and creates typed requests
 class ApiRequestProvider: NSObject {
+    /// Default implementation of ApiCaller protocol
     private struct Caller: ApiCaller {
         let configuration: ApiConfiguration
         let urlSession: URLSession
@@ -409,17 +502,28 @@ class ApiRequestProvider: NSObject {
         }
     }
 
+    /// Current authorization data for requests
     var authorization: AuthorizationData?
+    /// Creates caller instances with current state
     var caller: ApiCaller {
         callerType.init(configuration: configuration, urlSession: urlSession, authorization: authorization)
     }
     
+    /// API configuration for endpoints and settings
     let configuration: ApiConfiguration
+    /// Type of caller to create (for dependency injection)
     let callerType: ApiCaller.Type
+    /// Type of request to create (for dependency injection)
     let requestType: ApiRequest.Type
 
+    /// Shared URL session with custom delegate for redirect handling
     private lazy var urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
 
+    /// Initializes the API request provider
+    /// - Parameters:
+    ///   - configuration: API configuration
+    ///   - callerType: Type of caller to create (defaults to internal Caller)
+    ///   - requestType: Type of request to create (defaults to ApiRequestImpl)
     init(
         configuration: ApiConfiguration,
         callerType: ApiCaller.Type = Caller.self,
@@ -430,6 +534,16 @@ class ApiRequestProvider: NSObject {
         self.requestType = requestType
     }
 
+    /// Creates a request with a Codable body
+    /// - Parameters:
+    ///   - method: HTTP method (optional)
+    ///   - endpoint: API endpoint
+    ///   - queryItems: URL query parameters
+    ///   - headers: HTTP headers
+    ///   - encodable: Object to encode as JSON body
+    ///   - timeout: Request timeout
+    /// - Returns: Configured API request
+    /// - Throws: Encoding errors
     func request(
         with method: ApiMethod? = nil,
         endpoint: ApiEndpoint,
@@ -449,6 +563,15 @@ class ApiRequestProvider: NSObject {
         )
     }
 
+    /// Creates a request with raw Data body
+    /// - Parameters:
+    ///   - method: HTTP method (optional)
+    ///   - endpoint: API endpoint
+    ///   - queryItems: URL query parameters
+    ///   - headers: HTTP headers
+    ///   - body: Raw body data
+    ///   - timeout: Request timeout
+    /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
         endpoint: ApiEndpoint,
@@ -468,6 +591,15 @@ class ApiRequestProvider: NSObject {
         )
     }
 
+    /// Creates a request with string body
+    /// - Parameters:
+    ///   - method: HTTP method (optional)
+    ///   - endpoint: API endpoint
+    ///   - queryItems: URL query parameters
+    ///   - headers: HTTP headers
+    ///   - string: String to encode as UTF-8 body
+    ///   - timeout: Request timeout
+    /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
         endpoint: ApiEndpoint,
@@ -487,6 +619,15 @@ class ApiRequestProvider: NSObject {
         )
     }
 
+    /// Creates a request with form-encoded body
+    /// - Parameters:
+    ///   - method: HTTP method (optional)
+    ///   - endpoint: API endpoint
+    ///   - queryItems: URL query parameters
+    ///   - headers: HTTP headers
+    ///   - form: Form data dictionary
+    ///   - timeout: Request timeout
+    /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
         endpoint: ApiEndpoint,
@@ -506,6 +647,10 @@ class ApiRequestProvider: NSObject {
         )
     }
 
+    /// Fetches raw data from a URL without API configuration
+    /// - Parameter url: URL to fetch data from
+    /// - Returns: Raw response data
+    /// - Throws: Network errors
     @discardableResult
     func data(url: URL) async throws -> Data {
         let urlRequest = URLRequest(url: url)
@@ -515,6 +660,13 @@ class ApiRequestProvider: NSObject {
 }
 
 extension ApiRequestProvider: URLSessionTaskDelegate {
+    /// Handles HTTP redirects, preventing automatic redirects for authentication endpoints
+    /// - Parameters:
+    ///   - session: The URL session
+    ///   - task: The URL session task
+    ///   - response: The HTTP response triggering the redirect
+    ///   - request: The proposed new request
+    ///   - completionHandler: Completion handler with the request to follow (nil to prevent redirect)
     func urlSession(_: URLSession, task: URLSessionTask, willPerformHTTPRedirection _: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
         let lastPathComponent = task.originalRequest?.url?.lastPathComponent
         if ["signin", "authorize"].contains(lastPathComponent) {

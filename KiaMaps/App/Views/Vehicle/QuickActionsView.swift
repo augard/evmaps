@@ -89,7 +89,7 @@ struct QuickActionsView: View {
     }
     
     @MainActor
-    private func performAsyncAction(_ actionType: String, _ action: @escaping () async -> Void) async {
+    private func performAsyncAction(_ actionType: String, _ action: @escaping () async throws -> Void) async {
         // Prevent multiple simultaneous actions
         guard isPerformingAction == nil else { return }
         
@@ -100,8 +100,8 @@ struct QuickActionsView: View {
         
         do {
             // Execute the async action
-            await action()
-            
+            try await action()
+
             // Success haptic
             ActionButton.HapticFeedback.success.trigger()
         } catch {
