@@ -143,6 +143,39 @@ This project does not currently have unit tests or a testing framework configure
 
 ## Development Rules
 
+### **Logging: Use os_log Instead of print**
+**IMPORTANT**: Always use `os_log` for logging instead of `print` statements in production code.
+
+```swift
+// ✅ CORRECT: Use os_log for structured logging
+import os
+
+private let logger = Logger(subsystem: "com.porsche.kiamaps", category: "VehicleManager")
+
+// Log with appropriate levels
+logger.debug("Starting vehicle refresh")
+logger.info("Vehicle status updated: \(vehicleId)")
+logger.error("API request failed: \(error.localizedDescription)")
+
+// ❌ INCORRECT: Don't use print in production code
+print("Debug: Vehicle status updated") // Remove or replace with os_log
+```
+
+**Why use os_log:**
+- Structured logging with subsystems and categories
+- Different log levels (debug, info, notice, error, fault)
+- Better performance - logs can be filtered and disabled
+- Integration with Console.app and Xcode debugging tools
+- Preserves user privacy with proper data handling
+
+**Usage Guidelines:**
+- Create loggers per module/class with appropriate subsystem and category
+- Use `.debug` for detailed debugging information
+- Use `.info` for general informational messages
+- Use `.error` for recoverable errors
+- Use `.fault` for critical errors/system failures
+- Mark sensitive data appropriately with privacy options
+
 ### **MANDATORY: Always Build After Code Changes**
 **CRITICAL RULE**: After making ANY code changes, you MUST immediately build the project to verify compilation:
 

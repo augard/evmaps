@@ -11,12 +11,14 @@ import SwiftUI
 /// Simple user profile screen with account information and app preferences
 struct UserProfileView: View {
     let api: Api
-    
+    let selectedVehicle: Vehicle?
+
     @Environment(\.dismiss) private var dismiss
     @State private var showingLogoutAlert = false
     @State private var showingDebugScreen = false
-    @State private var tapCount = 0
+    @State private var showingMQTTDebugScreen = false
     @AppStorage("ShowDeveloperMenu") private var showDeveloperMenu = false
+    @State private var tapCount = 0
     
     var body: some View {
         NavigationView {
@@ -63,6 +65,9 @@ struct UserProfileView: View {
         }
         .sheet(isPresented: $showingDebugScreen) {
             DebugScreenView()
+        }
+        .sheet(isPresented: $showingMQTTDebugScreen) {
+            MQTTDebugView(mqttManager: .init(api: api), selectedVehicle: selectedVehicle)
         }
     }
     
@@ -198,8 +203,17 @@ struct UserProfileView: View {
                                 showingDebugScreen = true
                             }
                         )
+                    
+            
+                        actionRow(
+                            title: "MQTT Debug",
+                            subtitle: "Real-time vehicle communication testing",
+                            icon: "antenna.radiowaves.left.and.right",
+                            action: {
+                                showingMQTTDebugScreen = true
+                            }
+                        )
                     }
-
                     actionRow(
                         title: "App Version",
                         subtitle: appVersion + " (\(buildNumber))",
@@ -409,6 +423,7 @@ struct UserProfileView: View {
 
 #Preview("User Profile") {
     UserProfileView(
-        api: Api(configuration: AppConfiguration.apiConfiguration, rsaService: .init())
+        api: Api(configuration: AppConfiguration.apiConfiguration, rsaService: .init()),
+        selectedVehicle: .preview
     )
 }

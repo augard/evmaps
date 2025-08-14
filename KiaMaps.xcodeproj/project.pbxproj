@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		807D0D032E4BECC700B40963 /* CocoaMQTT in Frameworks */ = {isa = PBXBuildFile; productRef = 807D0D022E4BECC700B40963 /* CocoaMQTT */; };
+		80BC37DE2E4BF24F0025FC66 /* CocoaMQTT in Frameworks */ = {isa = PBXBuildFile; productRef = 80BC37DD2E4BF24F0025FC66 /* CocoaMQTT */; };
 		CD05A6F122E8E4EA00F93F50 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD05A6F022E8E4EA00F93F50 /* MapKit.framework */; };
 		CD05A6F922E9018D00F93F50 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = CD05A6F822E9018D00F93F50 /* README.md */; };
 		CDA8AD8C22E8CF7D00B1EAF8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CDA8AD8B22E8CF7D00B1EAF8 /* Assets.xcassets */; };
@@ -92,6 +94,7 @@
 				Api/Models/AuthenticationModels.swift,
 				Api/Models/ClimateControlModels.swift,
 				Api/Models/ConnectorAuthorizationModels.swift,
+				Api/Models/MQTTModels.swift,
 				Api/Models/NotificationRegistrationResponse.swift,
 				Api/Models/SignInResponse.swift,
 				Api/Models/UserIntegrationResponse.swift,
@@ -106,6 +109,7 @@
 				Encryption/RSAEncryptionService.swift,
 				LocalServer/LocalCredentialClient.swift,
 				LocalServer/LocalCredentialServer.swift,
+				MQTT/MQTTManager.swift,
 				Vehicle/VehicleManager.swift,
 			);
 			target = CDA8ADA222E8CF8700B1EAF8 /* KiaExtensionUI */;
@@ -154,6 +158,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				807D0D032E4BECC700B40963 /* CocoaMQTT in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -161,6 +166,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				80BC37DE2E4BF24F0025FC66 /* CocoaMQTT in Frameworks */,
 				CD05A6F122E8E4EA00F93F50 /* MapKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -280,6 +286,7 @@
 			);
 			name = KiaMaps;
 			packageProductDependencies = (
+				807D0D022E4BECC700B40963 /* CocoaMQTT */,
 			);
 			productName = ride2;
 			productReference = CDA8AD8122E8CF7B00B1EAF8 /* KiaMaps.app */;
@@ -304,6 +311,7 @@
 			);
 			name = KiaExtension;
 			packageProductDependencies = (
+				80BC37DD2E4BF24F0025FC66 /* CocoaMQTT */,
 			);
 			productName = ride;
 			productReference = CDA8AD9A22E8CF8700B1EAF8 /* KiaExtension.appex */;
@@ -371,6 +379,8 @@
 			);
 			mainGroup = CDA8AD7822E8CF7B00B1EAF8;
 			packageReferences = (
+				807D0D012E4BECC700B40963 /* XCRemoteSwiftPackageReference "CocoaMQTT" */,
+				80BC37DC2E4BF2240025FC66 /* XCRemoteSwiftPackageReference "CocoaAsyncSocket" */,
 			);
 			productRefGroup = CDA8AD8222E8CF7B00B1EAF8 /* Products */;
 			projectDirPath = "";
@@ -853,6 +863,22 @@
 				kind = branch;
 			};
 		};
+		807D0D012E4BECC700B40963 /* XCRemoteSwiftPackageReference "CocoaMQTT" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/emqx/CocoaMQTT";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.9;
+			};
+		};
+		80BC37DC2E4BF2240025FC66 /* XCRemoteSwiftPackageReference "CocoaAsyncSocket" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/robbiehanson/CocoaAsyncSocket";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.6.5;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -865,6 +891,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 55DE317D2C11E655001D7302 /* XCRemoteSwiftPackageReference "KeychainAccess" */;
 			productName = KeychainAccess;
+		};
+		807D0D022E4BECC700B40963 /* CocoaMQTT */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 807D0D012E4BECC700B40963 /* XCRemoteSwiftPackageReference "CocoaMQTT" */;
+			productName = CocoaMQTT;
+		};
+		80BC37DD2E4BF24F0025FC66 /* CocoaMQTT */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 807D0D012E4BECC700B40963 /* XCRemoteSwiftPackageReference "CocoaMQTT" */;
+			productName = CocoaMQTT;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
