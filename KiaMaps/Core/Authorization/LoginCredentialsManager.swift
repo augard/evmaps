@@ -27,6 +27,6 @@ enum LoginCredentialManager {
     }
 
     static func clearCredentials() {
-        Keychain<Key>.removeVakue(at: .loginCredentials)
+        Keychain<Key>.removeValue(at: .loginCredentials)
     }
 }

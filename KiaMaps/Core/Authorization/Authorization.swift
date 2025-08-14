@@ -108,7 +108,7 @@ enum Authorization {
 
     /// Removes authorization data from keychain and posts notifications
     static func remove() {
-        Keychain<Key>.removeVakue(at: .authorization)
+        Keychain<Key>.removeValue(at: .authorization)
         // Notify extensions that credentials have been cleared
         //DarwinNotificationHelper.post(name: DarwinNotificationHelper.NotificationName.credentialsCleared)
         // Post local notification for UI updates

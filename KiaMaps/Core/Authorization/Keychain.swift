@@ -109,13 +109,13 @@ struct Keychain<Key: RawRepresentable> {
                 os_log(.error, log: Logger.keychain, "Failed to encode a value for storing into the keychain.")
             }
         } else {
-            removeVakue(at: path)
+            removeValue(at: path)
         }
     }
 
     /// Removes a value from the keychain at the specified path
     /// - Parameter path: The keychain service identifier for the item to remove
-    static func removeVakue(at path: Key) {
+    static func removeValue(at path: Key) {
         let nativeQuery: [KeychainSecurityKeys: Any] = [
             .className: KeychainSecurityKeys.genericPassword.rawValue,
             .attributeService: path.rawValue,

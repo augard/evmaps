@@ -123,10 +123,10 @@ final class ExtensionIntegrationTests: XCTestCase {
             case .success(let result):
                 XCTAssertNotNil(result)
                 credentials = result
-                expectation.fulfill()
             case .failure:
                 XCTFail("Failed to fetch credentials")
             }
+            expectation.fulfill()
         })
         wait(for: [expectation], timeout: 5.0)
 
@@ -144,11 +144,10 @@ final class ExtensionIntegrationTests: XCTestCase {
             case .success(let result):
                 XCTAssertNotNil(result)
                 XCTAssertEqual(result.authorization?.accessToken, credentials?.authorization?.accessToken)
-
-                expectation2.fulfill()
             case .failure:
                 XCTFail("Failed to fetch credentials")
             }
+            expectation2.fulfill()
         })
         wait(for: [expectation2], timeout: 5.0)
     }

@@ -3,11 +3,11 @@ import SwiftUI
 /// Tesla-style quick action buttons for common vehicle operations
 struct QuickActionsView: View {
     let vehicleStatus: VehicleStatus
-    let onLockAction: () async -> Void
-    let onClimateAction: () async -> Void
-    let onHornAction: () async -> Void
-    let onLocateAction: () async -> Void
-    
+    let onLockAction: () async throws -> Void
+    let onClimateAction: () async throws -> Void
+    let onHornAction: () async throws -> Void
+    let onLocateAction: () async throws -> Void
+
     @State private var isPerformingAction: String? = nil
     
     private var isLocked: Bool {

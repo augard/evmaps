@@ -86,7 +86,7 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
                     ExtensionLogger.error("Unauthorized after retry (Status code 401)", category: "GetCarPowerLevelStatus")
                     result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
                 case (.unexpectedStatusCode(400), false):
-                    ExtensionLogger.error("We probably reached call limit (Status code 404)", category: "GetCarPowerLevelStatus")
+                    ExtensionLogger.error("We probably reached call limit (Status code 400)", category: "GetCarPowerLevelStatus")
                     result = .init(code: .success, userActivity: nil)
                 default:
                     ExtensionLogger.error("Unknown Api Error '%@", category: "GetCarPowerLevelStatus", error.localizedDescription)
@@ -137,7 +137,7 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
                 do {
                     _ = try await api.refreshVehicle(carId)
                 } catch {
-
+                    ExtensionLogger.error("Failed to refresh vehicle: %@", category: "GetCarPowerLevelStatus", error.localizedDescription)
                 }
                 manager.removeLastUpdateDate()
             }
@@ -169,7 +169,7 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
             self.manager = VehicleManager(id: carId)
 
             if self.mock {
-                Thread.sleep(until: .now + 4)
+                Thread.sleep(until: .now + 4) // Just to simulate server request/response time
                 ExtensionLogger.debug("Updater: Returning mocking data", category: "GetCarPowerLevelStatus")
                 let response = VehicleStatusResponse.lowBatteryPreview.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
                 lastBatteryCharge.value = self.updateCharge(observer: observer, response: response, lastBatteryCharge: lastBatteryCharge.value)

@@ -69,9 +69,6 @@ class CarListHandler: NSObject, INListCarsIntentHandling, Handler {
                 case (.unauthorized, true):
                     ExtensionLogger.error("Unauthorized after retry (Status code 401)", category: "CarList")
                     result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
-                    ExtensionLogger.error("We probably reached call limit (Status code 400)", category: "CarList")
-                    ExtensionLogger.error("We probably reached call limit (Status code 404)", category: "CarList")
-                    result = .init(code: .success, userActivity: nil)
                 default:
                     ExtensionLogger.error("Unknown Api Error '%@", category: "CarList", error.localizedDescription)
                     result = .init(code: .failure, userActivity: nil)
