@@ -8,11 +8,15 @@
 
 import UIKit
 
+/// Enumeration representing supported vehicle brands
 enum ApiBrand: String {
     case kia
     case hyundai
     case genesis
 
+    /// Returns the appropriate API configuration for the brand and region combination
+    /// - Parameter region: The geographic region for API endpoints
+    /// - Returns: Region-specific API configuration for the brand
     func configuration(for region: ApiRegion) -> ApiConfiguration {
         switch self {
         case .kia, .hyundai, .genesis:
@@ -29,23 +33,53 @@ enum ApiBrand: String {
     }
 }
 
+/// Protocol defining required configuration properties for API communication
 protocol ApiConfiguration {
+    /// Brand identifier key (e.g., "kia", "hyundai", "genesis")
     var key: String { get }
+    
+    /// Human-readable brand name
     var name: String { get }
+    
+    /// API port number for connections
     var port: Int { get }
+    
+    /// Service agent string for API requests
     var serviceAgent: String { get }
+    
+    /// User agent string identifying the client application
     var userAgent: String { get }
+    
+    /// Accept header for HTTP content negotiation
     var acceptHeader: String { get }
+    
+    /// Base API host URL for vehicle data endpoints
     var baseHost: String { get }
+    
+    /// Authentication host URL for login and OAuth2 flow
     var loginHost: String { get }
+    
+    /// Unique service identifier for API authentication
     var serviceId: String { get }
+    
+    /// Application identifier for API access
     var appId: String { get }
+    
+    /// Sender ID for push notification registration
     var senderId: Int { get }
+    
+    /// OAuth2 client ID for authentication flow
     var authClientId: String { get }
+    
+    /// Encrypted configuration token for API requests
     var cfb: String { get }
+    
+    /// Push notification type ("APNS" for iOS, "GCM" for Android)
     var pushType: String { get }
 }
 
+/// European region API configuration for supported vehicle brands
+/// Provides brand-specific endpoints, credentials, and service identifiers for EU market
 enum ApiConfigurationEurope: String, ApiConfiguration {
     case kia
     case hyundai
@@ -167,6 +201,8 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
     }
 }
 
+/// Geographic regions where the API is available
+/// Currently only Europe is fully supported
 enum ApiRegion {
     case europe
     case usa
@@ -183,6 +219,8 @@ extension ApiConfiguration where Self == MockApiConfiguration {
     }
 }
 
+/// Mock API configuration for unit testing and development
+/// Provides test-safe values that don't connect to real services
 struct MockApiConfiguration: ApiConfiguration {
     var key: String = "mock"
     var name: String = "Mock Configuration"

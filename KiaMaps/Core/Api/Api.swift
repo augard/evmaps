@@ -39,8 +39,11 @@ import os.log
  * Use a single instance per authentication session.
  */
 class Api {
+    /// The API configuration containing endpoints, credentials, and service identifiers
     let configuration: ApiConfiguration
 
+    /// Current authorization data including access tokens and device information
+    /// Managed through the provider for consistent state management
     var authorization: AuthorizationData? {
         get {
             provider.authorization
@@ -50,7 +53,10 @@ class Api {
         }
     }
 
+    /// Service for RSA encryption operations, used for password encryption during authentication
     private let rsaService: RSAEncryptionService
+    
+    /// Provider that handles actual API request execution and token management
     private let provider: ApiRequestProvider
 
     init(configuration: ApiConfiguration, rsaService: RSAEncryptionService) {

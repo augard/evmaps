@@ -9,21 +9,37 @@
 import Foundation
 import os.log
 
+/// Enumeration of Security Framework constants used for keychain operations
+/// Provides type-safe access to keychain attribute keys and values
 private enum KeychainSecurityKeys: String {
+    /// Security class type
     case className
+    /// Account attribute
     case attributeAccount
+    /// Generic attribute for custom data
     case attributeGeneric
+    /// Service attribute for grouping items
     case attributeService
+    /// Match limit for search queries
     case matchLimit
+    /// Single item match limit
     case matchLimitOne
+    /// Return data flag for queries
     case returnData
+    /// Value data for storage
     case valueData
+    /// Generic password class type
     case genericPassword
+    /// Accessibility level for stored items
     case accessible
+    /// Accessible after first unlock level
     case firstUnlock
+    /// Synchronization attribute
     case synchronizable
+    /// Access group for shared keychain access
     case accessGroup
 
+    /// Returns the Security Framework constant for each key
     public var rawValue: String {
         let key: CFString
         switch self {
@@ -58,11 +74,18 @@ private enum KeychainSecurityKeys: String {
     }
 }
 
+/// Generic keychain storage utility for securely storing and retrieving Codable data
+/// Uses iOS Security Framework to store encrypted data with app group sharing support
 struct Keychain<Key: RawRepresentable> {
+    /// The app group identifier for shared keychain access between app and extensions
     private static var accessGroupId: String {
         AppConfiguration.accessGroupId
     }
 
+    /// Stores a Codable value in the keychain or removes it if value is nil
+    /// - Parameters:
+    ///   - value: The value to store, or nil to remove existing value
+    ///   - path: The keychain service identifier for this item
     static func store<Content: Codable>(value: Content?, path: Key) {
         if let value {
             do {
@@ -86,11 +109,13 @@ struct Keychain<Key: RawRepresentable> {
                 os_log(.error, log: Logger.keychain, "Failed to encode a value for storing into the keychain.")
             }
         } else {
-            removeVakue(at: path)
+            removeValue(at: path)
         }
     }
 
-    static func removeVakue(at path: Key) {
+    /// Removes a value from the keychain at the specified path
+    /// - Parameter path: The keychain service identifier for the item to remove
+    static func removeValue(at path: Key) {
         let nativeQuery: [KeychainSecurityKeys: Any] = [
             .className: KeychainSecurityKeys.genericPassword.rawValue,
             .attributeService: path.rawValue,
@@ -103,6 +128,9 @@ struct Keychain<Key: RawRepresentable> {
         checkForErrors("Store empty failed to delete value at path: \(path).", status: deleteStatus)
     }
 
+    /// Retrieves and decodes a Codable value from the keychain
+    /// - Parameter path: The keychain service identifier for the item to retrieve
+    /// - Returns: The decoded value of type Content, or nil if not found or decoding fails
     static func value<Content: Codable>(for path: Key) -> Content? {
         let nativeQuery: [KeychainSecurityKeys: Any] = [
             .className: KeychainSecurityKeys.genericPassword.rawValue,
@@ -138,6 +166,10 @@ struct Keychain<Key: RawRepresentable> {
         }
     }
 
+    /// Logs keychain operation errors while ignoring expected status codes
+    /// - Parameters:
+    ///   - message: Error message to log
+    ///   - status: OSStatus from keychain operation
     private static func checkForErrors(
         _ message: String,
         status: OSStatus
@@ -152,7 +184,9 @@ struct Keychain<Key: RawRepresentable> {
     }
 }
 
+/// Extension to convert KeychainSecurityKeys dictionary to NSDictionary for Security Framework
 private extension Dictionary where Key == KeychainSecurityKeys, Value == Any {
+    /// Converts the dictionary to NSDictionary format required by Security Framework functions
     var securityQuery: NSDictionary {
         NSDictionary(
             objects: Array(values),

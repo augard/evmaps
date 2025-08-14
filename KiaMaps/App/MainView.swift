@@ -42,7 +42,7 @@ struct MainView: View {
     @State var isSelectedVahicleExpanded = true
     @State var lastUpdateDate: Date?
     @State var showingProfile = false
-    @State var loginRetry: Bool = false
+    @State var loginRetry = false
 
     init(configuration: AppConfiguration.Type) {
         self.configuration = configuration

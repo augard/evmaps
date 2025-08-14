@@ -15,6 +15,8 @@ struct UserProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingLogoutAlert = false
     @State private var showingDebugScreen = false
+    @State private var tapCount = 0
+    @AppStorage("ShowDeveloperMenu") private var showDeveloperMenu = false
     
     var body: some View {
         NavigationView {
@@ -180,22 +182,31 @@ struct UserProfileView: View {
     private var debugSupportSection: some View {
         KiaCard {
             VStack(spacing: KiaDesign.Spacing.medium) {
-                sectionHeader(title: "Debug & Support", icon: "wrench.and.screwdriver")
-                
+                if showDeveloperMenu {
+                    sectionHeader(title: "Debug & Support", icon: "wrench.and.screwdriver")
+                } else {
+                    sectionHeader(title: "Support", icon: "wrench.and.screwdriver")
+                }
+
                 VStack(spacing: KiaDesign.Spacing.small) {
-                    actionRow(
-                        title: "Debug Screen",
-                        subtitle: "Access legacy UI and debug information",
-                        icon: "ladybug",
-                        action: {
-                            showingDebugScreen = true
-                        }
-                    )
-                    
+                    if showDeveloperMenu {
+                        actionRow(
+                            title: "Debug Screen",
+                            subtitle: "Access legacy UI and debug information",
+                            icon: "ladybug",
+                            action: {
+                                showingDebugScreen = true
+                            }
+                        )
+                    }
+
                     actionRow(
                         title: "App Version",
-                        subtitle: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
-                        icon: "info.circle"
+                        subtitle: appVersion + " (\(buildNumber))",
+                        icon: "info.circle",
+                        action: {
+                            handleVersionTap()
+                        }
                     )
                     
                     actionRow(
@@ -347,7 +358,34 @@ struct UserProfileView: View {
         .buttonStyle(.plain)
     }
     
+    // MARK: - Computed Properties
+    
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+    }
+    
+    private var buildNumber: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
+    }
+    
     // MARK: - Actions
+    
+    private func handleVersionTap() {
+        tapCount += 1
+        
+        if tapCount >= 7 {
+            showDeveloperMenu = true
+            tapCount = 0
+            
+            // Haptic feedback
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
+        
+        // Reset tap count after 2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            tapCount = 0
+        }
+    }
     
     private func signOut() async {
         do {
