@@ -164,7 +164,10 @@ class Api {
     /// - Returns: Complete vehicle response containing all registered vehicles
     /// - Throws: Network errors or authentication failures
     func vehicles() async throws -> VehicleResponse {
-        try await provider.request(endpoint: .vehicles).response()
+        guard let authorization = authorization else {
+            throw ApiError.unauthorized
+        }
+        return try await provider.request(endpoint: .vehicles).response()
     }
 
     /// Request fresh vehicle status update from the vehicle
@@ -173,7 +176,10 @@ class Api {
     /// - Note: Uses CCS2 endpoint if supported, fallback to standard endpoint
     /// - Throws: Network errors or vehicle communication failures
     func refreshVehicle(_ vehicleId: UUID) async throws -> UUID {
-        let endpoint: ApiEndpoint = authorization?.isCcuCCS2Supported == true ? .refreshCCS2Vehicle(vehicleId) : .refreshVehicle(vehicleId)
+        guard let authorization = authorization else {
+            throw ApiError.unauthorized
+        }
+        let endpoint: ApiEndpoint = authorization.isCcuCCS2Supported == true ? .refreshCCS2Vehicle(vehicleId) : .refreshVehicle(vehicleId)
         return try await provider.request(endpoint: endpoint).responseEmpty().resultId
     }
 
@@ -183,7 +189,10 @@ class Api {
     /// - Note: Uses CCS2 endpoint if supported, fallback to standard endpoint
     /// - Throws: Network errors or data parsing failures
     func vehicleCachedStatus(_ vehicleId: UUID) async throws -> VehicleStatusResponse {
-        let endpoint: ApiEndpoint = authorization?.isCcuCCS2Supported == true ? .vehicleCachedCCS2Status(vehicleId) : .vehicleCachedStatus(vehicleId)
+        guard let authorization = authorization else {
+            throw ApiError.unauthorized
+        }
+        let endpoint: ApiEndpoint = authorization.isCcuCCS2Supported == true ? .vehicleCachedCCS2Status(vehicleId) : .vehicleCachedStatus(vehicleId)
         return try await provider.request(endpoint: endpoint).response()
     }
 
@@ -191,7 +200,10 @@ class Api {
     /// - Returns: User profile data as JSON string
     /// - Throws: Network errors or authentication failures
     func profile() async throws -> String {
-        try await provider.request(endpoint: .userProfile).string()
+        guard authorization != nil else {
+            throw ApiError.unauthorized
+        }
+        return try await provider.request(endpoint: .userProfile).string()
     }
     
     // MARK: - Climate Control
@@ -203,6 +215,9 @@ class Api {
     ///   - pin: Vehicle PIN (required for climate control)
     /// - Returns: Operation result ID for tracking
     func startClimate(_ vehicleId: UUID, options: ClimateControlOptions, pin: String) async throws -> UUID {
+        guard let authorization = authorization?.accessToken else {
+            throw ApiError.unauthorized
+        }
         guard !pin.isEmpty else {
             throw ClimateControlError.missingPin
         }
@@ -222,14 +237,12 @@ class Api {
             }
             throw ClimateControlError.vehicleNotReady
         }
-        
+
         let request = options.toClimateControlRequest(pin: pin)
-        let headers = authorization?.authorizatioHeaders(for: configuration) ?? [:]
         
         return try await provider.request(
             with: .post,
             endpoint: .startClimate(vehicleId),
-            headers: headers,
             encodable: request
         ).responseEmpty().resultId
     }
@@ -238,13 +251,131 @@ class Api {
     /// - Parameter vehicleId: The vehicle ID
     /// - Returns: Operation result ID for tracking
     func stopClimate(_ vehicleId: UUID) async throws -> UUID {
-        let headers = authorization?.authorizatioHeaders(for: configuration) ?? [:]
-        
+        guard let authorization = authorization?.accessToken else {
+            throw ApiError.unauthorized
+        }
         return try await provider.request(
             with: .post,
-            endpoint: .stopClimate(vehicleId),
-            headers: headers
+            endpoint: .stopClimate(vehicleId)
         ).responseEmpty().resultId
+    }
+}
+
+extension Api {
+    // MARK: - MQTT Service Hub Methods
+
+    /**
+     * MQTT Step 1: Get device host information for MQTT connection
+     * GET /api/v3/servicehub/device/host
+     */
+    func fetchMQTTDeviceHost() async throws -> MQTTHostInfo {
+        guard authorization?.accessToken != nil else {
+            throw ApiError.unauthorized
+        }
+
+        let response: MQTTHostResponse = try await provider.request(endpoint: .mqttDeviceHost).data()
+        return MQTTHostInfo(
+            host: response.mqtt.host,
+            port: response.mqtt.port,
+            ssl: response.mqtt.ssl
+        )
+    }
+
+    /**
+     * MQTT Step 2: Register device as mobile unit for MQTT communication
+     * POST /api/v3/servicehub/device/register
+     */
+    func registerMQTTDevice() async throws -> MQTTDeviceInfo {
+        guard authorization?.accessToken != nil else {
+            throw ApiError.unauthorized
+        }
+
+        let deviceUUID = "\(UUID().uuidString)_UVO"
+        let request = DeviceRegisterRequest(unit: "mobile", uuid: deviceUUID)
+        let response: DeviceRegisterResponse = try await provider.request(endpoint: .mqttRegisterDevice, encodable: request).data()
+
+        return MQTTDeviceInfo(
+            clientId: response.clientId,
+            deviceId: response.deviceId,
+            uuid: deviceUUID
+        )
+    }
+
+    /**
+     * MQTT Step 3: Get vehicle metadata and supported protocols for MQTT
+     * GET /api/v3/servicehub/vehicles/metadatalist?carId=<carId>&brand=K
+     */
+    func fetchMQTTVehicleMetadata(for vehicle: Vehicle, clientId: String) async throws -> [MQTTVehicleMetadata] {
+        guard authorization?.accessToken != nil else {
+            throw ApiError.unauthorized
+        }
+
+        let response: VehicleMetadataResponse = try await provider.request(
+            endpoint: .mqttVehicleMetadata,
+            queryItems: [
+                URLQueryItem(name: "carId", value: vehicle.vehicleId.uuidString),
+                URLQueryItem(name: "brand", value: configuration.brandCode)
+            ],
+            headers: [
+                "client-id": clientId
+            ]
+        ).data()
+
+        return response.vehicles.map { vehicle in
+            MQTTVehicleMetadata(
+                id: vehicle._id,
+                clientId: vehicle.clientId,
+                unit: vehicle.unit,
+                vehicleId: vehicle.vehicleId,
+                protocols: vehicle.protocols
+            )
+        }
+    }
+
+    /**
+     * MQTT Step 4: Subscribe to specific vehicle protocols for MQTT communication
+     * POST /api/v3/servicehub/device/protocol
+     */
+    func subscribeMQTTVehicleProtocols(for vehicle: Vehicle, clientId: String) async throws {
+        guard authorization?.accessToken != nil else {
+            throw ApiError.unauthorized
+        }
+
+        // Subscribe to CCU (Car Control Unit) real-time updates
+        let request = ProtocolSubscriptionRequest(
+            protocols: ["service.phone.vss", "service.phone.connection", "service.phone.res"],
+            protocolId: "statesync.vehicle.ccu.update",
+            carId: vehicle.vehicleId.uuidString,
+            brand: configuration.brandCode
+        )
+
+        try await provider.request(
+            endpoint: .mqttDeviceProtocol,
+            headers: [
+                "client-id": clientId
+            ],
+            encodable: request
+        ).empty()
+    }
+
+    /**
+     * MQTT Step 5: Check MQTT connection state after protocol subscription
+     * GET /api/v3/vstatus/connstate?clientId=<clientId>
+     */
+    func checkMQTTConnectionState(clientId: String) async throws -> ConnectionStateResponse {
+        guard authorization?.accessToken != nil else {
+            throw ApiError.unauthorized
+        }
+
+        return try await provider.request(
+            endpoint: .mqttConnectionState,
+            queryItems: [
+                URLQueryItem(name: "clientId", value: clientId),
+            ],
+            headers: [
+                "client-id": clientId
+            ]
+        ).data()
     }
 }
 

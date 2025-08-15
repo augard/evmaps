@@ -58,7 +58,10 @@ protocol ApiConfiguration {
     
     /// Authentication host URL for login and OAuth2 flow
     var loginHost: String { get }
-    
+
+    /// MQTT host URL for broker
+    var mqttHost: String { get }
+
     /// Unique service identifier for API authentication
     var serviceId: String { get }
     
@@ -73,7 +76,10 @@ protocol ApiConfiguration {
     
     /// Encrypted configuration token for API requests
     var cfb: String { get }
-    
+
+    /// Short character name for brand used for API
+    var brandCode: String { get }
+
     /// Push notification type ("APNS" for iOS, "GCM" for Android)
     var pushType: String { get }
 }
@@ -144,6 +150,10 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
         "https://idpconnect-eu.\(key).com"
     }
 
+    var mqttHost: String {
+        "https://egw-svchub-ccs-\(brandCode.lowercased())-eu.eu-central.hmgmobility.com:31010"
+    }
+
     var serviceId: String {
         switch self {
         case .kia:
@@ -192,6 +202,17 @@ enum ApiConfigurationEurope: String, ApiConfiguration {
         }
     }
 
+    var brandCode: String {
+        switch self {
+        case .kia:
+            "K"
+        case .hyundai:
+            "H"
+        case .genesis:
+            "G"
+        }
+    }
+
     var pushType: String {
         if self == .kia {
             "APNS"
@@ -230,10 +251,12 @@ struct MockApiConfiguration: ApiConfiguration {
     var acceptHeader: String = "application/json, text/html"
     var baseHost: String = "https://mock.test.com"
     var loginHost: String = "https://idpconnect-mock.test.com"
+    var mqttHost: String = "https://mock.hmgmobility.com:31010"
     var serviceId: String = "mock-service-id-123"
     var appId: String = "mock-app-id-456"
     var senderId: Int = 123456789
     var authClientId: String = "mock-auth-client-789"
     var cfb: String = "mockCfbToken123="
+    var brandCode: String = "M"
     var pushType: String = "MOCK"
 }

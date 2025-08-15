@@ -116,18 +116,18 @@ class MQTTManager: ObservableObject {
 
         do {
             // Step 1: Get device host information
-            let hostInfo = try await getDeviceHost()
+            let hostInfo = try await api.fetchMQTTDeviceHost()
             
             // Step 2: Register device
-            let deviceInfo = try await registerDevice()
+            let deviceInfo = try await api.registerMQTTDevice()
             self.deviceInfo = deviceInfo
             
             // Step 3: Get vehicle metadata and protocols
-            let vehicleMetadata = try await getVehicleMetadata(for: vehicle)
+            let vehicleMetadata = try await api.fetchMQTTVehicleMetadata(for: vehicle, clientId: deviceInfo.clientId)
             self.vehicleMetadata = vehicleMetadata
 
             // Step 4: Subscribe to vehicle protocols via HTTP
-            try await subscribeToVehicleProtocols(for: vehicle)
+            try await api.subscribeMQTTVehicleProtocols(for: vehicle, clientId: deviceInfo.clientId)
 
             // Step 5: Configure and connect MQTT client
             let ackCode = try await configureMQTTClient(hostInfo: hostInfo, deviceInfo: deviceInfo, vehicleMetadata: vehicleMetadata[0])
@@ -138,7 +138,7 @@ class MQTTManager: ObservableObject {
             os_log(.info, log: Logger.mqtt, "MQTT topics subscribed successfully")
             
             // Step 7: Check connection state
-            let connectionState = try await checkConnectionState(clientId: deviceInfo.clientId)
+            let connectionState = try await api.checkMQTTConnectionState(clientId: deviceInfo.clientId)
             os_log(.info, log: Logger.mqtt, "MQTT Connection State: \(connectionState.state) - Protocol Version: \(connectionState.mqttProtoVer)")
 
             if connectionState.state == "ONLINE" {
@@ -170,169 +170,6 @@ class MQTTManager: ObservableObject {
         subscribedTopics.removeAll()
     }
     
-    // MARK: - Private Methods - HTTP API Sequence
-
-    /**
-     * Step 1: Get device host information
-     * GET /api/v3/servicehub/device/host
-     */
-    private func getDeviceHost() async throws -> MQTTHostInfo {
-        guard let authorization = api.authorization?.accessToken else {
-            throw MQTTError.noAuthorization
-        }
-        
-        // Direct HTTP request to ServiceHub endpoint (different host)
-        let url = URL(string: "https://egw-svchub-ccs-k-eu.eu-central.hmgmobility.com:31010/api/v3/servicehub/device/host")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authorization)", forHTTPHeaderField: "Authorization")
-        request.setValue("Keep-Alive", forHTTPHeaderField: "Connection")
-        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
-        request.setValue("okhttp/4.12.0", forHTTPHeaderField: "User-Agent")
-        
-        let (data, _) = try await URLSession.shared.data(for: request)
-        let response = try JSONDecoder().decode(MQTTHostResponse.self, from: data)
-        
-        return MQTTHostInfo(
-            host: response.mqtt.host,
-            port: response.mqtt.port,
-            ssl: response.mqtt.ssl
-        )
-    }
-    
-    /**
-     * Step 2: Register device as mobile unit
-     * POST /api/v3/servicehub/device/register
-     */
-    private func registerDevice() async throws -> MQTTDeviceInfo {
-        guard let authorization = api.authorization?.accessToken else {
-            throw MQTTError.noAuthorization
-        }
-        
-        let deviceUUID = "\(UUID().uuidString)_UVO"
-        let registerRequest = DeviceRegisterRequest(unit: "mobile", uuid: deviceUUID)
-        let requestBody = try JSONEncoder().encode(registerRequest)
-        
-        let url = URL(string: "https://egw-svchub-ccs-k-eu.eu-central.hmgmobility.com:31010/api/v3/servicehub/device/register")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(authorization)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
-        request.setValue("Keep-Alive", forHTTPHeaderField: "Connection")
-        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
-        request.setValue("okhttp/4.12.0", forHTTPHeaderField: "User-Agent")
-        request.httpBody = requestBody
-        
-        let (data, _) = try await URLSession.shared.data(for: request)
-        let response = try JSONDecoder().decode(DeviceRegisterResponse.self, from: data)
-        
-        return MQTTDeviceInfo(
-            clientId: response.clientId,
-            deviceId: response.deviceId,
-            uuid: deviceUUID
-        )
-    }
-    
-    /**
-     * Step 3: Get vehicle metadata and supported protocols
-     * GET /api/v3/servicehub/vehicles/metadatalist?carId=<carId>&brand=K
-     */
-    private func getVehicleMetadata(for vehicle: Vehicle) async throws -> [MQTTVehicleMetadata] {
-        guard let authorization = api.authorization?.accessToken,
-              let deviceInfo = self.deviceInfo else {
-            throw MQTTError.noAuthorization
-        }
-        
-        let urlString = "https://egw-svchub-ccs-k-eu.eu-central.hmgmobility.com:31010/api/v3/servicehub/vehicles/metadatalist?carId=\(vehicle.vehicleId)&brand=K"
-        let url = URL(string: urlString)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authorization)", forHTTPHeaderField: "Authorization")
-        request.setValue(deviceInfo.clientId, forHTTPHeaderField: "client-id")
-        request.setValue("Keep-Alive", forHTTPHeaderField: "Connection")
-        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
-        request.setValue("okhttp/4.12.0", forHTTPHeaderField: "User-Agent")
-        
-        let (data, _) = try await URLSession.shared.data(for: request)
-        let response = try JSONDecoder().decode(VehicleMetadataResponse.self, from: data)
-        
-        return response.vehicles.map { vehicle in
-            MQTTVehicleMetadata(
-                id: vehicle._id,
-                clientId: vehicle.clientId,
-                unit: vehicle.unit,
-                vehicleId: vehicle.vehicleId,
-                protocols: vehicle.protocols
-            )
-        }
-    }
-    
-    /**
-     * Step 4: Subscribe to specific vehicle protocols
-     * POST /api/v3/servicehub/device/protocol
-     */
-    private func subscribeToVehicleProtocols(for vehicle: Vehicle) async throws {
-        guard let authorization = api.authorization?.accessToken,
-              let deviceInfo = self.deviceInfo,
-              let _ = self.vehicleMetadata else {
-            throw MQTTError.incompleteSetup
-        }
-        
-        // Subscribe to CCU (Car Control Unit) real-time updates
-        let protocolRequest = ProtocolSubscriptionRequest(
-            protocols: ["service.phone.vss", "service.phone.connection", "service.phone.res"],
-            protocolId: "statesync.vehicle.ccu.update",
-            carId: vehicle.vehicleId.uuidString,
-            brand: "K"
-        )
-        
-        let requestBody = try JSONEncoder().encode(protocolRequest)
-        
-        let url = URL(string: "https://egw-svchub-ccs-k-eu.eu-central.hmgmobility.com:31010/api/v3/servicehub/device/protocol")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(authorization)", forHTTPHeaderField: "Authorization")
-        request.setValue(deviceInfo.clientId, forHTTPHeaderField: "client-id")
-        request.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
-        request.setValue("Keep-Alive", forHTTPHeaderField: "Connection")
-        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
-        request.setValue("okhttp/4.12.0", forHTTPHeaderField: "User-Agent")
-        request.httpBody = requestBody
-        
-        let (_, _) = try await URLSession.shared.data(for: request)
-        // Response should be 200 OK with empty body
-    }
-    
-    /**
-     * Step 6: Check connection state after protocol subscription
-     * GET /api/v3/vstatus/connstate?clientId=<clientId>
-     */
-    private func checkConnectionState(clientId: String) async throws -> ConnectionStateResponse {
-        guard let authorization = api.authorization?.accessToken else {
-            throw MQTTError.noAuthorization
-        }
-        
-        let urlString = "https://egw-svchub-ccs-k-eu.eu-central.hmgmobility.com:31010/api/v3/vstatus/connstate?clientId=\(clientId)"
-        let url = URL(string: urlString)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authorization)", forHTTPHeaderField: "Authorization")
-        request.setValue("Keep-Alive", forHTTPHeaderField: "Connection")
-        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
-        request.setValue("okhttp/4.12.0", forHTTPHeaderField: "User-Agent")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        // Check response headers for connection state
-        if let httpResponse = response as? HTTPURLResponse {
-            if let resMsg = httpResponse.allHeaderFields["res-msg"] as? String {
-                os_log(.debug, log: Logger.mqtt, "Connection State Response: \(resMsg)")
-            }
-        }
-        
-        let connectionState = try JSONDecoder().decode(ConnectionStateResponse.self, from: data)
-        return connectionState
-    }
     
     // MARK: - Private Methods - MQTT Client Configuration
     

@@ -143,6 +143,47 @@ This project does not currently have unit tests or a testing framework configure
 
 ## Development Rules
 
+### **Naming Conventions: Avoid "get" Prefix**
+**IMPORTANT**: Follow consistent naming conventions for better code readability and Swift conventions.
+
+```swift
+// ✅ CORRECT: Network calls use "fetch" prefix
+func fetchVehicleStatus(_ vehicleId: UUID) async throws -> VehicleStatus
+func fetchUserProfile() async throws -> UserProfile
+func fetchMQTTDeviceHost() async throws -> MQTTHostInfo
+
+// ✅ CORRECT: Variables use descriptive names without "get"
+var userProfile: UserProfile?
+var vehicleStatus: VehicleStatus?
+var connectionState: ConnectionState?
+
+// ✅ CORRECT: Update/set operations use "update" prefix
+func updateVehicleStatus(_ status: VehicleStatus)
+func updateConnectionState(_ state: ConnectionState)
+
+// ❌ INCORRECT: Don't use "get" prefix
+func getVehicleStatus() // Use fetchVehicleStatus() instead
+func getUserProfile()   // Use fetchUserProfile() instead
+func getMQTTHost()      // Use fetchMQTTDeviceHost() instead
+
+// ❌ INCORRECT: Don't use unnecessary prefixes for variables
+var getUserProfile: UserProfile?     // Use userProfile instead
+var getVehicleStatus: VehicleStatus? // Use vehicleStatus instead
+```
+
+**Naming Guidelines:**
+- **Network calls**: Use `fetch` prefix for API calls that retrieve data
+- **Variables**: Use descriptive names without prefixes when possible
+- **Update operations**: Use `update` prefix for methods that modify existing data
+- **Boolean properties**: Use `is`, `has`, `can`, `should` prefixes (e.g., `isConnected`, `hasError`)
+- **Computed properties**: No prefix needed, use descriptive names (e.g., `connectionTimeString`, `statusColor`)
+
+**Why avoid "get" prefix:**
+- Swift conventions favor concise, descriptive names
+- "get" is redundant - functions naturally "get" or return values
+- Better readability: `fetchUserProfile()` vs `getUserProfile()`
+- Consistency with Apple's naming conventions
+
 ### **Logging: Use os_log Instead of print**
 **IMPORTANT**: Always use `os_log` for logging instead of `print` statements in production code.
 
