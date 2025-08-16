@@ -181,7 +181,7 @@ struct MQTTDebugView: View {
                     
                     StatisticBox(
                         title: "Data Updates",
-                        value: mqttManager.latestVehicleData != nil ? "✓" : "—",
+                        value: mqttManager.latestData != nil ? "✓" : "—",
                         icon: "arrow.clockwise"
                     )
                     
@@ -206,13 +206,13 @@ struct MQTTDebugView: View {
                     
                     Spacer()
                     
-                    if mqttManager.latestVehicleData != nil {
+                    if mqttManager.latestData != nil {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
                     }
                 }
                 
-                if let data = mqttManager.latestVehicleData {
+                if let data = mqttManager.latestData {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(Array(data.keys.prefix(5)), id: \.self) { key in

@@ -62,14 +62,17 @@ enum MQTTError: LocalizedError {
  */
 @MainActor
 class MQTTManager: ObservableObject {
+    typealias VehicleStatusCallback = (VehicleStatusResponse.State) -> Void
 
     // MARK: - Published Properties
     
     @Published var connectionStatus: MQTTConnectionStatus = .disconnected
     @Published var lastError: String?
     @Published var receivedMessageCount: Int = 0
-    @Published var latestVehicleData: [String: Any]?
-    
+    @Published var latestData: [String: Any]?
+
+    var vehicleStatusCallback: VehicleStatusCallback?
+
     // MARK: - Private Properties
 
     private let api: Api
@@ -85,18 +88,6 @@ class MQTTManager: ObservableObject {
     // Track pending topic subscriptions
     private var pendingSubscriptions: Set<String> = []
     private var subscribedTopics: Set<String> = []
-
-    // MARK: - MQTT Configuration
-    
-    private struct MQTTConfig {
-        let host: String
-        let port: Int
-        let ssl: Bool
-        let clientId: String
-        let deviceId: String
-    }
-    
-    private var mqttConfig: MQTTConfig?
     
     // MARK: - Initialization
     
@@ -126,15 +117,22 @@ class MQTTManager: ObservableObject {
             let vehicleMetadata = try await api.fetchMQTTVehicleMetadata(for: vehicle, clientId: deviceInfo.clientId)
             self.vehicleMetadata = vehicleMetadata
 
+            let protocols: [any MQTTProtocol] = [MQTTBaseProtocolIds.connection, MQTTBaseProtocolIds.vss, MQTTCloseRemoteProtocolIds.hvacMediaStatus]
+
             // Step 4: Subscribe to vehicle protocols via HTTP
-            try await api.subscribeMQTTVehicleProtocols(for: vehicle, clientId: deviceInfo.clientId)
+            try await api.subscribeMQTTVehicleProtocols(
+                for: vehicle,
+                clientId: deviceInfo.clientId,
+                protocolId: MQTTBaseProtocolIds.vehicleCcuUpdate,
+                protocols: protocols
+            )
 
             // Step 5: Configure and connect MQTT client
             let ackCode = try await configureMQTTClient(hostInfo: hostInfo, deviceInfo: deviceInfo, vehicleMetadata: vehicleMetadata[0])
             os_log(.info, log: Logger.mqtt, "MQTT connected with ACK code: \(String(describing: ackCode))")
             
             // Step 6: Subscribe to MQTT topics for real-time data
-            try await subscribeToMQTTTopics(vehicleMetadata: vehicleMetadata[0])
+            try await subscribeToMQTTTopics(vehicleMetadata: vehicleMetadata[0], protocols: protocols)
             os_log(.info, log: Logger.mqtt, "MQTT topics subscribed successfully")
             
             // Step 7: Check connection state
@@ -165,7 +163,6 @@ class MQTTManager: ObservableObject {
         connectionStatus = .disconnected
         deviceInfo = nil
         vehicleMetadata = nil
-        mqttConfig = nil
         pendingSubscriptions.removeAll()
         subscribedTopics.removeAll()
     }
@@ -180,15 +177,6 @@ class MQTTManager: ObservableObject {
         guard let authorization = api.authorization?.accessToken else {
             throw MQTTError.noAuthorization
         }
-        
-        // Create MQTT client configuration
-        mqttConfig = MQTTConfig(
-            host: hostInfo.host,
-            port: hostInfo.port,
-            ssl: hostInfo.ssl,
-            clientId: deviceInfo.clientId,
-            deviceId: deviceInfo.deviceId
-        )
 
         let mqtt = CocoaMQTT5(clientID: deviceInfo.clientId, host: hostInfo.host, port: UInt16(hostInfo.port))
         mqtt.username = deviceInfo.clientId
@@ -243,18 +231,14 @@ class MQTTManager: ObservableObject {
     /**
      * Subscribe to MQTT topics and wait for all subscription acknowledgments
      */
-    private func subscribeToMQTTTopics(vehicleMetadata: MQTTVehicleMetadata) async throws {
+    private func subscribeToMQTTTopics(vehicleMetadata: MQTTVehicleMetadata, protocols: [any MQTTProtocol]) async throws {
         guard let mqtt = mqttClient else {
             throw MQTTError.incompleteSetup
         }
         
         // Define the topics we need to subscribe to
-        let topics = [
-            "service/phone/_/connection/" + vehicleMetadata.vehicleId,
-            "service/phone/_/vss/" + vehicleMetadata.vehicleId,
-            //"service/phone/_/res/" + vehicleMetadata.vehicleId
-        ]
-        
+        let topics = protocols.map { [$0.subscriptionName, vehicleMetadata.vehicleId].joined(separator: "/") }
+
         return try await withCheckedThrowingContinuation { continuation in
             self.subscriptionContinuation = continuation
             
@@ -329,18 +313,42 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
     func mqtt5(_ mqtt: CocoaMQTT5, didReceiveMessage message: CocoaMQTT5Message, id: UInt16, publishData: MqttDecodePublish?) {
         os_log(.info, log: Logger.mqtt, "MQTT 5.0 Received message on topic: \(message.topic)")
         os_log(.debug, log: Logger.mqtt, "Message content: \(message.string ?? "")")
-        
+
         receivedMessageCount += 1
-        
+
         // Parse vehicle data from message
+        var data: Data?
         if let messageString = message.string,
-           let data = messageString.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            latestVehicleData = json
+           let messageData = messageString.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: messageData) as? [String: Any] {
+            latestData = json
+            data = messageData
         }
-        
+
         if let publishData = publishData {
             os_log(.debug, log: Logger.mqtt, "Publish data: \(publishData)")
+        }
+
+        guard let protocolId = MQTTTProtocols.compactMap({ $0.init(topicName: message.topic) }).first else {
+            return
+        }
+        if let protocolId = protocolId as? MQTTBaseProtocolIds {
+            switch protocolId {
+            case .vss:
+                guard let data = data else {
+                    os_log(.debug, log: Logger.mqtt, "No data for topic: \(message.topic)")
+                    return
+                }
+                let decoder = JSONDecoder()
+                do {
+                    let vehicleStatus = try decoder.decode(VehicleStatusResponse.State.self, from: data)
+                    vehicleStatusCallback?(vehicleStatus)
+                } catch {
+                    os_log(.error, log: Logger.mqtt, "Failed to decode data for topic: \(message.topic), error: \(error.localizedDescription)")
+                }
+            case .connection, .res, .vehicleCcuUpdate:
+                break
+            }
         }
     }
     
@@ -400,7 +408,13 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
     }
     
     func mqtt5DidDisconnect(_ mqtt: CocoaMQTT5, withError error: Error?) {
-        os_log(.info, log: Logger.mqtt, "MQTT 5.0 Disconnected: \(error?.localizedDescription ?? "No error")")
+        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 Disconnected: \(error?.localizedDescription ?? "No error")")
+
+        if subscriptionContinuation == nil, connectionContinuation == nil, connectionStatus == .connected {
+            os_log(.debug, log: Logger.mqtt, "MQTT 5.0, Keeping connected as we finished connection and subscriotion, will do reconnect")
+            return
+        }
+
         connectionStatus = .disconnected
         if let error = error {
             lastError = error.localizedDescription

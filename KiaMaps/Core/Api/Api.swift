@@ -321,30 +321,22 @@ extension Api {
             ]
         ).data()
 
-        return response.vehicles.map { vehicle in
-            MQTTVehicleMetadata(
-                id: vehicle._id,
-                clientId: vehicle.clientId,
-                unit: vehicle.unit,
-                vehicleId: vehicle.vehicleId,
-                protocols: vehicle.protocols
-            )
-        }
+        return response.vehicles
     }
 
     /**
      * MQTT Step 4: Subscribe to specific vehicle protocols for MQTT communication
      * POST /api/v3/servicehub/device/protocol
      */
-    func subscribeMQTTVehicleProtocols(for vehicle: Vehicle, clientId: String) async throws {
+    func subscribeMQTTVehicleProtocols(for vehicle: Vehicle, clientId: String, protocolId: any MQTTProtocol, protocols: [any MQTTProtocol]) async throws {
         guard authorization?.accessToken != nil else {
             throw ApiError.unauthorized
         }
 
         // Subscribe to CCU (Car Control Unit) real-time updates
         let request = ProtocolSubscriptionRequest(
-            protocols: ["service.phone.vss", "service.phone.connection", "service.phone.res"],
-            protocolId: "statesync.vehicle.ccu.update",
+            protocols: protocols,
+            protocolId: protocolId,
             carId: vehicle.vehicleId.uuidString,
             brand: configuration.brandCode
         )
