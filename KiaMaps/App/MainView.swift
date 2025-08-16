@@ -100,7 +100,7 @@ struct MainView: View {
         .toolbarBackground(KiaDesign.Colors.background, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .sheet(isPresented: $showingProfile) {
-            UserProfileView(api: api)
+            UserProfileView(api: api, selectedVehicle: selectedVehicle)
         }
     }
 

@@ -17,6 +17,7 @@ enum ApiEndpoint: CustomStringConvertible {
         case login   // Authentication host
         case spa     // Single Page Application API host
         case user    // User profile host
+        case mqtt    // MQTT host
     }
 
     // MARK: - OAuth2 Authentication Endpoints
@@ -50,6 +51,13 @@ enum ApiEndpoint: CustomStringConvertible {
     // MARK: - Climate Control Endpoints
     case startClimate(UUID)                   // Start climate control with settings
     case stopClimate(UUID)                   // Stop climate control
+
+    // MARK: - MQTT Endpoints
+    case mqttDeviceHost                    // Get address for MQTT broker
+    case mqttRegisterDevice               // To Register device for MQTT broker
+    case mqttVehicleMetadata             // Get vehicle metadata for MQTT broker
+    case mqttDeviceProtocol             // Set what protocols are allowed in MQTT broker
+    case mqttConnectionState           // To get connection state with MQTT broker
 
     /// Returns the endpoint path and its relative base URL
     /// - Returns: Tuple containing the path string and which base URL it's relative to
@@ -95,6 +103,16 @@ enum ApiEndpoint: CustomStringConvertible {
             ("vehicles/\(vehicleId.formatted)/control/temperature", .spa)
         case let .stopClimate(vehicleId):
             ("vehicles/\(vehicleId.formatted)/control/temperature/off", .spa)
+        case .mqttDeviceHost:
+            ("api/v3/servicehub/device/host", .mqtt)
+        case .mqttRegisterDevice:
+            ("api/v3/servicehub/device/register", .mqtt)
+        case .mqttVehicleMetadata:
+            ("api/v3/servicehub/vehicles/metadatalist", .mqtt)
+        case .mqttDeviceProtocol:
+            ("api/v3/servicehub/device/protocol", .mqtt)
+        case .mqttConnectionState:
+            ("api/v3/vstatus/connstate", .mqtt)
         }
     }
 
@@ -141,6 +159,16 @@ enum ApiEndpoint: CustomStringConvertible {
             "startClimate"
         case .stopClimate:
             "stopClimate"
+        case .mqttDeviceHost:
+            "mqttDeviceHost"
+        case .mqttRegisterDevice:
+            "mqttDeviceHost"
+        case .mqttVehicleMetadata:
+            "mqttVehicleMetadata"
+        case .mqttDeviceProtocol:
+            "mqttDeviceProtocol"
+        case .mqttConnectionState:
+            "mqttConnectionState"
         }
     }
 }

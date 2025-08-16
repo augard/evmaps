@@ -35,7 +35,10 @@ enum Logger {
     
     /// Bluetooth connectivity
     static let bluetooth = OSLog(subsystem: subsystem, category: "Bluetooth")
-    
+
+    /// MQTT connectivity
+    static let mqtt = OSLog(subsystem: subsystem, category: "MQTT")
+
     /// Keychain and secure storage
     static let keychain = OSLog(subsystem: subsystem, category: "Keychain")
     

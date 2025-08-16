@@ -47,9 +47,9 @@ struct SeatCommands: Codable {
 /// Options for configuring climate control
 struct ClimateControlOptions {
     let temperature: Int        // Temperature in Celsius (16-32°C typically)
-    let defrost: Bool          // Enable defrost
-    let duration: Int          // Duration in minutes (1-30)
-    let driverSeatLevel: Int   // Driver seat heating/cooling (0-3)
+    let defrost: Bool           // Enable defrost
+    let duration: Int           // Duration in minutes (1-30)
+    let driverSeatLevel: Int    // Driver seat heating/cooling (0-3)
     let passengerSeatLevel: Int // Passenger seat heating/cooling (0-3)
     let rearLeftSeatLevel: Int  // Rear left seat heating/cooling (0-3)
     let rearRightSeatLevel: Int // Rear right seat heating/cooling (0-3)
