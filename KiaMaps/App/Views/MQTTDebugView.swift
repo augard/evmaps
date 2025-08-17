@@ -23,8 +23,10 @@ struct MQTTDebugView: View {
     @StateObject private var mqttManager: MQTTManager
     @State private var selectedVehicle: Vehicle?
     @State private var connectionStartTime: Date?
+    @State private var connectionElapsedTime: TimeInterval = 0
     @State private var communicationLog: [CommunicationLogEntry] = []
     @State private var isTestingSequence = false
+    @State private var timerCancellable: Timer?
 
     init(mqttManager: MQTTManager, selectedVehicle: Vehicle?) {
         _mqttManager = StateObject(wrappedValue: mqttManager)
@@ -60,11 +62,8 @@ struct MQTTDebugView: View {
         .onAppear {
             setupDebugSession()
         }
-        .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { _ in
-            // Force UI update for connection time
-            if mqttManager.connectionStatus == .connected && connectionStartTime != nil {
-                // This timer trigger will cause the connectionTimeString to update
-            }
+        .onChange(of: mqttManager.connectionStatus) { newStatus in
+            handleConnectionStatusChange(newStatus)
         }
     }
     
@@ -336,22 +335,50 @@ struct MQTTDebugView: View {
     }
     
     private var connectionTimeString: String {
-        guard mqttManager.connectionStatus == .connected,
-              let startTime = connectionStartTime else {
+        guard mqttManager.connectionStatus == .connected else {
             return "—"
         }
         
-        let elapsed = Date().timeIntervalSince(startTime)
-        let minutes = Int(elapsed) / 60
-        let seconds = Int(elapsed) % 60
+        let minutes = Int(connectionElapsedTime) / 60
+        let seconds = Int(connectionElapsedTime) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+    
+    private func handleConnectionStatusChange(_ status: MQTTConnectionStatus) {
+        switch status {
+        case .connected:
+            if connectionStartTime == nil {
+                connectionStartTime = Date()
+                connectionElapsedTime = 0
+            }
+            startConnectionTimer()
+        case .disconnected, .error:
+            stopConnectionTimer()
+            connectionStartTime = nil
+            connectionElapsedTime = 0
+        case .connecting:
+            break
+        }
+    }
+    
+    private func startConnectionTimer() {
+        stopConnectionTimer()
+        timerCancellable = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if let startTime = connectionStartTime {
+                connectionElapsedTime = Date().timeIntervalSince(startTime)
+            }
+        }
+    }
+    
+    private func stopConnectionTimer() {
+        timerCancellable?.invalidate()
+        timerCancellable = nil
     }
     
     // MARK: - Actions
     
     private func setupDebugSession() {
-        // TODO: Get actual selected vehicle from the app context
-        os_log(.debug, log: Logger.mqtt, "MQTT Debug View loaded - ready for testing")
+        os_log(.debug, log: Logger.mqtt, "MQTT Debug View loaded - ready for testing with vehicle: %@", selectedVehicle?.vehicleId.uuidString ?? "none")
     }
     
     private func connectToMQTT() {

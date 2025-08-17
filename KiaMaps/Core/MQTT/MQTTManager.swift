@@ -79,7 +79,6 @@ class MQTTManager: ObservableObject {
     private var mqttClient: CocoaMQTT5?
     private var deviceInfo: MQTTDeviceInfo?
     private var vehicleMetadata: [MQTTVehicleMetadata]?
-    private var test: Bool = false
     
     // Continuation for waiting on MQTT connection
     private var connectionContinuation: CheckedContinuation<CocoaMQTTCONNACKReasonCode, Error>?
@@ -117,7 +116,7 @@ class MQTTManager: ObservableObject {
             let vehicleMetadata = try await api.fetchMQTTVehicleMetadata(for: vehicle, clientId: deviceInfo.clientId)
             self.vehicleMetadata = vehicleMetadata
 
-            let protocols: [any MQTTProtocol] = [MQTTBaseProtocolIds.connection, MQTTBaseProtocolIds.vss, MQTTCloseRemoteProtocolIds.hvacMediaStatus]
+            let protocols: [any MQTTProtocol] = [MQTTBaseProtocolIds.connection, MQTTBaseProtocolIds.vss]
 
             // Step 4: Subscribe to vehicle protocols via HTTP
             try await api.subscribeMQTTVehicleProtocols(
@@ -218,9 +217,9 @@ class MQTTManager: ObservableObject {
                 // Set a timeout for connection
                 Task {
                     try await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds timeout
-                    guard self.connectionContinuation != nil else { return }
-                    self.connectionContinuation?.resume(throwing: MQTTError.connectionFailed("Connection timeout to MQTT broker"))
+                    guard let continuation = self.connectionContinuation else { return }
                     self.connectionContinuation = nil
+                    continuation.resume(throwing: MQTTError.connectionFailed("Connection timeout to MQTT broker"))
                 }
             }
         }
@@ -256,15 +255,14 @@ class MQTTManager: ObservableObject {
             // Set a timeout for subscription
             Task {
                 try await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds timeout
-                if self.subscriptionContinuation != nil {
-                    let missingTopics = self.pendingSubscriptions.subtracting(self.subscribedTopics)
-                    if !missingTopics.isEmpty {
-                        os_log(.error, log: Logger.mqtt, "Subscription timeout. Missing topics: \(missingTopics.joined(separator: ", "))")
-                        self.subscriptionContinuation?.resume(throwing: MQTTError.connectionFailed("Subscription timeout. Failed to subscribe to: \(missingTopics.joined(separator: ", "))"))
-                    }
-                    self.subscriptionContinuation = nil
-                    self.pendingSubscriptions.removeAll()
+                guard let continuation = self.subscriptionContinuation else { return }
+                self.subscriptionContinuation = nil
+                let missingTopics = self.pendingSubscriptions.subtracting(self.subscribedTopics)
+                if !missingTopics.isEmpty {
+                    os_log(.error, log: Logger.mqtt, "Subscription timeout. Missing topics: \(missingTopics.joined(separator: ", "))")
+                    continuation.resume(throwing: MQTTError.connectionFailed("Subscription timeout. Failed to subscribe to: \(missingTopics.joined(separator: ", "))"))
                 }
+                self.pendingSubscriptions.removeAll()
             }
         }
     }
