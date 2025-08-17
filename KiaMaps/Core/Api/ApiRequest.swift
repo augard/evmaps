@@ -82,6 +82,8 @@ extension ApiConfiguration {
             result = URL(string: path, relativeTo: spaUrl)
         case .user:
             result = URL(string: path, relativeTo: userUrl)
+        case .mqtt:
+            result = URL(string: path, relativeTo: mqttUrl)
         }
         guard let result = result else { throw URLError(.badURL) }
         return result
@@ -105,6 +107,11 @@ extension ApiConfiguration {
     /// User-specific API URL
     private var userUrl: URL? {
         URL(string: baseHost + ":\(port)" + "/api/v1/user/")
+    }
+
+    /// MQTT API URL
+    private var mqttUrl: URL? {
+        URL(string: mqttHost)
     }
 }
 

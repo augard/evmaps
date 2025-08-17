@@ -11,13 +11,15 @@ import SwiftUI
 /// Map page showing vehicle location and navigation
 struct MapPageView: View {
     let vehicle: Vehicle
-    let status: VehicleStatusResponse
+    let vehicleStatus: VehicleStatus
+    let vehicleLocation: Location
     let isActive: Bool
     
     var body: some View {
         VehicleMapView(
             vehicle: vehicle,
-            vehicleStatus: status.state.vehicle,
+            vehicleStatus: vehicleStatus,
+            vehicleLocation: vehicleLocation
         )
         .background(KiaDesign.Colors.background)
     }
@@ -28,7 +30,8 @@ struct MapPageView: View {
 #Preview("Map Page View") {
     MapPageView(
         vehicle: MockVehicleData.mockVehicle,
-        status: MockVehicleData.standardResponse,
+        vehicleStatus: MockVehicleData.standard,
+        vehicleLocation: MockVehicleData.standard.location!,
         isActive: true
     )
 }

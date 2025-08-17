@@ -76,6 +76,7 @@ struct OverviewPageView: View {
                 VehicleMapView(
                     vehicle: vehicle,
                     vehicleStatus: status,
+                    vehicleLocation: status.location!,
                     onChargingStationTap: { station in
                         // Handle charging station tap
                         print("Charging station tapped: \(station.name)")

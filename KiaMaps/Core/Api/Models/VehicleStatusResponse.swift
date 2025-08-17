@@ -81,6 +81,30 @@ struct VehicleStatusResponse: Codable {
     }
 }
 
+struct VehicleMQTTStatusResponse: Codable {
+
+    /// Timestamp of when the vehicle status was last updated
+    @DateValue<TimeIntervalDateFormatter> private(set) var lastUpdateTime: Date
+
+    /// The complete vehicle state information
+    let state: State
+
+    /// Wrapper for the main vehicle status data
+    struct State: Codable {
+        /// The detailed vehicle status information
+        let vehicle: VehicleStatus
+
+        enum CodingKeys: String, CodingKey {
+            case vehicle = "Vehicle"
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case lastUpdateTime = "latestUpdateTime"
+        case state
+    }
+}
+
 // MARK: - VehicleStatus
 
 /// Represents the complete vehicle status containing all subsystem information.
@@ -127,7 +151,7 @@ struct VehicleStatus: Codable {
     let offset: String
     
     /// Vehicle GPS location and movement information
-    let location: Location
+    let location: Location?
 
     /// Computed property that determines if the vehicle is currently charging
     /// Returns true if both the charging connector is fastened and the charging door is open
