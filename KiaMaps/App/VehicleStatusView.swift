@@ -61,7 +61,9 @@ struct VehicleStatusView: View {
                 }
 
                 DisclosureGroup("Location") {
-                    locationSection(location: vehicleStatus.location)
+                    if let location = vehicleStatus.location {
+                        locationSection(location: location)
+                    }
                 }
             }
         }

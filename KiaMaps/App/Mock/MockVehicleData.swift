@@ -825,7 +825,7 @@ extension MockVehicleData {
     
     /// Check if vehicle is charging based on mock data logic
     static func isCharging(_ vehicleStatus: VehicleStatus) -> Bool {
-        return vehicleStatus.location.heading > 0
+        return (vehicleStatus.location?.heading ?? 0) > 0
     }
     
     /// Get estimated range in kilometers

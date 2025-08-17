@@ -188,13 +188,19 @@ struct ProtocolSubscriptionRequest: Encodable {
 struct EmptyResponse: Codable {}
 
 struct ConnectionStateResponse: Codable {
+    enum State: String, Codable {
+        case online = "ONLINE"
+        case offline = "OFFLINE"
+        case unknown = "UNKNOWN"
+    }
+
     enum CodingKeys: String, CodingKey {
         case state
         case mqttProtoVer = "mqtt_proto_ver"
         case modifiedAt
     }
 
-    let state: String
-    let mqttProtoVer: Int
-    let modifiedAt: String
+    let state: State
+    let mqttProtoVer: Int?
+    let modifiedAt: String?
 }

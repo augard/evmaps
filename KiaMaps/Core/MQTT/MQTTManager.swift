@@ -62,7 +62,7 @@ enum MQTTError: LocalizedError {
  */
 @MainActor
 class MQTTManager: ObservableObject {
-    typealias VehicleStatusCallback = (VehicleStatusResponse.State) -> Void
+    typealias VehicleStatusCallback = (VehicleMQTTStatusResponse) -> Void
 
     // MARK: - Published Properties
     
@@ -136,13 +136,13 @@ class MQTTManager: ObservableObject {
             
             // Step 7: Check connection state
             let connectionState = try await api.checkMQTTConnectionState(clientId: deviceInfo.clientId)
-            os_log(.info, log: Logger.mqtt, "MQTT Connection State: \(connectionState.state) - Protocol Version: \(connectionState.mqttProtoVer)")
+            os_log(.info, log: Logger.mqtt, "MQTT Connection State: \(connectionState.state.rawValue) - Protocol Version: \(connectionState.mqttProtoVer ?? 0)")
 
-            if connectionState.state == "ONLINE" {
+            if connectionState.state == .online {
                 connectionStatus = .connected
                 os_log(.debug, log: Logger.mqtt, "MQTT 5.0 activation sequence complete")
             } else {
-                throw MQTTError.connectionFailed(connectionState.state)
+                throw MQTTError.connectionFailed(connectionState.state.rawValue)
             }
         } catch {
             disconnect()
@@ -332,19 +332,28 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
         }
         if let protocolId = protocolId as? MQTTBaseProtocolIds {
             switch protocolId {
-            case .vss:
+            case .vss, .connection:
                 guard let data = data else {
                     os_log(.debug, log: Logger.mqtt, "No data for topic: \(message.topic)")
                     return
                 }
                 let decoder = JSONDecoder()
                 do {
-                    let vehicleStatus = try decoder.decode(VehicleStatusResponse.State.self, from: data)
-                    vehicleStatusCallback?(vehicleStatus)
+                    if protocolId == .vss {
+                        let vehicleStatus = try decoder.decode(VehicleMQTTStatusResponse.self, from: data)
+                        os_log(.info, log: Logger.mqtt, "Last vehicle data update received at: \(vehicleStatus.lastUpdateTime)")
+                        vehicleStatusCallback?(vehicleStatus)
+                    } else if protocolId == .connection {
+                        let connectionStatus = try decoder.decode(ConnectionStateResponse.self, from: data)
+                        os_log(.debug, log: Logger.mqtt, "Connection state changed to: \(connectionStatus.state.rawValue)")
+                        if connectionStatus.state == .offline {
+                            disconnect()
+                        }
+                    }
                 } catch {
                     os_log(.error, log: Logger.mqtt, "Failed to decode data for topic: \(message.topic), error: \(error.localizedDescription)")
                 }
-            case .connection, .res, .vehicleCcuUpdate:
+            case .res, .vehicleCcuUpdate:
                 break
             }
         }
