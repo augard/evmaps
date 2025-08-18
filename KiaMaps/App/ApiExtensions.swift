@@ -23,15 +23,15 @@ extension Api {
         } catch {
             // Check if this is an unauthorized error (401) indicating expired token
             if let apiError = error as? ApiError, case .unauthorized = apiError {
-                os_log(.info, log: Logger.auth, "Detected expired token, attempting automatic login retry")
+                logInfo("Detected expired token, attempting automatic login retry", category: .auth)
                 
                 // Try to refresh the token using stored credentials
                 if await refreshTokenIfPossible() {
-                    os_log(.info, log: Logger.auth, "Token refreshed successfully, retrying operation")
+                    logInfo("Token refreshed successfully, retrying operation", category: .auth)
                     // Retry the operation with fresh token
                     return try await operation()
                 } else {
-                    os_log(.error, log: Logger.auth, "Token refresh failed, throwing original error")
+                    logError("Token refresh failed, throwing original error", category: .auth)
                     // If refresh failed, throw the original unauthorized error
                     throw error
                 }
@@ -47,18 +47,18 @@ extension Api {
     private func refreshTokenIfPossible() async -> Bool {
         // Check if we have stored login credentials
         guard let storedCredentials = LoginCredentialManager.retrieveCredentials() else {
-            os_log(.default, log: Logger.auth, "No stored credentials available for token refresh")
+            logInfo("No stored credentials available for token refresh", category: .auth)
             return false
         }
         
         // Check if current token is actually expired before attempting refresh
         if let currentAuth = authorization, !isTokenExpired(currentAuth) {
-            os_log(.debug, log: Logger.auth, "Current token is not expired, no refresh needed")
+            logDebug("Current token is not expired, no refresh needed", category: .auth)
             return true
         }
         
         do {
-            os_log(.info, log: Logger.auth, "Attempting to login with stored credentials")
+            logInfo("Attempting to login with stored credentials", category: .auth)
             let newAuthData = try await login(
                 username: storedCredentials.username,
                 password: storedCredentials.password
@@ -68,15 +68,15 @@ extension Api {
             Authorization.store(data: newAuthData)
             self.authorization = newAuthData
             
-            os_log(.info, log: Logger.auth, "Successfully refreshed token")
+            logInfo("Successfully refreshed token", category: .auth)
             return true
             
         } catch {
-            os_log(.error, log: Logger.auth, "Failed to refresh token with error: %{public}@", error.localizedDescription)
+            logError("Failed to refresh token with error: \(error.localizedDescription)", category: .auth)
             
             // If login fails, clear the stored credentials as they might be invalid
             if error is ApiError {
-                os_log(.default, log: Logger.auth, "Clearing invalid stored credentials")
+                logInfo("Clearing invalid stored credentials", category: .auth)
                 LoginCredentialManager.clearCredentials()
             }
             

@@ -120,9 +120,9 @@ final class RemoteLoggingServer: ObservableObject {
             
             listener?.start(queue: .main)
             isRunning = true
-            os_log(.info, log: Logger.server, "Remote logging server started on port %d", port.rawValue)
+            logInfo("Remote logging server started on port \(port.rawValue)", category: .server)
         } catch {
-            os_log(.error, log: Logger.server, "Failed to start remote logging server: %{public}@", error.localizedDescription)
+            logError("Failed to start remote logging server: \(error.localizedDescription)", category: .server)
         }
     }
     
@@ -135,7 +135,7 @@ final class RemoteLoggingServer: ObservableObject {
         connections.removeAll()
         connectionCount = 0
         isRunning = false
-        os_log(.info, log: Logger.server, "Remote logging server stopped")
+        logInfo("Remote logging server stopped", category: .server)
     }
     
     /// Removes all stored log entries from memory
@@ -228,8 +228,7 @@ final class RemoteLoggingServer: ObservableObject {
         
         // Log device info if available
         if let deviceInfo = batch.deviceInfo {
-            os_log(.debug, log: Logger.server, "Received logs from %{public}@ running iOS %{public}@", 
-                   deviceInfo.deviceModel, deviceInfo.osVersion)
+            logDebug("Received logs from \(deviceInfo.deviceModel) running iOS \(deviceInfo.osVersion)", category: .server)
         }
     }
 }
@@ -304,14 +303,14 @@ private class LogConnection: Hashable {
     /// - Parameter data: Raw HTTP request data containing headers and JSON body
     private func handleHTTPRequest(data: Data) {
         guard let httpString = String(data: data, encoding: .utf8) else {
-            os_log(.error, log: Logger.server, "Failed to decode HTTP request as UTF-8")
+            logError("Failed to decode HTTP request as UTF-8", category: .server)
             return
         }
         
         // Split headers and body
         let components = httpString.components(separatedBy: "\r\n\r\n")
         guard components.count >= 2 else {
-            os_log(.error, log: Logger.server, "Invalid HTTP request format")
+            logError("Invalid HTTP request format", category: .server)
             return
         }
         
@@ -337,7 +336,7 @@ private class LogConnection: Hashable {
             // Send HTTP 200 response
             sendHTTPResponse(status: "200 OK", body: "OK")
         } catch {
-            os_log(.error, log: Logger.server, "Failed to decode log batch from HTTP request: %{public}@", error.localizedDescription)
+            logError("Failed to decode log batch from HTTP request: \(error.localizedDescription)", category: .server)
             sendHTTPResponse(status: "400 Bad Request", body: "Invalid JSON")
         }
     }
@@ -349,7 +348,7 @@ private class LogConnection: Hashable {
             let batch = try JSONDecoder().decode(LogBatch.self, from: data)
             self.onReceive(batch)
         } catch {
-            os_log(.error, log: Logger.server, "Failed to decode log batch: %{public}@", error.localizedDescription)
+            logError("Failed to decode log batch: \(error.localizedDescription)", category: .server)
         }
     }
     

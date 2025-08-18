@@ -31,7 +31,7 @@ struct SignInResponse: Decodable {
                 return String(string[range]).replacingOccurrences(of: "&amp;", with: "&")
             }
         } catch {
-            os_log(.error, log: Logger.api, "Invalid regex: %{public}@", error.localizedDescription)
+            logError("Invalid regex: \(error.localizedDescription)", category: .api)
         }
         return nil
     }

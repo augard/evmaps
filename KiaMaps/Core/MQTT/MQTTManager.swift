@@ -100,7 +100,7 @@ class MQTTManager: ObservableObject {
      * Activates MQTT communication following the documented sequence
      */
     func activateMQTTCommunication(for vehicle: Vehicle) async throws {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 activation sequence started")
+        logDebug("MQTT 5.0 activation sequence started", category: .mqtt)
         connectionStatus = .connecting
         lastError = nil
 
@@ -128,19 +128,19 @@ class MQTTManager: ObservableObject {
 
             // Step 5: Configure and connect MQTT client
             let ackCode = try await configureMQTTClient(hostInfo: hostInfo, deviceInfo: deviceInfo, vehicleMetadata: vehicleMetadata[0])
-            os_log(.info, log: Logger.mqtt, "MQTT connected with ACK code: \(String(describing: ackCode))")
+            logInfo("MQTT connected with ACK code: \(String(describing: ackCode))", category: .mqtt)
             
             // Step 6: Subscribe to MQTT topics for real-time data
             try await subscribeToMQTTTopics(vehicleMetadata: vehicleMetadata[0], protocols: protocols)
-            os_log(.info, log: Logger.mqtt, "MQTT topics subscribed successfully")
+            logInfo("MQTT topics subscribed successfully", category: .mqtt)
             
             // Step 7: Check connection state
             let connectionState = try await api.checkMQTTConnectionState(clientId: deviceInfo.clientId)
-            os_log(.info, log: Logger.mqtt, "MQTT Connection State: \(connectionState.state.rawValue) - Protocol Version: \(connectionState.mqttProtoVer ?? 0)")
+            logInfo("MQTT Connection State: \(connectionState.state.rawValue) - Protocol Version: \(connectionState.mqttProtoVer ?? 0)", category: .mqtt)
 
             if connectionState.state == .online {
                 connectionStatus = .connected
-                os_log(.debug, log: Logger.mqtt, "MQTT 5.0 activation sequence complete")
+                logDebug("MQTT 5.0 activation sequence complete", category: .mqtt)
             } else {
                 throw MQTTError.connectionFailed(connectionState.state.rawValue)
             }
@@ -148,7 +148,7 @@ class MQTTManager: ObservableObject {
             disconnect()
             lastError = error.localizedDescription
             connectionStatus = .error
-            os_log(.debug, log: Logger.mqtt, "MQTT 5.0 activation sequence failed \(error.localizedDescription)")
+            logError("MQTT 5.0 activation sequence failed \(error.localizedDescription)", category: .mqtt)
             throw error
         }
 
@@ -207,12 +207,12 @@ class MQTTManager: ObservableObject {
                 continuation.resume(throwing: MQTTError.connectionFailed("Failed to connect to MQTT broker"))
                 self.connectionContinuation = nil
             } else {
-                os_log(.info, log: Logger.mqtt, "MQTT 5.0 Connection initiated: \(result)")
-                os_log(.debug, log: Logger.mqtt, "- Host: \(hostInfo.host):\(hostInfo.port)")
-                os_log(.debug, log: Logger.mqtt, "- SSL: \(hostInfo.ssl)")
-                os_log(.debug, log: Logger.mqtt, "- MQTT Version: 5.0")
-                os_log(.debug, log: Logger.mqtt, "- Client ID: \(deviceInfo.clientId)")
-                os_log(.debug, log: Logger.mqtt, "- Device ID: \(deviceInfo.deviceId)")
+                logInfo("MQTT 5.0 Connection initiated: \(result)", category: .mqtt)
+                logDebug("- Host: \(hostInfo.host):\(hostInfo.port)", category: .mqtt)
+                logDebug("- SSL: \(hostInfo.ssl)", category: .mqtt)
+                logDebug("- MQTT Version: 5.0", category: .mqtt)
+                logDebug("- Client ID: \(deviceInfo.clientId)", category: .mqtt)
+                logDebug("- Device ID: \(deviceInfo.deviceId)", category: .mqtt)
                 
                 // Set a timeout for connection
                 Task {
@@ -245,7 +245,7 @@ class MQTTManager: ObservableObject {
             self.pendingSubscriptions = Set(topics)
             self.subscribedTopics.removeAll()
             
-            os_log(.debug, log: Logger.mqtt, "Subscribing to MQTT topics: \(topics.joined(separator: ", "))")
+            logDebug("Subscribing to MQTT topics: \(topics.joined(separator: ", "))", category: .mqtt)
             
             // Subscribe to all topics
             for topic in topics {
@@ -259,7 +259,7 @@ class MQTTManager: ObservableObject {
                 self.subscriptionContinuation = nil
                 let missingTopics = self.pendingSubscriptions.subtracting(self.subscribedTopics)
                 if !missingTopics.isEmpty {
-                    os_log(.error, log: Logger.mqtt, "Subscription timeout. Missing topics: \(missingTopics.joined(separator: ", "))")
+                    logError("Subscription timeout. Missing topics: \(missingTopics.joined(separator: ", "))", category: .mqtt)
                     continuation.resume(throwing: MQTTError.connectionFailed("Subscription timeout. Failed to subscribe to: \(missingTopics.joined(separator: ", "))"))
                 }
                 self.pendingSubscriptions.removeAll()
@@ -272,9 +272,9 @@ class MQTTManager: ObservableObject {
 
 extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
     func mqtt5(_ mqtt: CocoaMQTT5, didConnectAck ack: CocoaMQTTCONNACKReasonCode, connAckData: MqttDecodeConnAck?) {
-        os_log(.info, log: Logger.mqtt, "MQTT 5.0 Connected with reason code: \(ack.description)")
+        logInfo("MQTT 5.0 Connected with reason code: \(ack.description)", category: .mqtt)
         if let connAckData = connAckData {
-            os_log(.debug, log: Logger.mqtt, "Connection ACK data: \(connAckData)")
+            logDebug("Connection ACK data: \(connAckData)", category: .mqtt)
         }
         
         // Resume the continuation if waiting for connection
@@ -291,26 +291,26 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
     }
     
     func mqtt5(_ mqtt: CocoaMQTT5, didPublishMessage message: CocoaMQTT5Message, id: UInt16) {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 Published message: \(message.string ?? "")")
+        logDebug("MQTT 5.0 Published message: \(message.string ?? "")", category: .mqtt)
     }
     
     func mqtt5(_ mqtt: CocoaMQTT5, didPublishAck id: UInt16, pubAckData: MqttDecodePubAck?) {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 Publish acknowledged: \(id)")
+        logDebug("MQTT 5.0 Publish acknowledged: \(id)", category: .mqtt)
         if let pubAckData = pubAckData {
-            os_log(.debug, log: Logger.mqtt, "Publish ACK data: \(pubAckData)")
+            logDebug("Publish ACK data: \(pubAckData)", category: .mqtt)
         }
     }
     
     func mqtt5(_ mqtt: CocoaMQTT5, didPublishRec id: UInt16, pubRecData: MqttDecodePubRec?) {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 Publish received: \(id)")
+        logDebug("MQTT 5.0 Publish received: \(id)", category: .mqtt)
         if let pubRecData = pubRecData {
-            os_log(.debug, log: Logger.mqtt, "Publish REC data: \(pubRecData)")
+            logDebug("Publish REC data: \(pubRecData)", category: .mqtt)
         }
     }
     
     func mqtt5(_ mqtt: CocoaMQTT5, didReceiveMessage message: CocoaMQTT5Message, id: UInt16, publishData: MqttDecodePublish?) {
-        os_log(.info, log: Logger.mqtt, "MQTT 5.0 Received message on topic: \(message.topic)")
-        os_log(.debug, log: Logger.mqtt, "Message content: \(message.string ?? "")")
+        logInfo("MQTT 5.0 Received message on topic: \(message.topic)", category: .mqtt)
+        logDebug("Message content: \(message.string ?? "")", category: .mqtt)
 
         receivedMessageCount += 1
 
@@ -324,7 +324,7 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
         }
 
         if let publishData = publishData {
-            os_log(.debug, log: Logger.mqtt, "Publish data: \(publishData)")
+            logDebug("Publish data: \(publishData)", category: .mqtt)
         }
 
         guard let protocolId = MQTTTProtocols.compactMap({ $0.init(topicName: message.topic) }).first else {
@@ -334,24 +334,24 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
             switch protocolId {
             case .vss, .connection:
                 guard let data = data else {
-                    os_log(.debug, log: Logger.mqtt, "No data for topic: \(message.topic)")
+                    logDebug("No data for topic: \(message.topic)", category: .mqtt)
                     return
                 }
                 let decoder = JSONDecoder()
                 do {
                     if protocolId == .vss {
                         let vehicleStatus = try decoder.decode(VehicleMQTTStatusResponse.self, from: data)
-                        os_log(.info, log: Logger.mqtt, "Last vehicle data update received at: \(vehicleStatus.lastUpdateTime)")
+                        logInfo("Last vehicle data update received at: \(vehicleStatus.lastUpdateTime)", category: .mqtt)
                         vehicleStatusCallback?(vehicleStatus)
                     } else if protocolId == .connection {
                         let connectionStatus = try decoder.decode(ConnectionStateResponse.self, from: data)
-                        os_log(.debug, log: Logger.mqtt, "Connection state changed to: \(connectionStatus.state.rawValue)")
+                        logDebug("Connection state changed to: \(connectionStatus.state.rawValue)", category: .mqtt)
                         if connectionStatus.state == .offline {
                             disconnect()
                         }
                     }
                 } catch {
-                    os_log(.error, log: Logger.mqtt, "Failed to decode data for topic: \(message.topic), error: \(error.localizedDescription)")
+                    logError("Failed to decode data for topic: \(message.topic), error: \(error.localizedDescription)", category: .mqtt)
                 }
             case .res, .vehicleCcuUpdate:
                 break
@@ -360,12 +360,12 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
     }
     
     func mqtt5(_ mqtt: CocoaMQTT5, didSubscribeTopics success: NSDictionary, failed: [String], subAckData: MqttDecodeSubAck?) {
-        os_log(.info, log: Logger.mqtt, "MQTT 5.0 Subscribed to topics: \(success)")
+        logInfo("MQTT 5.0 Subscribed to topics: \(success)", category: .mqtt)
         if !failed.isEmpty {
-            os_log(.error, log: Logger.mqtt, "MQTT 5.0 Failed to subscribe to: \(failed)")
+            logError("MQTT 5.0 Failed to subscribe to: \(failed)", category: .mqtt)
         }
         if let subAckData = subAckData {
-            os_log(.debug, log: Logger.mqtt, "Subscribe ACK data: \(subAckData)")
+            logDebug("Subscribe ACK data: \(subAckData)", category: .mqtt)
         }
         
         // Track successful subscriptions
@@ -381,14 +381,14 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
             pendingSubscriptions.remove(topic)
         }
         
-        os_log(.debug, log: Logger.mqtt, "Subscription status - Pending: \(self.pendingSubscriptions.count), Subscribed: \(self.subscribedTopics.count), Failed: \(failed.count)")
+        logDebug("Subscription status - Pending: \(self.pendingSubscriptions.count), Subscribed: \(self.subscribedTopics.count), Failed: \(failed.count)", category: .mqtt)
         
         // Check if all subscriptions are complete
         if pendingSubscriptions.isEmpty {
             // All topics have been processed (either success or failure)
             if let continuation = subscriptionContinuation {
                 if failed.isEmpty {
-                    os_log(.info, log: Logger.mqtt, "All MQTT topics subscribed successfully")
+                    logInfo("All MQTT topics subscribed successfully", category: .mqtt)
                     continuation.resume()
                 } else {
                     continuation.resume(throwing: MQTTError.connectionFailed("Failed to subscribe to topics: \(failed.joined(separator: ", "))"))
@@ -400,25 +400,25 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
     }
     
     func mqtt5(_ mqtt: CocoaMQTT5, didUnsubscribeTopics topics: [String], unsubAckData: MqttDecodeUnsubAck?) {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 Unsubscribed from topics: \(topics)")
+        logDebug("MQTT 5.0 Unsubscribed from topics: \(topics)", category: .mqtt)
         if let unsubAckData = unsubAckData {
-            os_log(.debug, log: Logger.mqtt, "Unsubscribe ACK data: \(unsubAckData)")
+            logDebug("Unsubscribe ACK data: \(unsubAckData)", category: .mqtt)
         }
     }
     
     func mqtt5DidPing(_ mqtt: CocoaMQTT5) {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 Ping")
+        logDebug("MQTT 5.0 Ping", category: .mqtt)
     }
     
     func mqtt5DidReceivePong(_ mqtt: CocoaMQTT5) {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 Pong")
+        logDebug("MQTT 5.0 Pong", category: .mqtt)
     }
     
     func mqtt5DidDisconnect(_ mqtt: CocoaMQTT5, withError error: Error?) {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 Disconnected: \(error?.localizedDescription ?? "No error")")
+        logDebug("MQTT 5.0 Disconnected: \(error?.localizedDescription ?? "No error")", category: .mqtt)
 
         if subscriptionContinuation == nil, connectionContinuation == nil, connectionStatus == .connected {
-            os_log(.debug, log: Logger.mqtt, "MQTT 5.0, Keeping connected as we finished connection and subscriotion, will do reconnect")
+            logDebug("MQTT 5.0, Keeping connected as we finished connection and subscriotion, will do reconnect", category: .mqtt)
             return
         }
 
@@ -445,15 +445,15 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
     
     // MQTT 5.0 specific delegate methods
     func mqtt5(_ mqtt: CocoaMQTT5, didReceiveDisconnectReasonCode reasonCode: CocoaMQTTDISCONNECTReasonCode) {
-        os_log(.info, log: Logger.mqtt, "MQTT 5.0 Disconnect reason code: \(reasonCode.description)")
+        logInfo("MQTT 5.0 Disconnect reason code: \(reasonCode.description)", category: .mqtt)
     }
     
     func mqtt5(_ mqtt: CocoaMQTT5, didReceiveAuthReasonCode reasonCode: CocoaMQTTAUTHReasonCode) {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 Auth reason code: \(reasonCode.description)")
+        logDebug("MQTT 5.0 Auth reason code: \(reasonCode.description)", category: .mqtt)
     }
 
     func mqtt5(_ mqtt5: CocoaMQTT5, didStateChangeTo state: CocoaMQTTConnState) {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 State: \(state)")
+        logDebug("MQTT 5.0 State: \(state)", category: .mqtt)
     }
 
     func mqtt5(_ mqtt5: CocoaMQTT5, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
@@ -461,7 +461,7 @@ extension MQTTManager: @preconcurrency CocoaMQTT5Delegate {
     }
 
     func mqtt5(_ mqtt5: CocoaMQTT5, didPublishComplete id: UInt16, pubCompData: MqttDecodePubComp?) {
-        os_log(.debug, log: Logger.mqtt, "MQTT 5.0 pubCompData: \(String(describing: pubCompData))")
+        logDebug("MQTT 5.0 pubCompData: \(String(describing: pubCompData))", category: .mqtt)
     }
 }
 

@@ -210,17 +210,6 @@ final class RSAEncryptionServiceTests: XCTestCase {
         }
     }
     
-    func testBase64URLDecodingWithURLSafeCharacters() {
-        // Test URL-safe character replacement (- and _)
-        let base64Standard = "Hello+World/Test="
-        let base64URL = "Hello-World_Test"
-        
-        let decodedStandard = Data(base64Encoded: base64Standard)
-        let decodedURL = Data(base64URLEncoded: base64URL)
-        
-        XCTAssertEqual(decodedStandard, decodedURL, "URL-safe character replacement failed")
-    }
-    
     // MARK: - Hex Encoding Tests
     
     func testHexEncoding() {

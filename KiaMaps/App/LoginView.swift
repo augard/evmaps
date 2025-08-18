@@ -292,6 +292,6 @@ struct KiaTextFieldStyle: TextFieldStyle {
 
 #Preview {
     LoginView(configuration: AppConfiguration.self) { authData in
-        os_log(.info, log: Logger.auth, "Login successful for user")
+        logInfo("Login successful for user", category: .auth)
     }
 }

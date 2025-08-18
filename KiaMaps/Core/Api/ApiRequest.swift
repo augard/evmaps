@@ -422,13 +422,13 @@ struct ApiRequestImpl: ApiRequest {
         guard let string = String(data: data, encoding: .utf8) else {
             throw URLError(.cannotDecodeContentData)
         }
-        os_log(.debug, log: Logger.api, "%{public}@ - result: %{private}@", String(describing: endpoint), string)
+        logDebug("\(String(describing: endpoint)) - result: \(string)", category: .api)
         return string
     }
 
     func httpResponse(acceptStatusCode: Int) async throws -> HTTPURLResponse {
         let (_, response) = try await callRequest(acceptStatusCode: acceptStatusCode)
-        os_log(.debug, log: Logger.api, "%{public}@ - result: %{private}@", String(describing: endpoint), String(describing: response))
+        logDebug("\(String(describing: endpoint)) - result: \(String(describing: response))", category: .api)
         guard let response = response as? HTTPURLResponse else {
             throw URLError(.cannotDecodeContentData)
         }
@@ -438,7 +438,7 @@ struct ApiRequestImpl: ApiRequest {
     func data<Data: Decodable>(acceptStatusCode: Int) async throws -> Data {
         let (data, _) = try await callRequest(acceptStatusCode: acceptStatusCode)
         let result = try JSONDecoders.default.decode(Data.self, from: data)
-        os_log(.debug, log: Logger.api, "%{public}@ - result: %{private}@", String(describing: endpoint), String(describing: result))
+        logDebug("\(String(describing: endpoint)) - result: \(String(describing: result))", category: .api)
         return result
     }
 
@@ -455,10 +455,10 @@ struct ApiRequestImpl: ApiRequest {
     @discardableResult
     private func callRequest(acceptStatusCode: Int) async throws -> (Data, URLResponse) {
         let urlRequest = try self.urlRequest
-        os_log(.debug, log: Logger.api, "%{public}@ - request: %{private}@ %{private}@", String(describing: endpoint), String(describing: urlRequest.url), String(describing: urlRequest.allHTTPHeaderFields))
+        logDebug("\(String(describing: endpoint)) - request: \(String(describing: urlRequest.url)) \(String(describing: urlRequest.allHTTPHeaderFields))", category: .api)
 
         let (data, response) = try await caller.urlSession.data(for: urlRequest)
-        os_log(.debug, log: Logger.api, "%{public}@ - response: %{private}@", String(describing: endpoint), String(describing: response))
+        logDebug("\(String(describing: endpoint)) - response: \(String(describing: response))", category: .api)
 
         guard (200 ... 399).contains(response.status ?? 0) else {
             if response.status == 401 {

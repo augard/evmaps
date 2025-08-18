@@ -2,114 +2,111 @@
 //  ExtensionLogger.swift
 //  KiaExtension
 //
-//  Created by Claude on 11.08.2025.
+//  Created by Claude on 14.08.2025.
 //  Copyright © 2025 Lukas Foldyna. All rights reserved.
 //
 
 import Foundation
 import os.log
 
-/// Extension-specific logger that wraps both os_log and RemoteLogger
-enum ExtensionLogger {
+/// Extension-specific logger implementation that uses both os_log and remote logging
+public final class ExtensionLogger: AbstractLoggerProtocol {
     
-    // MARK: - Logging Methods
+    // MARK: - Properties
     
-    /// Log a debug message
-    static func debug(_ message: String, category: String = "Extension", _ args: CVarArg..., file: String = #file, function: String = #function, line: Int = #line) {
-        logMessage(.debug, log: Logger.extension, category: category, message, args, file: file, function: function, line: line)
-    }
+    private let subsystem: String
+    private var categoryLogs: [LogCategory: OSLog] = [:]
+    private let remoteLogger: RemoteLogger
+    private let logSource: LogEntry.LogSource
     
-    /// Log an info message
-    static func info(_ message: String, category: String = "Extension", _ args: CVarArg..., file: String = #file, function: String = #function, line: Int = #line) {
-        logMessage(.info, log: Logger.extension, category: category, message, args, file: file, function: function, line: line)
-    }
+    // MARK: - Initialization
     
-    /// Log a default/warning message
-    static func warning(_ message: String, category: String = "Extension", _ args: CVarArg..., file: String = #file, function: String = #function, line: Int = #line) {
-        logMessage(.default, log: Logger.extension, category: category, message, args, file: file, function: function, line: line)
-    }
-    
-    /// Log an error message
-    static func error(_ message: String, category: String = "Extension", _ args: CVarArg..., file: String = #file, function: String = #function, line: Int = #line) {
-        logMessage(.error, log: Logger.extension, category: category, message, args, file: file, function: function, line: line)
-    }
-    
-    /// Log a fault message
-    static func fault(_ message: String, category: String = "Extension", _ args: CVarArg..., file: String = #file, function: String = #function, line: Int = #line) {
-        logMessage(.fault, log: Logger.extension, category: category, message, args, file: file, function: function, line: line)
-    }
-    
-    // MARK: - Private Methods
-    
-    private static func logMessage(
-        _ level: OSLogType,
-        log: OSLog,
-        category: String,
-        _ message: String,
-        _ args: [CVarArg],
-        file: String,
-        function: String,
-        line: Int
-    ) {
-        // Log to os_log first
-        if args.isEmpty {
-            os_log(level, log: log, "%{public}@", message)
-        } else {
-            // Format message with arguments
-            let formattedMessage = String(format: message, arguments: args)
-            os_log(level, log: log, "%{public}@", formattedMessage)
-        }
-        
-        // Convert to remote log level
-        let remoteLevel: LogEntry.LogLevel
-        switch level {
-        case .debug:
-            remoteLevel = .debug
-        case .info:
-            remoteLevel = .info
-        case .default:
-            remoteLevel = .default
-        case .error:
-            remoteLevel = .error
-        case .fault:
-            remoteLevel = .fault
-        default:
-            remoteLevel = .default
-        }
-        
-        // Format message with args for remote logging
-        let formattedMessage = args.isEmpty ? message : String(format: message, arguments: args)
+    public init(subsystem: String? = nil, remoteLogger: RemoteLogger = RemoteLogger.shared) {
+        self.subsystem = subsystem ?? Bundle.main.bundleIdentifier ?? "com.porsche.kiamaps.extension"
+        self.remoteLogger = remoteLogger
         
         // Determine source based on bundle identifier
-        let source: LogEntry.LogSource
         if Bundle.main.bundleIdentifier?.contains("CarPlay") == true {
-            source = .carPlayExtension
+            self.logSource = .carPlayExtension
         } else {
-            source = .siriExtension
+            self.logSource = .siriExtension
         }
         
-        // Send to remote logger
-        RemoteLogger.shared.log(
-            remoteLevel,
-            category: category,
-            message: formattedMessage,
-            source: source,
-            file: file,
-            function: function,
-            line: line
-        )
+        // Pre-create OSLog instances for all categories
+        for category in LogCategory.allCases {
+            categoryLogs[category] = category.osLog(subsystem: self.subsystem)
+        }
+    }
+    
+    // MARK: - AbstractLoggerProtocol Implementation
+    
+    public func log(_ level: AbstractLogLevel, message: String, category: LogCategory, file: String, function: String, line: Int) {
+        // Log to os_log
+        logToOSLog(level, category: category, message: message, file: file, function: function, line: line)
+        
+        // Log to remote logger
+        logToRemoteLogger(level, category: category, message: message, file: file, function: function, line: line)
     }
     
     // MARK: - Configuration
     
     /// Enable or disable remote logging
-    static func setRemoteLoggingEnabled(_ enabled: Bool) {
-        RemoteLogger.shared.setEnabled(enabled)
+    public func setRemoteLoggingEnabled(_ enabled: Bool) {
+        remoteLogger.setEnabled(enabled)
         
         if enabled {
-            info("Remote logging enabled for extension")
+            info("Remote logging enabled for extension", category: .ext)
         } else {
-            info("Remote logging disabled for extension")
+            info("Remote logging disabled for extension", category: .ext)
         }
+    }
+    
+    /// Check if remote logging is enabled
+    public var isRemoteLoggingEnabled: Bool {
+        return remoteLogger.isEnabled
+    }
+    
+    // MARK: - Private Methods
+    
+    private func logToOSLog(_ level: AbstractLogLevel, category: LogCategory, message: String, file: String, function: String, line: Int) {
+        guard let osLog = categoryLogs[category] else {
+            // Fallback to general category if somehow missing
+            let fallbackLog = LogCategory.general.osLog(subsystem: subsystem)
+            performOSLog(level.osLogType, log: fallbackLog, message: message, file: file, function: function, line: line)
+            return
+        }
+        
+        performOSLog(level.osLogType, log: osLog, message: message, file: file, function: function, line: line)
+    }
+    
+    private func performOSLog(_ osLogType: OSLogType, log: OSLog, message: String, file: String, function: String, line: Int) {
+        let fileName = URL(fileURLWithPath: file).lastPathComponent
+        let formattedMessage = "[\(fileName):\(line)] \(function) - \(message)"
+        
+        os_log(osLogType, log: log, "%{public}@", formattedMessage)
+    }
+    
+    private func logToRemoteLogger(_ level: AbstractLogLevel, category: LogCategory, message: String, file: String, function: String, line: Int) {
+        remoteLogger.log(
+            level.remoteLogLevel,
+            category: category.rawValue,
+            message: message,
+            source: logSource,
+            file: file,
+            function: function,
+            line: line
+        )
+    }
+}
+
+// MARK: - Extension Logger Configuration
+
+public extension ExtensionLogger {
+    
+    /// Configure the shared logger with an ExtensionLogger instance
+    static func configureSharedLogger(subsystem: String? = nil, enableRemoteLogging: Bool = true) {
+        let extensionLogger = ExtensionLogger(subsystem: subsystem)
+        extensionLogger.setRemoteLoggingEnabled(enableRemoteLogging)
+        SharedLogger.shared.configure(with: extensionLogger)
     }
 }

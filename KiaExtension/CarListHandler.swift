@@ -51,30 +51,30 @@ class CarListHandler: NSObject, INListCarsIntentHandling, Handler {
 
             result = .init(code: .success, userActivity: nil)
             result.cars = cars.map { $0.car(with: api.configuration) }
-            ExtensionLogger.debug("CLoaded %d cars", category: "CarList", cars.count)
+            logDebug("Loaded \(cars.count) cars", category: .vehicle)
         } catch let error  {
             if let error = error as? ApiError {
                 switch (error, loginRetry) {
                 case (.unauthorized, false):
                     loginRetry = true
                     do {
-                        ExtensionLogger.warning("Unauthorized trying retry (Status code 401)", category: "CarList")
+                        logWarning("Unauthorized trying retry (Status code 401)", category: .auth)
                         try await credentialsHandler.reauthorize()
                         result = await handle(intent: intent)
-                        ExtensionLogger.debug("Succesfully reauthorized", category: "CarList")
+                        logDebug("Successfully reauthorized", category: .auth)
                     } catch {
-                        ExtensionLogger.error("Failed to reauthorized, unknown error '%@", category: "CarList", error.localizedDescription)
+                        logError("Failed to reauthorize, unknown error '\(error.localizedDescription)'", category: .auth)
                         result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
                     }
                 case (.unauthorized, true):
-                    ExtensionLogger.error("Unauthorized after retry (Status code 401)", category: "CarList")
+                    logError("Unauthorized after retry (Status code 401)", category: .auth)
                     result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
                 default:
-                    ExtensionLogger.error("Unknown Api Error '%@", category: "CarList", error.localizedDescription)
+                    logError("Unknown Api Error '\(error.localizedDescription)'", category: .api)
                     result = .init(code: .failure, userActivity: nil)
                 }
             } else {
-                ExtensionLogger.error("Unknown error '%@'", category: "CarList", error.localizedDescription)
+                logError("Unknown error '\(error.localizedDescription)'", category: .general)
                 result = .init(code: .failure, userActivity: nil)
             }
         }
@@ -94,7 +94,7 @@ extension Vehicle {
         
         // Get Bluetooth and iAP2 identifiers for this vehicle
         let headUnitIds = headUnitIdentifiers()
-        ExtensionLogger.debug("Vehicle '%@' - Bluetooth: %@, iAP2: %@", category: "CarList", nickname, headUnitIds.bluetooth ?? "none", headUnitIds.iap2 ?? "none")
+        logDebug("Vehicle '\(nickname)' - Bluetooth: \(headUnitIds.bluetooth ?? "none"), iAP2: \(headUnitIds.iap2 ?? "none")", category: .vehicle)
         
         let car: INCar = .init(
             carIdentifier: vehicleId.uuidString,

@@ -10,18 +10,18 @@ import Foundation
 import UIKit
 
 /// Represents a single log entry that can be sent over the network
-struct LogEntry: Codable, Identifiable {
-    let id: UUID
-    let timestamp: Date
-    let category: String
-    let level: LogLevel
-    let message: String
-    let source: LogSource
-    let file: String?
-    let function: String?
-    let line: Int?
+public struct LogEntry: Codable, Identifiable {
+    public let id: UUID
+    public let timestamp: Date
+    public let category: String
+    public let level: LogLevel
+    public let message: String
+    public let source: LogSource
+    public let file: String?
+    public let function: String?
+    public let line: Int?
     
-    enum LogLevel: String, Codable, CaseIterable {
+    public enum LogLevel: String, Codable, CaseIterable {
         case debug = "DEBUG"
         case info = "INFO"
         case `default` = "DEFAULT"
@@ -49,13 +49,13 @@ struct LogEntry: Codable, Identifiable {
         }
     }
     
-    enum LogSource: String, Codable, CaseIterable {
+    public enum LogSource: String, Codable, CaseIterable {
         case mainApp = "MainApp"
         case carPlayExtension = "CarPlayExtension"
         case siriExtension = "SiriExtension"
     }
     
-    init(
+    public init(
         category: String,
         level: LogLevel,
         message: String,

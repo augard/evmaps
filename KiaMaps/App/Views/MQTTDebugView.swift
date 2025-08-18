@@ -378,12 +378,12 @@ struct MQTTDebugView: View {
     // MARK: - Actions
     
     private func setupDebugSession() {
-        os_log(.debug, log: Logger.mqtt, "MQTT Debug View loaded - ready for testing with vehicle: %@", selectedVehicle?.vehicleId.uuidString ?? "none")
+        logDebug("MQTT Debug View loaded - ready for testing with vehicle: \(selectedVehicle?.vehicleId.uuidString ?? "none")", category: .mqtt)
     }
     
     private func connectToMQTT() {
         guard let selectedVehicle = selectedVehicle else {
-            os_log(.error, log: Logger.mqtt, "MQTT no selected vehicle")
+            logError("MQTT no selected vehicle", category: .mqtt)
             return
         }
         
@@ -394,7 +394,7 @@ struct MQTTDebugView: View {
             do {
                 try await mqttManager.activateMQTTCommunication(for: selectedVehicle)
             } catch {
-                os_log(.error, log: Logger.mqtt, "MQTT connection failed: \(error.localizedDescription)")
+                logError("MQTT connection failed: \(error.localizedDescription)", category: .mqtt)
                 connectionStartTime = nil
             }
         }
@@ -402,7 +402,7 @@ struct MQTTDebugView: View {
     
     private func testCommunicationSequence() {
         guard let selectedVehicle = selectedVehicle else {
-            os_log(.error, log: Logger.mqtt, "No vehicle selected for testing")
+            logError("No vehicle selected for testing", category: .mqtt)
             return
         }
         
@@ -464,7 +464,7 @@ struct MQTTDebugView: View {
                         error: error.localizedDescription
                     )
                 }
-                os_log(.error, log: Logger.mqtt, "Step \(stepNumber) failed: \(error.localizedDescription)")
+                logError("Step \(stepNumber) failed: \(error.localizedDescription)", category: .mqtt)
                 break
             }
         }
@@ -473,32 +473,32 @@ struct MQTTDebugView: View {
     // Individual test methods for each step
     private func testDeviceHostDiscovery() async throws {
         // Simulate the device host discovery API call
-        os_log(.debug, log: Logger.mqtt, "Testing device host discovery...")
+        logDebug("Testing device host discovery...", category: .mqtt)
         // This would normally call the actual API endpoint
     }
     
     private func testDeviceRegistration() async throws {
-        os_log(.debug, log: Logger.mqtt, "Testing device registration...")
+        logDebug("Testing device registration...", category: .mqtt)
         // This would test the device registration API call
     }
     
     private func testVehicleMetadata(_ vehicle: Vehicle) async throws {
-        os_log(.debug, log: Logger.mqtt, "Testing vehicle metadata for \(vehicle.vehicleId)...")
+        logDebug("Testing vehicle metadata for \(vehicle.vehicleId)...", category: .mqtt)
         // This would test the vehicle metadata API call
     }
     
     private func testProtocolSubscription(_ vehicle: Vehicle) async throws {
-        os_log(.debug, log: Logger.mqtt, "Testing protocol subscription...")
+        logDebug("Testing protocol subscription...", category: .mqtt)
         // This would test the protocol subscription API call
     }
     
     private func testConnectionStateCheck() async throws {
-        os_log(.debug, log: Logger.mqtt, "Testing connection state check...")
+        logDebug("Testing connection state check...", category: .mqtt)
         // This would test the connection state verification API call
     }
     
     private func testMQTTConnection() async throws {
-        os_log(.debug, log: Logger.mqtt, "Testing MQTT connection...")
+        logDebug("Testing MQTT connection...", category: .mqtt)
         // This would test the actual MQTT broker connection
     }
 }

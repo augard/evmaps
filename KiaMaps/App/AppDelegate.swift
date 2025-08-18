@@ -7,6 +7,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     var localClient: LocalCredentialClient! = nil
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        // Configure shared logger for app
+        AppLogger.configureSharedLogger()
+        
         // Register background tasks
         BackgroundTaskManager.shared.registerBackgroundTasks()
         
@@ -15,7 +18,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         // Start the local credential server
         LocalCredentialServer.shared.start { success in
-            os_log(.info, log: Logger.server, "Server start success: %{public}@", success ? "true" : "false")
+            logInfo("Server start success: \(success ? "true" : "false")", category: .server)
         }
         return true
     }
@@ -24,7 +27,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Stop the local credential server
         LocalCredentialServer.shared.stop()
         BackgroundTaskManager.shared.cleanup()
-        os_log(.info, log: Logger.server, "Stopped local credential server")
+        logInfo("Stopped local credential server", category: .server)
     }
 }
     
@@ -43,11 +46,11 @@ class BackgroundTaskManager: ObservableObject {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundTaskIdentifier, using: nil) { task in
             self.handleBackgroundServerMaintenance(task: task as! BGAppRefreshTask)
         }
-        os_log(.info, log: Logger.app, "Registered background task: %{public}@", Self.backgroundTaskIdentifier)
+        logInfo("Registered background task: \(Self.backgroundTaskIdentifier)", category: .app)
     }
     
     func handleAppDidEnterBackground() {
-        os_log(.info, log: Logger.app, "App entered background, maintaining server")
+        logInfo("App entered background, maintaining server", category: .app)
         
         // Start background task to keep server running
         startBackgroundTask()
@@ -57,7 +60,7 @@ class BackgroundTaskManager: ObservableObject {
     }
     
     func handleAppWillEnterForeground() {
-        os_log(.info, log: Logger.app, "App entering foreground")
+        logInfo("App entering foreground", category: .app)
         
         // End background task if running
         endBackgroundTask()
@@ -78,27 +81,27 @@ class BackgroundTaskManager: ObservableObject {
         
         do {
             try BGTaskScheduler.shared.submit(request)
-            os_log(.info, log: Logger.app, "Scheduled background refresh task")
+            logInfo("Scheduled background refresh task", category: .app)
         } catch {
-            os_log(.error, log: Logger.app, "Failed to schedule background refresh: %{public}@", error.localizedDescription)
+            logError("Failed to schedule background refresh: \(error.localizedDescription)", category: .app)
         }
     }
     
     private func handleBackgroundServerMaintenance(task: BGAppRefreshTask) {
-        os_log(.info, log: Logger.app, "Handling background server maintenance")
+        logInfo("Handling background server maintenance", category: .app)
         
         // Schedule next refresh
         scheduleBackgroundRefresh()
         
         task.expirationHandler = {
-            os_log(.info, log: Logger.app, "Background task expired")
+            logInfo("Background task expired", category: .app)
             task.setTaskCompleted(success: false)
         }
         
         // Check and restart server if needed
         DispatchQueue.global(qos: .default).async {
             if !LocalCredentialServer.shared.isRunning {
-                os_log(.info, log: Logger.app, "Restarting server during background refresh")
+                logInfo("Restarting server during background refresh", category: .app)
                 LocalCredentialServer.shared.start()
                 
                 // Wait a moment for server to start
@@ -114,7 +117,7 @@ class BackgroundTaskManager: ObservableObject {
     private func startBackgroundTask() {
         backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "LocalServerMaintenance") {
             [weak self] in
-            os_log(.info, log: Logger.app, "Background task expired, ending task")
+            logInfo("Background task expired, ending task", category: .app)
             self?.endBackgroundTask()
         }
         
@@ -133,13 +136,13 @@ class BackgroundTaskManager: ObservableObject {
     }
     
     private func maintainServerInBackground() {
-        os_log(.info, log: Logger.app, "Maintaining server in background")
+        logInfo("Maintaining server in background", category: .app)
         
         // Keep the server alive for as long as possible in background
         while backgroundTask != .invalid && UIApplication.shared.backgroundTimeRemaining > 5.0 {
             // Check server status periodically
             if !LocalCredentialServer.shared.isRunning {
-                os_log(.info, log: Logger.app, "Restarting server in background")
+                logInfo("Restarting server in background", category: .app)
                 LocalCredentialServer.shared.start()
             }
             
@@ -147,7 +150,7 @@ class BackgroundTaskManager: ObservableObject {
             Thread.sleep(forTimeInterval: 1.0)
         }
         
-        os_log(.info, log: Logger.app, "Background maintenance ending, time remaining: %{public}f", UIApplication.shared.backgroundTimeRemaining)
+        logInfo("Background maintenance ending, time remaining: \(UIApplication.shared.backgroundTimeRemaining)", category: .app)
     }
 }
 
@@ -180,19 +183,19 @@ struct Application: App {
     private func handleScenePhaseChange(_ phase: ScenePhase) {
         switch phase {
         case .active:
-            os_log(.debug, log: Logger.app, "Scene became active")
+            logDebug("Scene became active", category: .app)
             backgroundManager.handleAppWillEnterForeground()
             
         case .inactive:
-            os_log(.debug, log: Logger.app, "Scene became inactive")
+            logDebug("Scene became inactive", category: .app)
             // Handle brief inactive state (e.g., incoming call, control center)
             
         case .background:
-            os_log(.debug, log: Logger.app, "Scene entered background")
+            logDebug("Scene entered background", category: .app)
             backgroundManager.handleAppDidEnterBackground()
             
         @unknown default:
-            os_log(.default, log: Logger.app, "Unknown scene phase: %{public}@", String(describing: phase))
+            logWarning("Unknown scene phase: \(String(describing: phase))", category: .app)
         }
     }
 }

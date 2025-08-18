@@ -61,7 +61,7 @@ final class LocalCredentialServer {
     /// Starts the local server
     func start(completion: ((Bool) -> Void)? = nil) {
         guard listener == nil else {
-            os_log(.default, log: Logger.server, "Server already running")
+            logInfo("Server already running", category: .server)
             completion?(true)
             return
         }
@@ -75,7 +75,7 @@ final class LocalCredentialServer {
         do {
             listener = try NWListener(using: parameters, on: NWEndpoint.Port(integerLiteral: port))
         } catch {
-            os_log(.error, log: Logger.server, "Failed to create listener: %{public}@", error.localizedDescription)
+            logError("Failed to create listener: \(error.localizedDescription)", category: .server)
             completion?(false)
             return
         }
@@ -83,19 +83,19 @@ final class LocalCredentialServer {
         listener?.stateUpdateHandler = { [weak self] state in
             switch state {
             case .ready:
-                os_log(.info, log: Logger.server, "Server is ready on port %{public}d", self?.port ?? 0)
+                logInfo("Server is ready on port \(self?.port ?? 0)", category: .server)
                 completion?(true)
             case .failed(let error):
-                os_log(.error, log: Logger.server, "Server failed with error: %{public}@", error.localizedDescription)
+                logError("Server failed with error: \(error.localizedDescription)", category: .server)
                 self?.handleServerFailure(error: error)
                 completion?(false)
             case .cancelled:
-                os_log(.info, log: Logger.server, "Server cancelled")
+                logInfo("Server cancelled", category: .server)
                 completion?(false)
             case .waiting(let error):
-                os_log(.debug, log: Logger.server, "Server waiting: %{public}@", error.localizedDescription)
+                logDebug("Server waiting: \(error.localizedDescription)", category: .server)
             default:
-                os_log(.debug, log: Logger.server, "Server state: %{public}@", String(describing: state))
+                logDebug("Server state: \(String(describing: state))", category: .server)
             }
         }
         
@@ -112,7 +112,7 @@ final class LocalCredentialServer {
         
         // Retry after a short delay for certain errors
         if case .posix(let posixError) = error, posixError == .EADDRINUSE {
-            os_log(.default, log: Logger.server, "Port in use, retrying in 5 seconds...")
+            logInfo("Port in use, retrying in 5 seconds...", category: .server)
             DispatchQueue.global().asyncAfter(deadline: .now() + 5.0) { [weak self] in
                 self?.start()
             }
@@ -123,7 +123,7 @@ final class LocalCredentialServer {
     func stop() {
         listener?.cancel()
         listener = nil
-        os_log(.info, log: Logger.server, "Server stopped")
+        logInfo("Server stopped", category: .server)
     }
     
     /// Handles incoming connections
@@ -131,13 +131,13 @@ final class LocalCredentialServer {
         connection.stateUpdateHandler = { state in
             switch state {
             case .ready:
-                os_log(.debug, log: Logger.server, "Connection ready")
+                logDebug("Connection ready", category: .server)
             case .failed(let error):
-                os_log(.error, log: Logger.server, "Connection failed: %{public}@", error.localizedDescription)
+                logError("Connection failed: \(error.localizedDescription)", category: .server)
             case .cancelled:
-                os_log(.debug, log: Logger.server, "Connection cancelled")
+                logDebug("Connection cancelled", category: .server)
             default:
-                os_log(.debug, log: Logger.server, "Connection state: %{public}@", String(describing: state))
+                logDebug("Connection state: \(String(describing: state))", category: .server)
             }
         }
         
@@ -148,13 +148,13 @@ final class LocalCredentialServer {
             guard let self = self else { return }
             
             if let error = error {
-                os_log(.error, log: Logger.server, "Receive error: %{public}@", error.localizedDescription)
+                logError("Receive error: \(error.localizedDescription)", category: .server)
                 connection.cancel()
                 return
             }
             
             guard let data = data, !data.isEmpty else {
-                os_log(.default, log: Logger.server, "No data received")
+                logInfo("No data received", category: .server)
                 connection.cancel()
                 return
             }
@@ -174,12 +174,12 @@ final class LocalCredentialServer {
             
             // Verify password
             guard request.password == serverPassword else {
-                os_log(.default, log: Logger.server, "Invalid password from extension: %{public}@", request.extensionIdentifier)
+                logWarning("Invalid password from extension: \(request.extensionIdentifier)", category: .server)
                 sendErrorResponse(connection: connection, error: "Invalid password")
                 return
             }
             
-            os_log(.info, log: Logger.server, "Valid request from extension: %{public}@", request.extensionIdentifier)
+            logInfo("Valid request from extension: \(request.extensionIdentifier)", category: .server)
 
             let credentials = LoginCredentialManager.retrieveCredentials()
 
@@ -196,7 +196,7 @@ final class LocalCredentialServer {
             sendResponse(connection: connection, data: responseData)
             
         } catch {
-            os_log(.error, log: Logger.server, "Failed to process request: %{public}@", error.localizedDescription)
+            logError("Failed to process request: \(error.localizedDescription)", category: .server)
             sendErrorResponse(connection: connection, error: "Invalid request format")
         }
     }
@@ -205,9 +205,9 @@ final class LocalCredentialServer {
     private func sendResponse(connection: NWConnection, data: Data) {
         connection.send(content: data, completion: .contentProcessed { error in
             if let error = error {
-                os_log(.error, log: Logger.server, "Send error: %{public}@", error.localizedDescription)
+                logError("Send error: \(error.localizedDescription)", category: .server)
             } else {
-                os_log(.debug, log: Logger.server, "Response sent successfully")
+                logDebug("Response sent successfully", category: .server)
             }
             connection.cancel()
         })

@@ -106,7 +106,7 @@ struct Keychain<Key: RawRepresentable> {
                 checkForErrors("Store failed to delete value at path: \(path).", status: deleteStatus)
                 checkForErrors("Store failed to add value at path: \(path).", status: addStatus)
             } catch {
-                os_log(.error, log: Logger.keychain, "Failed to encode a value for storing into the keychain.")
+                logError("Failed to encode a value for storing into the keychain.", category: .keychain)
             }
         } else {
             removeValue(at: path)
@@ -154,14 +154,14 @@ struct Keychain<Key: RawRepresentable> {
         }
 
         guard let data = retrievedData as? Data else {
-            os_log(.error, log: Logger.keychain, "Failed to cast value at path: %{public}@ to type Data", String(describing: path))
+            logError("Failed to cast value at path: \(String(describing: path)) to type Data", category: .keychain)
             return nil
         }
 
         do {
             return try JSONDecoders.default.decode(Content.self, from: data)
         } catch {
-            os_log(.error, log: Logger.keychain, "Failed to decode value at path: %{public}@ from type Data: %{public}@", String(describing: path), error.localizedDescription)
+            logError("Failed to decode value at path: \(String(describing: path)) from type Data: \(error.localizedDescription)", category: .keychain)
             return nil
         }
     }
@@ -180,7 +180,7 @@ struct Keychain<Key: RawRepresentable> {
         ].compactMap { $0 }
 
         guard !ignoredStatuses.contains(status) else { return }
-        os_log(.error, log: Logger.keychain, "%{public}@, error: %{public}d", message, status)
+        logError("\(message), error: \(status)", category: .keychain)
     }
 }
 

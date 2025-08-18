@@ -184,38 +184,66 @@ var getVehicleStatus: VehicleStatus? // Use vehicleStatus instead
 - Better readability: `fetchUserProfile()` vs `getUserProfile()`
 - Consistency with Apple's naming conventions
 
-### **Logging: Use os_log Instead of print**
-**IMPORTANT**: Always use `os_log` for logging instead of `print` statements in production code.
+### **Logging: Use AbstractLogger Instead of print**
+**IMPORTANT**: Always use the `AbstractLogger` system for logging instead of `print` statements in production code.
 
 ```swift
-// ✅ CORRECT: Use os_log for structured logging
-import os
+// ✅ CORRECT: Use AbstractLogger for structured logging
 
-private let logger = Logger(subsystem: "com.porsche.kiamaps", category: "VehicleManager")
+// Import the logging system
+import Foundation
 
-// Log with appropriate levels
-logger.debug("Starting vehicle refresh")
-logger.info("Vehicle status updated: \(vehicleId)")
-logger.error("API request failed: \(error.localizedDescription)")
+// Use global convenience functions with appropriate categories
+logDebug("Starting vehicle refresh", category: .vehicle)
+logInfo("Vehicle status updated: \(vehicleId)", category: .vehicle)
+logError("API request failed: \(error.localizedDescription)", category: .api)
+
+// Alternative: Use the shared logger directly
+SharedLogger.shared.logger.debug("MQTT connection established", category: .mqtt)
+SharedLogger.shared.logger.warning("Battery level low", category: .vehicle)
+SharedLogger.shared.logger.fault("Critical system failure", category: .app)
 
 // ❌ INCORRECT: Don't use print in production code
-print("Debug: Vehicle status updated") // Remove or replace with os_log
+print("Debug: Vehicle status updated") // Remove or replace with logDebug
+
+// ❌ INCORRECT: Don't use direct os_log calls anymore
+os_log(.debug, log: Logger.vehicle, "message") // Use logDebug instead
 ```
 
-**Why use os_log:**
-- Structured logging with subsystems and categories
-- Different log levels (debug, info, notice, error, fault)
-- Better performance - logs can be filtered and disabled
-- Integration with Console.app and Xcode debugging tools
-- Preserves user privacy with proper data handling
+**Why use AbstractLogger:**
+- Unified logging system across app and extensions
+- Automatic remote logging to development server
+- Built-in categorization with predefined categories
+- Integration with both os_log and remote logging
+- Better debugging capabilities during development
+- Consistent logging format across the entire app
+
+**Available Log Levels:**
+- `logDebug()` - Detailed debugging information
+- `logInfo()` - General informational messages  
+- `logWarning()` - Warning conditions that should be noted
+- `logError()` - Recoverable errors
+- `logFault()` - Critical errors/system failures
+
+**Available Categories:**
+- `.api` - API calls and network requests
+- `.auth` - Authentication and authorization
+- `.server` - Local server operations
+- `.app` - General app lifecycle and events
+- `.ui` - User interface events
+- `.bluetooth` - Bluetooth operations
+- `.mqtt` - MQTT communication
+- `.keychain` - Keychain and secure storage
+- `.vehicle` - Vehicle data and operations
+- `.ext` - Extension and Siri integration
+- `.general` - Default category for uncategorized logs
 
 **Usage Guidelines:**
-- Create loggers per module/class with appropriate subsystem and category
-- Use `.debug` for detailed debugging information
-- Use `.info` for general informational messages
-- Use `.error` for recoverable errors
-- Use `.fault` for critical errors/system failures
-- Mark sensitive data appropriately with privacy options
+- Always specify an appropriate category for better log organization
+- Use descriptive messages that include context
+- Include relevant data in log messages (user IDs, error codes, etc.)
+- Use appropriate log levels - don't log everything as `.info`
+- The system automatically handles file/function/line information
 
 ### **MANDATORY: Always Build After Code Changes**
 **CRITICAL RULE**: After making ANY code changes, you MUST immediately build the project to verify compilation:
