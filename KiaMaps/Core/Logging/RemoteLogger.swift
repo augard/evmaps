@@ -10,11 +10,11 @@ import Foundation
 import os.log
 
 /// Remote logger that sends logs to the main app via network
-final class RemoteLogger {
+public final class RemoteLogger {
     
     // MARK: - Properties
     
-    static let shared = RemoteLogger()
+    public static let shared = RemoteLogger()
     
     private let serverURL: URL
     private let session: URLSession
@@ -24,7 +24,11 @@ final class RemoteLogger {
     private let maxBufferSize = 50
     private let flushInterval: TimeInterval = 2.0
     
-    private var isEnabled: Bool = false
+    private var _isEnabled: Bool = false
+    
+    public var isEnabled: Bool {
+        return _isEnabled
+    }
     private let enabledKey = "RemoteLoggingEnabled"
     
     // MARK: - Initialization
@@ -40,9 +44,9 @@ final class RemoteLogger {
         self.session = URLSession(configuration: config)
         
         // Check if remote logging is enabled
-        self.isEnabled = UserDefaults.standard.bool(forKey: enabledKey)
+        self._isEnabled = UserDefaults.standard.bool(forKey: enabledKey)
         
-        if isEnabled {
+        if _isEnabled {
             startFlushTimer()
         }
     }
@@ -50,10 +54,10 @@ final class RemoteLogger {
     // MARK: - Public Methods
     
     /// Enable or disable remote logging
-    func setEnabled(_ enabled: Bool) {
+    public func setEnabled(_ enabled: Bool) {
         bufferQueue.async { [weak self] in
             guard let self = self else { return }
-            self.isEnabled = enabled
+            self._isEnabled = enabled
             UserDefaults.standard.set(enabled, forKey: self.enabledKey)
             
             if enabled {
@@ -66,7 +70,7 @@ final class RemoteLogger {
     }
     
     /// Log a message to the remote server
-    func log(
+    public func log(
         _ level: LogEntry.LogLevel,
         category: String,
         message: String,
@@ -75,7 +79,7 @@ final class RemoteLogger {
         function: String = #function,
         line: Int = #line
     ) {
-        guard isEnabled else { return }
+        guard _isEnabled else { return }
         
         let entry = LogEntry(
             category: category,

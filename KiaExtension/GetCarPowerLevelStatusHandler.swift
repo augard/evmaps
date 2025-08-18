@@ -66,44 +66,44 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
                 try manager.store(status: status)
             }
             result = status.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
-            ExtensionLogger.debug("Loaded car status '%2f'", category: "GetCarPowerLevelStatus", status.state.vehicle.green.batteryManagement.batteryRemain.ratio)
+            logDebug("Loaded car status '\(status.state.vehicle.green.batteryManagement.batteryRemain.ratio)'", category: .vehicle)
         } catch {
             var useCachedData = true
             if let error = error as? ApiError {
                 switch (error, loginRetry) {
                 case (.unauthorized, false):
                     do {
-                        ExtensionLogger.warning("Unauthorized trying retry (Status code 401)", category: "GetCarPowerLevelStatus")
+                        logWarning("Unauthorized trying retry (Status code 401)", category: .auth)
                         try await credentialsHandler.reauthorize()
                         result = await fetchCarStatus(carId: carId)
 
                         useCachedData = false
-                        ExtensionLogger.debug("Succesfully reauthorized", category: "GetCarPowerLevelStatus")
+                        logDebug("Successfully reauthorized", category: .auth)
                     } catch {
                         result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
                     }
                 case (.unauthorized, true):
-                    ExtensionLogger.error("Unauthorized after retry (Status code 401)", category: "GetCarPowerLevelStatus")
+                    logError("Unauthorized after retry (Status code 401)", category: .auth)
                     result = .init(code: .failureRequiringAppLaunch, userActivity: nil)
                 case (.unexpectedStatusCode(400), false):
-                    ExtensionLogger.error("We probably reached call limit (Status code 400)", category: "GetCarPowerLevelStatus")
+                    logError("We probably reached call limit (Status code 400)", category: .api)
                     result = .init(code: .success, userActivity: nil)
                 default:
-                    ExtensionLogger.error("Unknown Api Error '%@", category: "GetCarPowerLevelStatus", error.localizedDescription)
+                    logError("Unknown Api Error '\(error.localizedDescription)'", category: .api)
                     result = .init(code: .failure, userActivity: nil)
                 }
             } else {
-                ExtensionLogger.error("Unknown error '%@'", category: "GetCarPowerLevelStatus", error.localizedDescription)
+                logError("Unknown error '\(error.localizedDescription)'", category: .general)
                 result = .init(code: .failure, userActivity: nil)
             }
 
             if useCachedData {
-                ExtensionLogger.debug("Returning cached data for failure", category: "GetCarPowerLevelStatus")
+                logDebug("Returning cached data for failure", category: .vehicle)
                 manager.restoreOutdatedData()
                 if let cachedData = try? manager.vehicleStatus {
                     return cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
                 } else {
-                    ExtensionLogger.debug("No cached data, returning failure", category: "GetCarPowerLevelStatus")
+                    logDebug("No cached data, returning failure", category: .vehicle)
                     manager.removeLastUpdateDate()
                 }
             }
@@ -127,22 +127,22 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
             } catch {
 
             }
-            ExtensionLogger.debug("Handler: Returning mocking data", category: "GetCarPowerLevelStatus")
+            logDebug("Handler: Returning mocking data", category: .vehicle)
             return VehicleStatusResponse.lowBatteryPreview.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
         } else if let cachedData = try? manager.vehicleStatus {
             // Use data from cache
             if cachedData.lastUpdateTime + 5 * 60 < Date.now {
-                ExtensionLogger.debug("Handler: Old cache, updating cached data", category: "GetCarPowerLevelStatus")
+                logDebug("Handler: Old cache, updating cached data", category: .vehicle)
                 await credentialsHandler.continueOrWaitForCredentials()
                 do {
                     _ = try await api.refreshVehicle(carId)
                 } catch {
-                    ExtensionLogger.error("Failed to refresh vehicle: %@", category: "GetCarPowerLevelStatus", error.localizedDescription)
+                    logError("Failed to refresh vehicle: \(error.localizedDescription)", category: .vehicle)
                 }
                 manager.removeLastUpdateDate()
             }
 
-            ExtensionLogger.debug("Handler: Use cached data", category: "GetCarPowerLevelStatus")
+            logDebug("Handler: Use cached data", category: .vehicle)
             return cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
         } else {
             // Get data from server
@@ -156,11 +156,11 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
     ///   - intent: The intent to provide updates for
     ///   - observer: Observer that receives the updates
     func startSendingUpdates(for intent: INGetCarPowerLevelStatusIntent, to observer: any INGetCarPowerLevelStatusIntentResponseObserver) {
-        ExtensionLogger.debug("Updater: Starting updating car status", category: "GetCarPowerLevelStatus")
+        logDebug("Updater: Starting updating car status", category: .vehicle)
         let lastBatteryCharge = BatteryChargeBox()
         timer = Timer.scheduledTimer(withTimeInterval: 60 * 4, repeats: true, block: { [weak self] _ in
             guard let identifier = intent.carName?.vocabularyIdentifier, let carId = UUID(uuidString: identifier) else {
-                ExtensionLogger.error("Updater: Failed to find car name '%@", category: "GetCarPowerLevelStatus", intent.carName ?? "Unknown")
+                logError("Updater: Failed to find car name '\(intent.carName?.spokenPhrase ?? "Unknown")'", category: .vehicle)
                 observer.didUpdate(getCarPowerLevelStatus: .init(code: .failureRequiringAppLaunch, userActivity: nil))
                 return
             }
@@ -170,17 +170,17 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
 
             if self.mock {
                 Thread.sleep(until: .now + 4) // Just to simulate server request/response time
-                ExtensionLogger.debug("Updater: Returning mocking data", category: "GetCarPowerLevelStatus")
+                logDebug("Updater: Returning mocking data", category: .vehicle)
                 let response = VehicleStatusResponse.lowBatteryPreview.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
                 lastBatteryCharge.value = self.updateCharge(observer: observer, response: response, lastBatteryCharge: lastBatteryCharge.value)
             } else if let cachedData = try? self.manager.vehicleStatus {
-                ExtensionLogger.debug("Updater: Using cached data", category: "GetCarPowerLevelStatus")
+                logDebug("Updater: Using cached data", category: .vehicle)
                 let response = cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters)
                 lastBatteryCharge.value = self.updateCharge(observer: observer, response: response, lastBatteryCharge: lastBatteryCharge.value)
             }
 
             Task {
-                ExtensionLogger.debug("Updater: Update vehicle data", category: "GetCarPowerLevelStatus")
+                logDebug("Updater: Update vehicle data", category: .vehicle)
                 await self.credentialsHandler.continueOrWaitForCredentials()
                 let response = await self.fetchCarStatus(carId: carId)
 
@@ -194,7 +194,7 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
     /// Stops sending periodic updates and invalidates the timer
     /// - Parameter intent: The intent to stop updates for
     func stopSendingUpdates(for _: INGetCarPowerLevelStatusIntent) {
-        ExtensionLogger.debug("Updater: Stoping updating car status", category: "GetCarPowerLevelStatus")
+        logDebug("Updater: Stopping updating car status", category: .vehicle)
         timer?.invalidate()
         timer = nil
     }

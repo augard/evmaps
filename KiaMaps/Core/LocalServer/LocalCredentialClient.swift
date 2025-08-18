@@ -68,14 +68,14 @@ final class LocalCredentialClient {
         connection.stateUpdateHandler = { state in
             switch state {
             case .ready:
-                os_log(.info, log: Logger.server, "Connected to server")
+                logInfo("Connected to server", category: .server)
             case .failed(let error), .waiting(let error):
-                os_log(.error, log: Logger.server, "Connection failed: %{public}@", error.localizedDescription)
+                logError("Connection failed: \(error.localizedDescription)", category: .server)
                 completion(.failure(error))
             case .cancelled:
-                os_log(.debug, log: Logger.server, "Connection cancelled")
+                logDebug("Connection cancelled", category: .server)
             default:
-                os_log(.debug, log: Logger.server, "Connection state: %{public}@", String(describing: state))
+                logDebug("Connection state: \(String(describing: state))", category: .server)
             }
         }
 
@@ -89,7 +89,7 @@ final class LocalCredentialClient {
 
             connection.send(content: requestData, completion: .contentProcessed { error in
                 if let error = error {
-                    os_log(.error, log: Logger.server, "Send error: %{public}@", error.localizedDescription)
+                    logError("Send error: \(error.localizedDescription)", category: .server)
                     completion(.failure(error))
                     connection.cancel()
                     return
@@ -100,7 +100,7 @@ final class LocalCredentialClient {
                     defer { connection.cancel() }
 
                     if let error = error {
-                        os_log(.error, log: Logger.server, "Receive error: %{public}@", error.localizedDescription)
+                        logError("Receive error: \(error.localizedDescription)", category: .server)
                         completion(.failure(error))
                         connection.cancel()
                         return
@@ -126,14 +126,14 @@ final class LocalCredentialClient {
                         completion(.success(response))
                         connection.cancel()
                     } catch {
-                        os_log(.error, log: Logger.server, "Decode error: %{public}@", error.localizedDescription)
+                        logError("Decode error: \(error.localizedDescription)", category: .server)
                         completion(.failure(error))
                         connection.cancel()
                     }
                 }
             })
         } catch {
-            os_log(.error, log: Logger.server, "Encode error: %{public}@", error.localizedDescription)
+            logError("Encode error: \(error.localizedDescription)", category: .server)
             completion(.failure(error))
             connection.cancel()
         }

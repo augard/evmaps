@@ -56,7 +56,7 @@ struct AuthorizationData: Codable {
               cfb.count == rawString.count,
               let rawData = rawString.data(using: .utf8)
         else {
-            os_log(.error, log: Logger.auth, "CFB and raw length not equal")
+            logError("CFB and raw length not equal", category: .auth)
             return ""
         }
 

@@ -25,13 +25,13 @@ class IntentHandler: INExtension {
     /// Initializes the intent handler and configures extension logging
     override init() {
         super.init()
-        // Configure extension logger on startup
+        // Configure shared logger for extension
         #if DEBUG
-        ExtensionLogger.setRemoteLoggingEnabled(true)
+        ExtensionLogger.configureSharedLogger(enableRemoteLogging: true)
         #else
-        ExtensionLogger.setRemoteLoggingEnabled(false)
+        ExtensionLogger.configureSharedLogger(enableRemoteLogging: false)
         #endif
-        ExtensionLogger.info("IntentHandler initialized", category: "Lifecycle")
+        logInfo("IntentHandler initialized", category: .ext)
     }
 
     /// Array of specialized intent handlers for different types of requests

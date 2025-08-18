@@ -83,15 +83,15 @@ class Api {
         let referer: String
         do {
             referer = try await fetchConnectorAuthorization()
-            os_log(.info, log: Logger.api, "Retrieved referer: %{private}@", referer)
+            logInfo("Retrieved referer: \(referer)", category: .api)
         } catch {
-            os_log(.error, log: Logger.api, "Client connector authorization failed: %{public}@", error.localizedDescription)
+            logError("Client connector authorization failed: \(error.localizedDescription)", category: .api)
             throw AuthenticationError.clientConfigurationFailed
         }
 
         // Step 1: Get client configuration
         let clientConfig = try await fetchClientConfiguration(referer: referer)
-        os_log(.info, log: Logger.api, "Client configured for: %{public}@", clientConfig.clientName)
+        logInfo("Client configured for: \(clientConfig.clientName)", category: .api)
         
         // Step 2: Check if password encryption is enabled
         let encryptionSettings = try await fetchPasswordEncryptionSettings(referer: referer)
@@ -104,7 +104,7 @@ class Api {
         do {
             rsaKey = try await fetchRSACertificate(referer: referer)
         } catch {
-            os_log(.error, log: Logger.api, "Fetch RSA Certificate failed: %{public}@", error.localizedDescription)
+            logError("Fetch RSA Certificate failed: \(error.localizedDescription)", category: .api)
             throw AuthenticationError.certificateRetrievalFailed
         }
         // Step 4: Initialize OAuth2 flow
@@ -124,7 +124,7 @@ class Api {
         do {
             tokenResponse = try await exchangeCodeForTokens(authorizationCode: authorizationCode)
         } catch {
-            os_log(.error, log: Logger.api, "Exchange code for token failed: %{public}@", error.localizedDescription)
+            logError("Exchange code for token failed: \(error.localizedDescription)", category: .api)
             throw AuthenticationError.tokenExchangeFailed
         }
 
@@ -152,9 +152,9 @@ class Api {
     func logout() async throws {
         do {
             try await provider.request(with: .post, endpoint: .logout).empty()
-            os_log(.info, log: Logger.auth, "Successfully logout")
+            logInfo("Successfully logout", category: .auth)
         } catch {
-            os_log(.error, log: Logger.auth, "Failed to logout: %{public}@", error.localizedDescription)
+            logError("Failed to logout: \(error.localizedDescription)", category: .auth)
         }
         provider.authorization = nil
         cleanCookies()

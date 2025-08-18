@@ -294,7 +294,7 @@ struct MainView: View {
                 await loadData()
                 if lastUpdateDate < selectedVehicleStatus.lastUpdateTime {
                     self.lastUpdateDate = nil
-                    os_log(.debug, log: Logger.ui, "Vehicle status updated")
+                    logDebug("Vehicle status updated", category: .ui)
                 }
             } else {
                 _ = try await api.refreshVehicleWithAutoRefresh(selectedVehicle.vehicleId)

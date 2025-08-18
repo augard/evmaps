@@ -20,8 +20,8 @@ final class MockVehicleDataTests: XCTestCase {
         XCTAssertEqual(vehicleStatus.green.batteryManagement.batteryRemain.ratio, 75)
         
         // Verify not charging
-        XCTAssertEqual(vehicleStatus.location.heading, 0)
-        
+        XCTAssertEqual(vehicleStatus.location?.heading, 0)
+
         // Verify driving ready
         XCTAssertEqual(vehicleStatus.green.drivingReady, true)
         XCTAssertEqual(vehicleStatus.drivingReady, true)
@@ -45,8 +45,8 @@ final class MockVehicleDataTests: XCTestCase {
         XCTAssertEqual(vehicleStatus.green.batteryManagement.batteryRemain.ratio, 45)
         
         // Verify charging (heading > 0 indicates charging in mock)
-        XCTAssertEqual(vehicleStatus.location.heading, 180)
-        
+        XCTAssertEqual(vehicleStatus.location?.heading, 180)
+
         // Verify not driving ready when charging
         XCTAssertEqual(vehicleStatus.green.drivingReady, false)
         XCTAssertEqual(vehicleStatus.drivingReady, false)
@@ -64,8 +64,8 @@ final class MockVehicleDataTests: XCTestCase {
         XCTAssertEqual(vehicleStatus.green.batteryManagement.batteryRemain.ratio, 12)
         
         // Verify not charging
-        XCTAssertEqual(vehicleStatus.location.heading, 0)
-        
+        XCTAssertEqual(vehicleStatus.location?.heading, 0)
+
         // Verify still driving ready despite low battery
         XCTAssertEqual(vehicleStatus.green.drivingReady, true)
         
@@ -80,8 +80,8 @@ final class MockVehicleDataTests: XCTestCase {
         XCTAssertEqual(vehicleStatus.green.batteryManagement.batteryRemain.ratio, 100)
         
         // Verify not charging (finished)
-        XCTAssertEqual(vehicleStatus.location.heading, 0)
-        
+        XCTAssertEqual(vehicleStatus.location?.heading, 0)
+
         // Verify driving ready
         XCTAssertEqual(vehicleStatus.green.drivingReady, true)
         
@@ -96,8 +96,8 @@ final class MockVehicleDataTests: XCTestCase {
         XCTAssertEqual(vehicleStatus.green.batteryManagement.batteryRemain.ratio, 67)
         
         // Verify charging
-        XCTAssertEqual(vehicleStatus.location.heading, 180)
-        
+        XCTAssertEqual(vehicleStatus.location?.heading, 180)
+
         // Verify not driving ready
         XCTAssertEqual(vehicleStatus.green.drivingReady, false)
         
@@ -115,8 +115,8 @@ final class MockVehicleDataTests: XCTestCase {
         XCTAssertEqual(vehicleStatus.green.batteryManagement.batteryRemain.ratio, 82)
         
         // Verify not charging
-        XCTAssertEqual(vehicleStatus.location.heading, 0)
-        
+        XCTAssertEqual(vehicleStatus.location?.heading, 0)
+
         // Verify driving ready
         XCTAssertEqual(vehicleStatus.green.drivingReady, true)
         
@@ -210,7 +210,7 @@ final class MockVehicleDataTests: XCTestCase {
         
         // Verify decoded values
         XCTAssertEqual(vehicleStatus.green.batteryManagement.batteryRemain.ratio, 50)
-        XCTAssertEqual(vehicleStatus.location.heading, 180) // Charging
+        XCTAssertEqual(vehicleStatus.location?.heading, 180) // Charging
         XCTAssertEqual(vehicleStatus.green.drivingReady, false)
     }
     
@@ -269,17 +269,17 @@ final class MockVehicleDataTests: XCTestCase {
     
     func testLocationDataForScenarios() {
         // Verify different scenarios have different locations
-        let standardLat = MockVehicleData.standard.location.geoCoordinate.latitude
-        let chargingLat = MockVehicleData.charging.location.geoCoordinate.latitude
-        let maintenanceLat = MockVehicleData.maintenance.location.geoCoordinate.latitude
-        
+        let standardLat = MockVehicleData.standard.location?.geoCoordinate.latitude
+        let chargingLat = MockVehicleData.charging.location?.geoCoordinate.latitude
+        let maintenanceLat = MockVehicleData.maintenance.location?.geoCoordinate.latitude
+
         XCTAssertEqual(standardLat, chargingLat)
         XCTAssertNotEqual(standardLat, maintenanceLat)
         XCTAssertNotEqual(chargingLat, maintenanceLat)
         
         // Verify speed is 0 when charging
-        XCTAssertEqual(MockVehicleData.charging.location.speed.value, 0)
-        XCTAssertEqual(MockVehicleData.fastCharging.location.speed.value, 0)
+        XCTAssertEqual(MockVehicleData.charging.location?.speed.value, 0)
+        XCTAssertEqual(MockVehicleData.fastCharging.location?.speed.value, 0)
     }
     
     // MARK: - Door and Lock State Tests

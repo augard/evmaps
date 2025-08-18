@@ -48,7 +48,7 @@ class BluetoothManager: NSObject {
                     name: accessory.name,
                     identifier: accessory.serialNumber
                 ))
-                os_log(.info, log: Logger.bluetooth, "Found automotive accessory: %{public}@ - %{private}@", accessory.name, accessory.serialNumber)
+                logInfo("Found automotive accessory: \(accessory.name) - \(accessory.serialNumber)", category: .bluetooth)
             }
         }
         
@@ -118,7 +118,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOn:
-            os_log(.info, log: Logger.bluetooth, "Bluetooth is powered on")
+            logInfo("Bluetooth is powered on", category: .bluetooth)
             // Retrieve connected peripherals
             let connectedPeripherals = central.retrieveConnectedPeripherals(withServices: [])
             self.connectedDevices = connectedPeripherals
@@ -128,17 +128,17 @@ extension BluetoothManager: CBCentralManagerDelegate {
                 let name = peripheral.name ?? "Unknown Device"
                 let identifier = peripheral.identifier.uuidString
                 deviceIdentifiers[name] = identifier
-                os_log(.info, log: Logger.bluetooth, "Connected device: %{public}@ - %{private}@", name, identifier)
+                logInfo("Connected device: \(name) - \(identifier)", category: .bluetooth)
             }
             
         case .poweredOff:
-            os_log(.info, log: Logger.bluetooth, "Bluetooth is powered off")
+            logInfo("Bluetooth is powered off", category: .bluetooth)
         case .unauthorized:
-            os_log(.error, log: Logger.bluetooth, "Bluetooth access is unauthorized")
+            logError("Bluetooth access is unauthorized", category: .bluetooth)
         case .unsupported:
-            os_log(.error, log: Logger.bluetooth, "Bluetooth is not supported")
+            logError("Bluetooth is not supported", category: .bluetooth)
         default:
-            os_log(.debug, log: Logger.bluetooth, "Bluetooth state: %{public}d", central.state.rawValue)
+            logDebug("Bluetooth state: \(central.state.rawValue)", category: .bluetooth)
         }
     }
 }

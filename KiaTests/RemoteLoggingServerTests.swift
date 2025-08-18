@@ -131,6 +131,7 @@ final class RemoteLoggingServerTests: XCTestCase {
         
         // Test filter by level
         server.selectedLevel = .info
+        server.selectedSource = nil
         var filtered = server.filteredLogs
         XCTAssertEqual(filtered.count, 2)
         XCTAssertTrue(filtered.allSatisfy { $0.level == .info })
