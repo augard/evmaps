@@ -7,15 +7,18 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     var localClient: LocalCredentialClient! = nil
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
+            return true
+        }
         // Configure shared logger for app
         AppLogger.configureSharedLogger()
-        
+
         // Register background tasks
         BackgroundTaskManager.shared.registerBackgroundTasks()
-        
+
         // Start Bluetooth scanning for vehicle head units
         BluetoothManager.shared.startScanning()
-        
+
         // Start the local credential server
         LocalCredentialServer.shared.start { success in
             logInfo("Server start success: \(success ? "true" : "false")", category: .server)
@@ -24,6 +27,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     func applicationWillTerminate(_ application: UIApplication) {
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
+            return
+        }
         // Stop the local credential server
         LocalCredentialServer.shared.stop()
         BackgroundTaskManager.shared.cleanup()
