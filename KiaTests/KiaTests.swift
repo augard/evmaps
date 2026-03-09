@@ -7,55 +7,106 @@
 //
 
 import XCTest
+@testable import KiaMaps
 
 final class KiaTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    private struct TimestampPayload: Codable {
+        @TimestampDateValue var timestamp: Date
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    private struct MillisecondPayload: Codable {
+        @MillisecondDateValue var eventTime: Date
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    func testTimestampDateValueDecodesEpochMillisecondsString() throws {
+        let decoder = JSONDecoder()
+        let data = #"{"timestamp":"1716728779116"}"#.data(using: .utf8)!
+
+        let payload = try decoder.decode(TimestampPayload.self, from: data)
+        let expected = Date(timeIntervalSince1970: 1_716_728_779.116)
+
+        XCTAssertEqual(payload.timestamp.timeIntervalSince1970, expected.timeIntervalSince1970, accuracy: 0.0001)
     }
 
-    func testDateFormatterExample() throws {
-        // Example test for the new MillisecondDateFormatter
-        // Note: This is a documentation example - actual implementation 
-        // would be tested in the main app target
-        
-        let testDateString = "2024-05-16 11:52:59.116"
-        
-        // This demonstrates the expected format
-        XCTAssertTrue(testDateString.contains("2024-05-16"))
-        XCTAssertTrue(testDateString.contains("11:52:59.116"))
-        
-        // Test basic date formatter setup pattern
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        
-        let date = formatter.date(from: testDateString)
-        XCTAssertNotNil(date, "Date should be parseable with the correct format")
-        
-        if let parsedDate = date {
-            let formattedBack = formatter.string(from: parsedDate)
-            XCTAssertEqual(formattedBack, testDateString, "Round-trip should work")
-        }
+    func testTimestampDateValueDecodesNativeDateUsingDecoderStrategy() throws {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        let data = #"{"timestamp":1716728779.116}"#.data(using: .utf8)!
+
+        let payload = try decoder.decode(TimestampPayload.self, from: data)
+        XCTAssertEqual(payload.timestamp.timeIntervalSince1970, 1_716_728_779.116, accuracy: 0.0001)
+    }
+
+    func testTimestampDateValueThrowsForInvalidString() {
+        let decoder = JSONDecoder()
+        let data = #"{"timestamp":"invalid"}"#.data(using: .utf8)!
+
+        XCTAssertThrowsError(try decoder.decode(TimestampPayload.self, from: data))
+    }
+
+    func testMillisecondDateValueRoundTripEncodingAndDecoding() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        let inputDate = Date(timeIntervalSince1970: 1_716_728_779.116)
+        let payload = MillisecondPayload(eventTime: inputDate)
+
+        let encoded = try encoder.encode(payload)
+        let encodedString = String(decoding: encoded, as: UTF8.self)
+        XCTAssertTrue(encodedString.contains(#""eventTime":"2024-05-26 10:12:59.116""#))
+
+        let decoded = try decoder.decode(MillisecondPayload.self, from: encoded)
+        XCTAssertEqual(decoded.eventTime.timeIntervalSince1970, inputDate.timeIntervalSince1970, accuracy: 0.001)
+    }
+
+    func testMQTTSubscriptionNameUsesWildcardSeparator() {
+        XCTAssertEqual(MQTTBaseProtocolIds.connection.subscriptionName, "service/phone/_/connection")
+        XCTAssertEqual(MQTTSpeedEventProtocolIds.location.subscriptionName, "service/phone/_/location")
+    }
+
+    func testMQTTProtocolInitFromTopicNameParsesVehicleSuffixedTopic() {
+        let topic = "service/phone/_/connection/12345"
+        let parsed = MQTTBaseProtocolIds(topicName: topic)
+
+        XCTAssertEqual(parsed, .connection)
+    }
+
+    func testMQTTProtocolInitFromTopicNameRejectsUnknownTopic() {
+        let topic = "service/phone/_/does-not-exist/12345"
+        let parsed = MQTTBaseProtocolIds(topicName: topic)
+
+        XCTAssertNil(parsed)
+    }
+
+    func testProtocolSubscriptionRequestEncodesRawProtocolValues() throws {
+        let request = ProtocolSubscriptionRequest(
+            protocols: [MQTTBaseProtocolIds.connection, MQTTSpeedEventProtocolIds.location],
+            protocolId: MQTTBaseProtocolIds.vehicleCcuUpdate,
+            carId: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")!,
+            brand: "KIA"
+        )
+
+        let data = try JSONEncoder().encode(request)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let protocols = try XCTUnwrap(json["protocols"] as? [String])
+        let protocolId = try XCTUnwrap(json["protocolId"] as? String)
+        let brand = try XCTUnwrap(json["brand"] as? String)
+
+        XCTAssertEqual(protocols, ["service.phone.connection", "service.phone.location"])
+        XCTAssertEqual(protocolId, "statesync.vehicle.ccu.update")
+        XCTAssertEqual(brand, "KIA")
+    }
+
+    func testMQTTConnectionStatusDisplayText() {
+        XCTAssertEqual(MQTTConnectionStatus.disconnected.displayText, "Disconnected")
+        XCTAssertEqual(MQTTConnectionStatus.connecting.displayText, "Connecting to vehicle...")
+        XCTAssertEqual(MQTTConnectionStatus.connected.displayText, "Connected - receiving live data")
+        XCTAssertEqual(MQTTConnectionStatus.error.displayText, "Connection failed")
     }
 
     func testPerformanceExample() throws {
-        // This is an example of a performance test case.
         measure {
-            // Put the code you want to measure the time of here.
+            _ = MQTTBaseProtocolIds.connection.subscriptionName
         }
     }
 
