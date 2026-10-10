@@ -41,23 +41,52 @@ extension Api {
         }
     }
     
-    /// Attempts to refresh the token using stored credentials
+    /// Attempts to refresh the token using stored refresh token or fallback to credentials
     /// - returns: True if token was successfully refreshed, false otherwise
     private func refreshTokenIfPossible() async -> Bool {
-        // Check if we have stored login credentials
-        guard let storedCredentials = LoginCredentialManager.retrieveCredentials() else {
-            logInfo("No stored credentials available for token refresh", category: .auth)
-            return false
-        }
-        
         // Check if current token is actually expired before attempting refresh
         if let currentAuth = authorization, !isTokenExpired(currentAuth) {
             logDebug("Current token is not expired, no refresh needed", category: .auth)
             return true
         }
         
+        // First, try to refresh using the refresh token if available
+        if let currentAuth = authorization {
+            logInfo("Attempting to refresh token using refresh token", category: .auth)
+            
+            do {
+                let tokenResponse = try await refreshToken(currentAuth.refreshToken)
+                
+                // Create new authorization data with refreshed tokens
+                let newAuthData = AuthorizationData(
+                    stamp: currentAuth.stamp, // Keep existing stamp
+                    deviceId: currentAuth.deviceId, // Keep existing device ID
+                    accessToken: tokenResponse.accessToken,
+                    expiresIn: tokenResponse.expiresIn,
+                    refreshToken: tokenResponse.refreshToken ?? currentAuth.refreshToken,
+                    isCcuCCS2Supported: currentAuth.isCcuCCS2Supported
+                )
+                
+                // Store the new authorization data
+                Authorization.store(data: newAuthData)
+                self.authorization = newAuthData
+                
+                logInfo("Successfully refreshed token using refresh token", category: .auth)
+                return true
+            } catch {
+                logWarning("Refresh token failed: \(error.localizedDescription). Falling back to credential login", category: .auth)
+                // Continue to fallback method below
+            }
+        }
+        
+        // Fallback: Try to refresh using stored login credentials
+        guard let storedCredentials = LoginCredentialManager.retrieveCredentials() else {
+            logInfo("No stored credentials available for fallback token refresh", category: .auth)
+            return false
+        }
+        
         do {
-            logInfo("Attempting to login with stored credentials", category: .auth)
+            logInfo("Attempting fallback login with stored credentials", category: .auth)
             let newAuthData = try await login(
                 username: storedCredentials.username,
                 password: storedCredentials.password
@@ -67,11 +96,11 @@ extension Api {
             Authorization.store(data: newAuthData)
             self.authorization = newAuthData
             
-            logInfo("Successfully refreshed token", category: .auth)
+            logInfo("Successfully refreshed token using credential fallback", category: .auth)
             return true
             
         } catch {
-            logError("Failed to refresh token with error: \(error.localizedDescription)", category: .auth)
+            logError("Failed to refresh token with fallback login: \(error.localizedDescription)", category: .auth)
             
             // If login fails, clear the stored credentials as they might be invalid
             if error is ApiError {

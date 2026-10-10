@@ -485,6 +485,7 @@ struct MockApiRequest: ApiRequest {
     let headers: Headers
     let body: Data?
     let timeout: TimeInterval
+    let authorization: Bool
 
     private static let formCharset: CharacterSet = {
         var charset = CharacterSet.alphanumerics
@@ -502,7 +503,8 @@ struct MockApiRequest: ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         encodable: Encodable,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     ) throws {
         var headers = headers
         if headers["Content-type"] == nil {
@@ -518,6 +520,7 @@ struct MockApiRequest: ApiRequest {
         self.headers = headers
         body = try JSONEncoders.default.encode(encodable)
         self.timeout = timeout
+        self.authorization = authorization
     }
 
     init(
@@ -527,7 +530,8 @@ struct MockApiRequest: ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         body: Data?,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     ) {
         var headers = headers
         if headers["Content-type"] == nil {
@@ -543,6 +547,7 @@ struct MockApiRequest: ApiRequest {
         self.headers = headers
         self.body = body
         self.timeout = timeout
+        self.authorization = authorization
     }
 
     init(
@@ -552,7 +557,8 @@ struct MockApiRequest: ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         form: Form,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     ) {
         var headers = Self.commonFormHeaders
         headers["User-Agent"] = caller.configuration.userAgent
@@ -570,6 +576,7 @@ struct MockApiRequest: ApiRequest {
         self.headers = headers
         body = formData
         self.timeout = timeout
+        self.authorization = authorization
     }
 
     var urlRequest: URLRequest {
@@ -581,7 +588,7 @@ struct MockApiRequest: ApiRequest {
             var request = URLRequest(url: url, cachePolicy: .reloadIgnoringCacheData, timeoutInterval: timeout)
             request.httpMethod = method.rawValue
             var headers = self.headers
-            if let authorization = caller.authorization {
+            if let authorization = caller.authorization, self.authorization {
                 for (key, value) in authorization.authorizatioHeaders(for: caller.configuration) {
                     headers[key] = value
                 }
