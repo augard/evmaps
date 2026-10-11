@@ -356,4 +356,67 @@ final class MockVehicleDataTests: XCTestCase {
             _ = try? decoder.decode(VehicleState.self, from: jsonData)
         }
     }
+
+    // MARK: - Date Parsing Coverage for Recent MQTT/Status Changes
+
+    func testTimeIntervalDateFormatterDecodesMillisecondsTimestampString() throws {
+        struct TimestampPayload: Codable {
+            @DateValue<TimeIntervalDateFormatter> var ts: Date
+        }
+
+        let json = #"{"ts":"1753344063251"}"#
+        let payload = try JSONDecoder().decode(TimestampPayload.self, from: Data(json.utf8))
+
+        XCTAssertEqual(payload.ts.timeIntervalSince1970, 1_753_344_063.251, accuracy: 0.0001)
+    }
+
+    func testMergedDateFormatterDecodesCompactTimestampString() throws {
+        struct MergedPayload: Codable {
+            @DateValue<MergedDateFormatter> var latestUpdateTime: Date
+        }
+
+        let json = #"{"latestUpdateTime":"20250901202513"}"#
+        let payload = try JSONDecoder().decode(MergedPayload.self, from: Data(json.utf8))
+
+        XCTAssertEqual(payload.latestUpdateTime, try expectedCompactTimestampDate())
+    }
+
+    func testVehicleMQTTStatusResponseDecodesLatestUpdateTimeAndState() throws {
+        let vehicleJSON = MockVehicleData.createVehicleStateJSON(
+            batteryLevel: 61,
+            isCharging: false,
+            drivingReady: true,
+            scenario: "mqtt_decode"
+        )
+        let mqttJSON = """
+        {
+            "latestUpdateTime": "20250901202513",
+            "state": {
+                "Vehicle": \(vehicleJSON)
+            }
+        }
+        """
+
+        let response = try JSONDecoder().decode(
+            VehicleMQTTStatusResponse.self,
+            from: Data(mqttJSON.utf8)
+        )
+
+        XCTAssertEqual(response.state.vehicle.green.batteryManagement.batteryRemain.ratio, 61)
+        XCTAssertEqual(response.lastUpdateTime, try expectedCompactTimestampDate())
+        XCTAssertTrue(response.state.vehicle.drivingReady)
+    }
+
+    /// UTC date for the compact timestamp `"20250901202513"`.
+    private func expectedCompactTimestampDate() throws -> Date {
+        var components = DateComponents()
+        components.year = 2025
+        components.month = 9
+        components.day = 1
+        components.hour = 20
+        components.minute = 25
+        components.second = 13
+        components.timeZone = TimeZone(secondsFromGMT: 0)
+        return try XCTUnwrap(Calendar(identifier: .gregorian).date(from: components))
+    }
 }
