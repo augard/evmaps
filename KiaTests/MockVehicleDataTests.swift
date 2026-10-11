@@ -221,12 +221,16 @@ final class MockVehicleDataTests: XCTestCase {
             drivingReady: true,
             scenario: "test"
         )
-        let unknownChargeDoorJSON = baseJSON.replacingOccurrences(
-            of: "\"ChargingDoor\": {\n                    \"State\": 2,",
-            with: "\"ChargingDoor\": {\n                    \"State\": 0,"
-        )
+        let baseData = try XCTUnwrap(baseJSON.data(using: .utf8))
+        var root = try XCTUnwrap(JSONSerialization.jsonObject(with: baseData) as? [String: Any])
+        var green = try XCTUnwrap(root["Green"] as? [String: Any])
+        var chargingDoor = try XCTUnwrap(green["ChargingDoor"] as? [String: Any])
+        XCTAssertEqual(chargingDoor["State"] as? Int, 2)
+        chargingDoor["State"] = 0
+        green["ChargingDoor"] = chargingDoor
+        root["Green"] = green
 
-        let jsonData = try XCTUnwrap(unknownChargeDoorJSON.data(using: .utf8))
+        let jsonData = try JSONSerialization.data(withJSONObject: root)
         let decodedState = try JSONDecoder().decode(VehicleState.self, from: jsonData)
 
         XCTAssertEqual(decodedState.green.chargingDoor.state, .unknown)
