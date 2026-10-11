@@ -24,10 +24,13 @@ struct AuthorizationImportPayload: Codable, Equatable {
         guard expiresIn > 0 else {
             throw AuthorizationImportError.invalidExpiry
         }
+        guard let deviceId else {
+            throw AuthorizationImportError.missingDeviceId
+        }
 
         return AuthorizationData(
             stamp: AuthorizationData.generateStamp(for: configuration),
-            deviceId: deviceId ?? UUID(),
+            deviceId: deviceId,
             accessToken: normalizedAccessToken,
             expiresIn: expiresIn,
             refreshToken: refreshToken?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
@@ -52,6 +55,7 @@ enum AuthorizationImportError: LocalizedError, Equatable {
     case invalidJSON
     case missingAccessToken
     case invalidExpiry
+    case missingDeviceId
 
     var errorDescription: String? {
         switch self {
@@ -61,6 +65,8 @@ enum AuthorizationImportError: LocalizedError, Equatable {
             "The token bundle does not contain an access token."
         case .invalidExpiry:
             "expiresIn must be greater than zero."
+        case .missingDeviceId:
+            "The token bundle does not contain a registered device ID."
         }
     }
 }

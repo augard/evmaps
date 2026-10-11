@@ -4,9 +4,9 @@ import XCTest
 final class AuthorizationImportTests: XCTestCase {
     private let configuration = ApiBrand.kia.configuration(for: .europe)
 
-    func testMinimalBundleCreatesExternalAuthorization() throws {
+    func testRequiredBundleCreatesExternalAuthorization() throws {
         let payload = try AuthorizationImportPayload.decode(
-            from: #"{"accessToken":"authorized-token","expiresIn":3600}"#
+            from: #"{"accessToken":"authorized-token","expiresIn":3600,"deviceId":"11111111-2222-3333-4444-555555555555"}"#
         )
 
         let authorization = try payload.authorization(for: configuration)
@@ -14,6 +14,7 @@ final class AuthorizationImportTests: XCTestCase {
         XCTAssertEqual(authorization.accessToken, "authorized-token")
         XCTAssertEqual(authorization.expiresIn, 3600)
         XCTAssertEqual(authorization.refreshToken, "")
+        XCTAssertEqual(authorization.deviceId.uuidString, "11111111-2222-3333-4444-555555555555")
         XCTAssertTrue(authorization.isCcuCCS2Supported)
         XCTAssertEqual(authorization.effectiveSource, .external)
     }
@@ -66,6 +67,19 @@ final class AuthorizationImportTests: XCTestCase {
         )
         XCTAssertThrowsError(try payload.authorization(for: configuration)) { error in
             XCTAssertEqual(error as? AuthorizationImportError, .invalidExpiry)
+        }
+    }
+
+    func testMissingDeviceIdIsRejected() {
+        let payload = AuthorizationImportPayload(
+            accessToken: "token",
+            refreshToken: nil,
+            expiresIn: 3600,
+            deviceId: nil,
+            isCcuCCS2Supported: nil
+        )
+        XCTAssertThrowsError(try payload.authorization(for: configuration)) { error in
+            XCTAssertEqual(error as? AuthorizationImportError, .missingDeviceId)
         }
     }
 

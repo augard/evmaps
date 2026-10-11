@@ -60,11 +60,11 @@ struct AuthorizationImportView: View {
                     Text("Required JSON")
                         .font(KiaDesign.Typography.caption)
                         .foregroundStyle(KiaDesign.Colors.textSecondary)
-                    Text(#"{"accessToken":"…","expiresIn":3600}"#)
+                    Text(#"{"accessToken":"…","expiresIn":3600,"deviceId":"registered UUID"}"#)
                         .font(.system(.caption, design: .monospaced))
                         .textSelection(.enabled)
                         .foregroundStyle(KiaDesign.Colors.textSecondary)
-                    Text("Optional: refreshToken, deviceId, isCcuCCS2Supported")
+                    Text("Optional: refreshToken, isCcuCCS2Supported")
                         .font(KiaDesign.Typography.captionSmall)
                         .foregroundStyle(KiaDesign.Colors.textSecondary)
                 }
@@ -89,6 +89,7 @@ struct AuthorizationImportView: View {
         do {
             let payload = try AuthorizationImportPayload.decode(from: bundleJSON)
             let authorization = try payload.authorization(for: configuration.apiConfiguration)
+            bundleJSON = ""
             LoginCredentialManager.clearCredentials()
             errorMessage = ""
             onLoginSuccess(authorization)

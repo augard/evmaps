@@ -38,14 +38,15 @@ translate between Kia API generations:
   "accessToken": "token from the approved provider",
   "expiresIn": 3600,
   "refreshToken": "optional provider refresh token",
-  "deviceId": "optional UUID",
+  "deviceId": "registered device UUID from the provider",
   "isCcuCCS2Supported": true
 }
 ```
 
-The importer removes an optional `Bearer` prefix, validates the token and expiry,
-marks the session as externally managed, clears stored Kia passwords, and hands
-the authorization to the existing Keychain storage. Externally managed sessions
+The importer removes an optional `Bearer` prefix, validates the token, expiry,
+and registered device ID, marks the session as externally managed, clears the
+pasted bundle and stored Kia passwords, and hands the authorization to the
+existing Keychain storage. Externally managed sessions
 never send their refresh token to the legacy Kia refresh endpoint. When such a
 session expires, the app returns to login for a replacement bundle.
 
