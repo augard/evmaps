@@ -378,17 +378,7 @@ final class MockVehicleDataTests: XCTestCase {
         let json = #"{"latestUpdateTime":"20250901202513"}"#
         let payload = try JSONDecoder().decode(MergedPayload.self, from: Data(json.utf8))
 
-        var components = DateComponents()
-        components.year = 2025
-        components.month = 9
-        components.day = 1
-        components.hour = 20
-        components.minute = 25
-        components.second = 13
-        components.timeZone = TimeZone(secondsFromGMT: 0)
-        let expected = Calendar(identifier: .gregorian).date(from: components)
-
-        XCTAssertEqual(payload.latestUpdateTime, expected)
+        XCTAssertEqual(payload.latestUpdateTime, try expectedCompactTimestampDate())
     }
 
     func testVehicleMQTTStatusResponseDecodesLatestUpdateTimeAndState() throws {
@@ -413,6 +403,20 @@ final class MockVehicleDataTests: XCTestCase {
         )
 
         XCTAssertEqual(response.state.vehicle.green.batteryManagement.batteryRemain.ratio, 61)
+        XCTAssertEqual(response.lastUpdateTime, try expectedCompactTimestampDate())
         XCTAssertTrue(response.state.vehicle.drivingReady)
+    }
+
+    /// UTC date for the compact timestamp `"20250901202513"`.
+    private func expectedCompactTimestampDate() throws -> Date {
+        var components = DateComponents()
+        components.year = 2025
+        components.month = 9
+        components.day = 1
+        components.hour = 20
+        components.minute = 25
+        components.second = 13
+        components.timeZone = TimeZone(secondsFromGMT: 0)
+        return try XCTUnwrap(Calendar(identifier: .gregorian).date(from: components))
     }
 }
