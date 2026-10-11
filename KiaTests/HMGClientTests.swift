@@ -45,6 +45,46 @@ final class HMGAuthClientTests: XCTestCase {
             XCTAssertEqual(error as? AuthenticationError, .authorizationCodeNotFound)
         }
     }
+
+    func testRefreshAuthorizationPreservesDeviceAndSourceWithoutAuthorizationHeader() async throws {
+        let provider = MQTTStubApiProvider(configuration: MockApiConfiguration())
+        let deviceId = UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")!
+        provider.authorization = AuthorizationData(
+            stamp: "stamp",
+            deviceId: deviceId,
+            accessToken: "old-access",
+            expiresIn: 60,
+            refreshToken: "old-refresh",
+            isCcuCCS2Supported: false,
+            source: .legacy
+        )
+        provider.tokenResponse = TokenResponse(
+            scope: nil,
+            connector: nil,
+            accessToken: "new-access",
+            refreshToken: nil,
+            idToken: nil,
+            tokenType: "Bearer",
+            expiresIn: 3600
+        )
+        let client = HMGAuthClient(configuration: MockApiConfiguration(), provider: provider, rsaService: .init())
+
+        let refreshed = try await client.refreshAuthorization(try XCTUnwrap(provider.authorization))
+
+        XCTAssertEqual(refreshed.accessToken, "new-access")
+        XCTAssertEqual(refreshed.expiresIn, 3600)
+        XCTAssertEqual(refreshed.refreshToken, "old-refresh")
+        XCTAssertEqual(refreshed.deviceId, deviceId)
+        XCTAssertEqual(refreshed.stamp, "stamp")
+        XCTAssertFalse(refreshed.isCcuCCS2Supported)
+        XCTAssertEqual(refreshed.source, .legacy)
+        XCTAssertEqual(provider.recordedAuthorizationFlags, [false])
+
+        let request = try XCTUnwrap(provider.recordedRequests.first)
+        let body = String(decoding: try XCTUnwrap(request.httpBody), as: UTF8.self)
+        XCTAssertTrue(body.contains("grant_type=refresh_token"))
+        XCTAssertTrue(body.contains("refresh_token=old-refresh"))
+    }
 }
 
 final class HMGMQTTClientTests: XCTestCase {
@@ -118,6 +158,8 @@ private final class MQTTStubApiProvider: ApiRequestProvider, ApiCaller, @uncheck
 
     var requestCount = 0
     var recordedRequests: [URLRequest] = []
+    var recordedAuthorizationFlags: [Bool] = []
+    var tokenResponse: TokenResponse?
     var hostResponse: MQTTHostResponse?
     var deviceRegisterResponse: DeviceRegisterResponse?
 
@@ -141,6 +183,7 @@ private struct MQTTStubApiRequest: ApiRequest {
     let headers: Headers
     let body: Data?
     let timeout: TimeInterval
+    let authorization: Bool
 
     init(
         caller: ApiCaller,
@@ -149,7 +192,8 @@ private struct MQTTStubApiRequest: ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         encodable: Encodable,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     ) throws {
         self.caller = caller
         self.method = method ?? .post
@@ -158,6 +202,7 @@ private struct MQTTStubApiRequest: ApiRequest {
         self.headers = headers
         body = try JSONEncoders.default.encode(AnyEncodable(encodable))
         self.timeout = timeout
+        self.authorization = authorization
     }
 
     init(
@@ -167,7 +212,8 @@ private struct MQTTStubApiRequest: ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         body: Data?,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     ) {
         self.caller = caller
         self.method = method ?? (body == nil ? .get : .post)
@@ -176,6 +222,7 @@ private struct MQTTStubApiRequest: ApiRequest {
         self.headers = headers
         self.body = body
         self.timeout = timeout
+        self.authorization = authorization
     }
 
     init(
@@ -185,7 +232,8 @@ private struct MQTTStubApiRequest: ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         form: Form,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     ) {
         self.caller = caller
         self.method = method ?? .post
@@ -197,6 +245,7 @@ private struct MQTTStubApiRequest: ApiRequest {
             .joined(separator: "&")
             .data(using: .utf8)
         self.timeout = timeout
+        self.authorization = authorization
     }
 
     var urlRequest: URLRequest {
@@ -264,6 +313,10 @@ private struct MQTTStubApiRequest: ApiRequest {
             return response as! T
         }
 
+        if T.self == TokenResponse.self, let response = provider.tokenResponse {
+            return response as! T
+        }
+
         throw URLError(.badServerResponse)
     }
 
@@ -281,6 +334,7 @@ private struct MQTTStubApiRequest: ApiRequest {
         }
         provider.requestCount += 1
         provider.recordedRequests.append(try urlRequest)
+        provider.recordedAuthorizationFlags.append(authorization)
         return provider
     }
 }

@@ -97,7 +97,7 @@ struct TokenResponse: Codable {
     let scope: String?
     let connector: [String: ConnectorTokenInfo]?
     let accessToken: String
-    let refreshToken: String
+    let refreshToken: String?
     let idToken: String?
     let tokenType: String
     let expiresIn: Int

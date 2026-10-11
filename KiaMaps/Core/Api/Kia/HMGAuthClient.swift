@@ -85,13 +85,39 @@ struct HMGAuthClient {
             deviceId: deviceId,
             accessToken: tokenResponse.accessToken,
             expiresIn: tokenResponse.expiresIn,
-            refreshToken: tokenResponse.refreshToken,
+            refreshToken: tokenResponse.refreshToken ?? "",
             isCcuCCS2Supported: true
         )
 
         provider.authorization = authorizationData
         try await notificationRegister(deviceId: deviceId)
         return authorizationData
+    }
+
+    func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData {
+        let form: [String: String] = [
+            "client_id": configuration.serviceId,
+            "client_secret": "secret",
+            "grant_type": "refresh_token",
+            "refresh_token": authorization.refreshToken,
+        ]
+
+        let tokenResponse: TokenResponse = try await provider.request(
+            with: .post,
+            endpoint: KiaApiEndpoint.loginToken,
+            form: form,
+            authorization: false
+        ).data()
+
+        return AuthorizationData(
+            stamp: authorization.stamp,
+            deviceId: authorization.deviceId,
+            accessToken: tokenResponse.accessToken,
+            expiresIn: tokenResponse.expiresIn,
+            refreshToken: tokenResponse.refreshToken ?? authorization.refreshToken,
+            isCcuCCS2Supported: authorization.isCcuCCS2Supported,
+            source: authorization.source
+        )
     }
 
     func logout() async throws {

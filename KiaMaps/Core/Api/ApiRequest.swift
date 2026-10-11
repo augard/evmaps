@@ -144,6 +144,7 @@ protocol ApiRequest {
     ///   - headers: HTTP headers
     ///   - encodable: Codable object to encode as JSON body
     ///   - timeout: Request timeout in seconds
+    ///   - authorization: If we should set authorization header
     /// - Throws: Encoding errors if encodable cannot be serialized
     init(
         caller: ApiCaller,
@@ -152,7 +153,8 @@ protocol ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         encodable: Encodable,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     ) throws
 
     /// Initializer for requests with raw Data body
@@ -164,6 +166,7 @@ protocol ApiRequest {
     ///   - headers: HTTP headers
     ///   - body: Raw data for request body
     ///   - timeout: Request timeout in seconds
+    ///   - authorization: If we should set authorization header
     init(
         caller: ApiCaller,
         method: ApiMethod?,
@@ -171,7 +174,8 @@ protocol ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         body: Data?,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     )
 
     /// Initializer for form-encoded requests
@@ -183,6 +187,7 @@ protocol ApiRequest {
     ///   - headers: HTTP headers
     ///   - form: Form data dictionary
     ///   - timeout: Request timeout in seconds
+    ///   - authorization: If we should set authorization header
     init(
         caller: ApiCaller,
         method: ApiMethod?,
@@ -190,7 +195,8 @@ protocol ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         form: Form,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     )
 
     /// The configured URLRequest ready for execution
@@ -329,6 +335,8 @@ struct ApiRequestImpl: ApiRequest {
     let body: Data?
     /// Request timeout in seconds
     let timeout: TimeInterval
+    /// If we should set authorization header
+    let authorization: Bool
 
     /// Character set used for form data encoding
     private static let formCharset: CharacterSet = {
@@ -348,7 +356,8 @@ struct ApiRequestImpl: ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         encodable: Encodable,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     ) throws {
         var headers = headers
         if headers["Content-type"] == nil {
@@ -364,6 +373,7 @@ struct ApiRequestImpl: ApiRequest {
         self.headers = headers
         body = try JSONEncoders.default.encode(encodable)
         self.timeout = timeout
+        self.authorization = authorization
     }
 
     init(
@@ -373,7 +383,8 @@ struct ApiRequestImpl: ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         body: Data?,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     ) {
         var headers = headers
         if headers["Content-type"] == nil {
@@ -389,6 +400,7 @@ struct ApiRequestImpl: ApiRequest {
         self.headers = headers
         self.body = body
         self.timeout = timeout
+        self.authorization = authorization
     }
 
     init(
@@ -398,7 +410,8 @@ struct ApiRequestImpl: ApiRequest {
         queryItems: [URLQueryItem],
         headers: Headers,
         form: Form,
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        authorization: Bool
     ) {
         var headers = headers
         headers.merge(Self.commonFormHeaders) { current, _ in current }
@@ -417,6 +430,7 @@ struct ApiRequestImpl: ApiRequest {
         self.headers = headers
         body = formData
         self.timeout = timeout
+        self.authorization = authorization
     }
 
     var urlRequest: URLRequest {
@@ -428,7 +442,7 @@ struct ApiRequestImpl: ApiRequest {
             var request = URLRequest(url: url, cachePolicy: .reloadIgnoringCacheData, timeoutInterval: timeout)
             request.httpMethod = method.rawValue
             var headers = self.headers
-            if let authorization = caller.authorization {
+            if let authorization = caller.authorization, self.authorization {
                 for (key, value) in authorization.authorizatioHeaders(for: caller.configuration) {
                     headers[key] = value
                 }
@@ -594,6 +608,7 @@ class ApiRequestProvider: NSObject {
     ///   - headers: HTTP headers
     ///   - encodable: Object to encode as JSON body
     ///   - timeout: Request timeout
+    ///   - authorization: If authorization header should be set
     /// - Returns: Configured API request
     /// - Throws: Encoding errors
     func request(
@@ -602,7 +617,8 @@ class ApiRequestProvider: NSObject {
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         encodable: Encodable,
-        timeout: TimeInterval = ApiDefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout,
+        authorization: Bool = true
     ) throws -> ApiRequest {
         try requestType.init(
             caller: caller,
@@ -611,7 +627,8 @@ class ApiRequestProvider: NSObject {
             queryItems: queryItems,
             headers: headers,
             encodable: encodable,
-            timeout: timeout
+            timeout: timeout,
+            authorization: authorization
         )
     }
 
@@ -623,6 +640,7 @@ class ApiRequestProvider: NSObject {
     ///   - headers: HTTP headers
     ///   - body: Raw body data
     ///   - timeout: Request timeout
+    ///   - authorization: If authorization header should be set
     /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
@@ -630,7 +648,8 @@ class ApiRequestProvider: NSObject {
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         body: Data? = nil,
-        timeout: TimeInterval = ApiDefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout,
+        authorization: Bool = true
     ) -> ApiRequest {
         requestType.init(
             caller: caller,
@@ -639,7 +658,8 @@ class ApiRequestProvider: NSObject {
             queryItems: queryItems,
             headers: headers,
             body: body,
-            timeout: timeout
+            timeout: timeout,
+            authorization: authorization
         )
     }
 
@@ -651,6 +671,7 @@ class ApiRequestProvider: NSObject {
     ///   - headers: HTTP headers
     ///   - string: String to encode as UTF-8 body
     ///   - timeout: Request timeout
+    ///   - authorization: If authorization header should be set
     /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
@@ -658,7 +679,8 @@ class ApiRequestProvider: NSObject {
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         string: String,
-        timeout: TimeInterval = ApiDefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout,
+        authorization: Bool = true
     ) -> ApiRequest {
         requestType.init(
             caller: caller,
@@ -667,7 +689,8 @@ class ApiRequestProvider: NSObject {
             queryItems: queryItems,
             headers: headers,
             body: string.data(using: .utf8),
-            timeout: timeout
+            timeout: timeout,
+            authorization: authorization
         )
     }
 
@@ -679,6 +702,7 @@ class ApiRequestProvider: NSObject {
     ///   - headers: HTTP headers
     ///   - form: Form data dictionary
     ///   - timeout: Request timeout
+    ///   - authorization: If authorization header should be set
     /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
@@ -686,7 +710,8 @@ class ApiRequestProvider: NSObject {
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         form: ApiRequest.Form,
-        timeout: TimeInterval = ApiDefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout,
+        authorization: Bool = true
     ) -> ApiRequest {
         requestType.init(
             caller: caller,
@@ -695,7 +720,8 @@ class ApiRequestProvider: NSObject {
             queryItems: queryItems,
             headers: headers,
             form: form,
-            timeout: timeout
+            timeout: timeout,
+            authorization: authorization
         )
     }
 

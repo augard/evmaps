@@ -13,6 +13,7 @@ protocol VehicleApiProvider {
     func webLoginUrl() throws -> URL?
     func login(username: String, password: String, recaptchaToken: String?) async throws -> AuthorizationData
     func login(authorizationCode: String) async throws -> AuthorizationData
+    func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData
     func logout() async throws
     func vehicles() async throws -> VehicleResponse
     func refreshVehicle(_ vehicleId: UUID) async throws -> UUID
@@ -49,6 +50,10 @@ final class HMGVehicleApiProvider: VehicleApiProvider {
 
     func login(authorizationCode: String) async throws -> AuthorizationData {
         try await authClient.exchangeAuthorizationCode(authorizationCode)
+    }
+
+    func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData {
+        try await authClient.refreshAuthorization(authorization)
     }
 
     func logout() async throws { try await authClient.logout() }
@@ -101,6 +106,11 @@ final class PorscheVehicleApiProvider: VehicleApiProvider {
         let authorization = authorizationData(from: tokenSet, existing: api.authorization)
         api.authorization = authorization
         return authorization
+    }
+
+    func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData {
+        let tokenSet = try await authClient.refreshToken(authorization.refreshToken)
+        return authorizationData(from: tokenSet, existing: authorization)
     }
 
     func logout() async throws {
@@ -377,6 +387,13 @@ class Api {
 
     func login(authorizationCode: String) async throws -> AuthorizationData {
         try await vehicleApiProvider.login(authorizationCode: authorizationCode)
+    }
+
+    /// Exchange the stored refresh token for a new access token
+    /// - Parameter authorization: Current authorization containing the refresh token
+    /// - Returns: Authorization data with refreshed tokens; device ID and stamp are preserved
+    func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData {
+        try await vehicleApiProvider.refreshAuthorization(authorization)
     }
 
     func extractAuthorizationCode(from location: URL) throws -> (code: String, state: String, loginSuccess: Bool) {

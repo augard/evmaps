@@ -252,7 +252,7 @@ final class UIComponentMockDataTests: XCTestCase {
         let VehicleState = MockVehicleData.preconditioning
         
         let view = VehicleSilhouetteView(vehicleState: mappedStatus(VehicleState))
-        
+
         // View should be created successfully
         XCTAssertNotNil(view)
         
@@ -263,7 +263,7 @@ final class UIComponentMockDataTests: XCTestCase {
     func testVehicleSilhouetteViewDoorStates() {
         let VehicleState = MockVehicleData.standard
         let view = VehicleSilhouetteView(vehicleState: mappedStatus(VehicleState))
-        
+
         XCTAssertNotNil(view)
         
         // All doors should be closed and locked

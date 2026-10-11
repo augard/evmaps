@@ -12,6 +12,11 @@ import os.log
 /// Contains authentication data required for API requests
 /// Stores tokens, device information, and protocol support flags
 struct AuthorizationData: Codable {
+    enum Source: String, Codable {
+        case legacy
+        case external
+    }
+
     /// Authorization stamp for request validation
     var stamp: String
     
@@ -41,6 +46,13 @@ struct AuthorizationData: Codable {
 
     /// Optional scope metadata for provider-specific auth flows.
     var tokenScope: String? = nil
+
+    /// Authentication owner. Nil decodes old keychain records as legacy sessions.
+    var source: Source? = nil
+
+    var effectiveSource: Source {
+        source ?? .legacy
+    }
 
     /// Generates authorization headers for API requests
     /// - Parameter configuration: API configuration for header generation
