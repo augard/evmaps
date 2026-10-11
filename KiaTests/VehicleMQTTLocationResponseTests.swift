@@ -73,7 +73,7 @@ final class VehicleMQTTLocationResponseTests: XCTestCase {
         }
     }
 
-    func testMergedDateFormatter_RoundTrip() {
+    func testMergedDateFormatter_RoundTrip() throws {
         let formatter = MergedDateFormatter()
         let source = "20241231235958"
 

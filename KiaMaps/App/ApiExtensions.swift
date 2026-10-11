@@ -52,6 +52,10 @@ extension Api {
         
         // First, try to refresh using the refresh token if available
         if let currentAuth = authorization {
+            guard currentAuth.effectiveSource != .external else {
+                logInfo("Externally managed authorization expired; a new bundle is required", category: .auth)
+                return false
+            }
             logInfo("Attempting to refresh token using refresh token", category: .auth)
             
             do {
