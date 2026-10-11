@@ -249,7 +249,7 @@ final class UIComponentMockDataTests: XCTestCase {
         let VehicleState = MockVehicleData.preconditioning
         
         let view = VehicleSilhouetteView(vehicleState: VehicleState)
-        
+
         // View should be created successfully
         XCTAssertNotNil(view)
         

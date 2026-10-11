@@ -161,7 +161,7 @@ class Api {
             deviceId: deviceId,
             accessToken: tokenResponse.accessToken,
             expiresIn: tokenResponse.expiresIn,
-            refreshToken: tokenResponse.refreshToken,
+            refreshToken: tokenResponse.refreshToken ?? "",
             isCcuCCS2Supported: true
         )
 
@@ -561,6 +561,23 @@ extension Api {
             with: .post,
             endpoint: .loginToken,
             form: form
+        ).data()
+    }
+
+    /// Login - Refresh token
+    func refreshToken(_ refreshToken: String) async throws -> TokenResponse {
+        let form: [String: String] = [
+            "client_id": configuration.serviceId,
+            "client_secret": "secret", // TODO: something generated
+            "grant_type": "refresh_token",
+            "refresh_token": refreshToken,
+        ]
+
+        return try await provider.request(
+            with: .post,
+            endpoint: .loginToken,
+            form: form,
+            authorization: false
         ).data()
     }
 
