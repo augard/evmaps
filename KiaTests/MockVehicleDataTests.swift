@@ -213,6 +213,36 @@ final class MockVehicleDataTests: XCTestCase {
         XCTAssertEqual(VehicleState.location?.heading, 180) // Charging
         XCTAssertEqual(VehicleState.green.drivingReady, false)
     }
+
+    func testVehicleStateJSONDecoding_ChargeDoorUnknownState() throws {
+        let baseJSON = MockVehicleData.createVehicleStateJSON(
+            batteryLevel: 50,
+            isCharging: false,
+            drivingReady: true,
+            scenario: "test"
+        )
+        let baseData = try XCTUnwrap(baseJSON.data(using: .utf8))
+        var root = try XCTUnwrap(JSONSerialization.jsonObject(with: baseData) as? [String: Any])
+        var green = try XCTUnwrap(root["Green"] as? [String: Any])
+        var chargingDoor = try XCTUnwrap(green["ChargingDoor"] as? [String: Any])
+        XCTAssertEqual(chargingDoor["State"] as? Int, 2)
+        chargingDoor["State"] = 0
+        green["ChargingDoor"] = chargingDoor
+        root["Green"] = green
+
+        let jsonData = try JSONSerialization.data(withJSONObject: root)
+        let decodedState = try JSONDecoder().decode(VehicleState.self, from: jsonData)
+
+        XCTAssertEqual(decodedState.green.chargingDoor.state, .unknown)
+    }
+
+    func testChargeDoorStatusUnknownCodableRoundTrip() throws {
+        let encoded = try JSONEncoder().encode(ChargeDoorStatus.unknown)
+        XCTAssertEqual(String(data: encoded, encoding: .utf8), "0")
+
+        let decoded = try JSONDecoder().decode(ChargeDoorStatus.self, from: encoded)
+        XCTAssertEqual(decoded, .unknown)
+    }
     
     // MARK: - VehicleStateResponse Tests
     
