@@ -12,6 +12,7 @@ import SwiftUI
 
 struct LoginView: View {
     enum LoginMode {
+        case authorizationImport
         case credentials
         case webView
     }
@@ -20,7 +21,7 @@ struct LoginView: View {
     let configuration: AppConfiguration.Type
     let onLoginSuccess: (AuthorizationData) -> Void
     
-    init(mode: LoginMode = .webView, configuration: AppConfiguration.Type, onLoginSuccess: @escaping (AuthorizationData) -> Void) {
+    init(mode: LoginMode = .authorizationImport, configuration: AppConfiguration.Type, onLoginSuccess: @escaping (AuthorizationData) -> Void) {
         self.mode = mode
         self.configuration = configuration
         self.onLoginSuccess = onLoginSuccess
@@ -29,6 +30,8 @@ struct LoginView: View {
     var body: some View {
         Group {
             switch mode {
+            case .authorizationImport:
+                AuthorizationImportView(configuration: configuration, onLoginSuccess: onLoginSuccess)
             case .credentials:
                 CredentialsLoginView(configuration: configuration, onLoginSuccess: onLoginSuccess)
             case .webView:
@@ -47,6 +50,12 @@ struct LoginView: View {
 #Preview("Credentials Login") {
     LoginView(mode: .credentials, configuration: AppConfiguration.self) { authData in
         logInfo("Login successful for user", category: .auth)
+    }
+}
+
+#Preview("Authorization Import") {
+    LoginView(mode: .authorizationImport, configuration: AppConfiguration.self) { authData in
+        logInfo("Authorization imported", category: .auth)
     }
 }
 
