@@ -23,6 +23,10 @@ final class RemoteLoggingIntegrationTests: XCTestCase {
         server = RemoteLoggingServer.shared
         server.stop()
         server.clearLogs()
+        server.filterText = ""
+        server.selectedLevel = nil
+        server.selectedSource = nil
+        server.selectedCategory = nil
         
         // Set up remote logger
         remoteLogger = RemoteLogger.shared
@@ -35,6 +39,10 @@ final class RemoteLoggingIntegrationTests: XCTestCase {
     override func tearDownWithError() throws {
         server?.stop()
         server?.clearLogs()
+        server?.filterText = ""
+        server?.selectedLevel = nil
+        server?.selectedSource = nil
+        server?.selectedCategory = nil
         remoteLogger?.setEnabled(false)
         
         UserDefaults.standard.removeObject(forKey: "RemoteLoggingEnabled")

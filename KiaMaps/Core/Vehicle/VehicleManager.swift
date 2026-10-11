@@ -65,12 +65,12 @@ struct VehicleManager {
     }
 
     /// Retrieves cached vehicle status if it's still valid (within 2 minutes)
-    /// - Returns: Cached VehicleStateResponse if valid, nil if expired or not found
+    /// - Returns: Cached VehicleStatusSnapshot if valid, nil if expired or not found
     /// - Throws: Decoding errors if cached data is corrupted
-    var vehicleState: VehicleStateResponse? {
+    var vehicleState: VehicleStatusSnapshot? {
         get throws {
             guard let lastUpdate = dateValue(for: .vehicleLastUpdateDate), lastUpdate + 2 * 60 > Date.now,
-                  let cachedStatus: VehicleStateResponse = try value(for: .vehicleState)
+                  let cachedStatus: VehicleStatusSnapshot = try value(for: .vehicleState)
             else {
                 return nil
             }
@@ -86,9 +86,9 @@ struct VehicleManager {
     }
 
     /// Stores vehicle status response with current timestamp
-    /// - Parameter status: VehicleStateResponse to cache
+    /// - Parameter status: VehicleStatusSnapshot to cache
     /// - Throws: Encoding errors if status cannot be serialized
-    func store(status: VehicleStateResponse) throws {
+    func store(status: VehicleStatusSnapshot) throws {
         try setValue(with: .vehicleState, encodable: status)
         setValue(with: .vehicleLastUpdateDate, value: Date.now)
         UserDefaults.standard.synchronize()

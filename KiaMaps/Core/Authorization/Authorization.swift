@@ -35,6 +35,18 @@ struct AuthorizationData: Codable {
     /// Flag indicating if vehicle supports CCS2 protocol
     var isCcuCCS2Supported: Bool
 
+    /// Provider identifier for non-HMG integrations.
+    var providerKind: String? = nil
+
+    /// Optional token issuer metadata for provider-specific auth flows.
+    var tokenIssuer: String? = nil
+
+    /// Optional token audience metadata for provider-specific auth flows.
+    var tokenAudience: String? = nil
+
+    /// Optional scope metadata for provider-specific auth flows.
+    var tokenScope: String? = nil
+
     /// Authentication owner. Nil decodes old keychain records as legacy sessions.
     var source: Source? = nil
 
@@ -46,7 +58,17 @@ struct AuthorizationData: Codable {
     /// - Parameter configuration: API configuration for header generation
     /// - Returns: Dictionary of authorization headers
     func authorizatioHeaders(for configuration: ApiConfiguration) -> ApiRequest.Headers {
-        [
+        if providerKind == "porsche" || configuration is PorscheApiConfiguration {
+            var headers: ApiRequest.Headers = [
+                "Authorization": "Bearer \(accessToken)",
+            ]
+            if let configuration = configuration as? PorscheApiConfiguration {
+                headers["X-Client-ID"] = configuration.xClientId
+            }
+            return headers
+        }
+
+        return [
             "Authorization": "Bearer \(accessToken)",
             "Stamp": Self.generateStamp(for: configuration),
             "ccsp-application-id": configuration.appId,

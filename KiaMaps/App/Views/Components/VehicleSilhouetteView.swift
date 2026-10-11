@@ -10,7 +10,7 @@ import SwiftUI
 
 /// Interactive vehicle silhouette showing doors, windows, and status indicators
 struct VehicleSilhouetteView: View {
-    let vehicleState: VehicleState
+    let vehicleState: VehicleStatus
     let onDoorTap: ((DoorPosition) -> Void)?
     let onTireTap: ((TirePosition) -> Void)?
     let onChargingPortTap: (() -> Void)?
@@ -90,7 +90,7 @@ struct VehicleSilhouetteView: View {
     }
     
     init(
-        vehicleState: VehicleState,
+        vehicleState: VehicleStatus,
         onDoorTap: ((DoorPosition) -> Void)? = nil,
         onTireTap: ((TirePosition) -> Void)? = nil,
         onChargingPortTap: (() -> Void)? = nil,
@@ -566,7 +566,7 @@ struct VehicleSilhouetteView: View {
 
 /// Expandable detail view showing comprehensive vehicle status
 struct VehicleStateDetailView: View {
-    let vehicleState: VehicleState
+    let vehicleState: VehicleStatus
     let selectedElement: VehicleSilhouetteView.InteractiveElement?
     
     var body: some View {
@@ -993,7 +993,7 @@ struct VehicleStateDetailView: View {
 
 /// Container view combining silhouette with expandable details
 struct InteractiveVehicleSilhouetteView: View {
-    let vehicleState: VehicleState
+    let vehicleState: VehicleStatus
 
     @State private var selectedElement: VehicleSilhouetteView.InteractiveElement?
     @State private var showingDetails = false
@@ -1093,7 +1093,7 @@ struct InteractiveVehicleSilhouetteView: View {
             Text("Standard Scenario")
                 .font(KiaDesign.Typography.title2)
             
-            VehicleSilhouetteView(vehicleState: MockVehicleData.standard)
+            VehicleSilhouetteView(vehicleState: KiaVehicleStatusMapper.map(state: MockVehicleData.standard))
             
             Divider()
             
@@ -1101,7 +1101,7 @@ struct InteractiveVehicleSilhouetteView: View {
             Text("Charging Scenario (AC)")
                 .font(KiaDesign.Typography.title2)
             
-            InteractiveVehicleSilhouetteView(vehicleState: MockVehicleData.charging)
+            InteractiveVehicleSilhouetteView(vehicleState: KiaVehicleStatusMapper.map(state: MockVehicleData.charging))
             
             Divider()
             
@@ -1109,7 +1109,7 @@ struct InteractiveVehicleSilhouetteView: View {
             Text("Fast Charging Scenario (DC)")
                 .font(KiaDesign.Typography.title2)
             
-            InteractiveVehicleSilhouetteView(vehicleState: MockVehicleData.fastCharging)
+            InteractiveVehicleSilhouetteView(vehicleState: KiaVehicleStatusMapper.map(state: MockVehicleData.fastCharging))
             
             Divider()
             
@@ -1117,16 +1117,16 @@ struct InteractiveVehicleSilhouetteView: View {
             Text("Low Tire Pressure Demo")
                 .font(KiaDesign.Typography.title2)
             
-            InteractiveVehicleSilhouetteView(vehicleState: MockVehicleData.lowTirePressure)
+            InteractiveVehicleSilhouetteView(vehicleState: KiaVehicleStatusMapper.map(state: MockVehicleData.lowTirePressure))
         }
         .padding()
     }
     .background(KiaDesign.Colors.background)
 }
 
-// MARK: - VehicleState Extensions
+// MARK: - VehicleStatus Extensions
 
-extension VehicleState {
+extension VehicleStatus {
     func isDoorOpen(_ door: VehicleSilhouetteView.DoorPosition) -> Bool {
         let doors = cabin.door
         switch door {

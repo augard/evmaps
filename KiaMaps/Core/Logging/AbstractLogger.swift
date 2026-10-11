@@ -124,6 +124,7 @@ public final class SharedLogger {
     
     /// The actual logger implementation (app or extension specific)
     private var implementation: AbstractLoggerProtocol
+    private let queue = DispatchQueue(label: "com.kiamaps.sharedlogger", attributes: .concurrent)
     
     private init() {
         // Default to a simple implementation - will be replaced during app startup
@@ -132,12 +133,14 @@ public final class SharedLogger {
     
     /// Configure the logger implementation (called during app/extension startup)
     public func configure(with logger: AbstractLoggerProtocol) {
-        self.implementation = logger
+        queue.sync(flags: .barrier) {
+            implementation = logger
+        }
     }
     
     /// Get the current logger implementation
     public var logger: AbstractLoggerProtocol {
-        return implementation
+        queue.sync { implementation }
     }
 }
 

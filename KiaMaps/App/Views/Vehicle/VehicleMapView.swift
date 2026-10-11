@@ -13,8 +13,8 @@ import CoreLocation
 /// Tesla-style map view with vehicle location and charging station integration
 struct VehicleMapView: View {
     let vehicle: Vehicle?
-    let vehicleState: VehicleState
-    let vehicleLocation: VehicleLocation
+    let vehicleState: VehicleStatus
+    let vehicleLocation: VehicleStatus.Location
     let onChargingStationTap: ((ChargingStation) -> Void)?
     let onVehicleTap: (() -> Void)?
     
@@ -41,8 +41,8 @@ struct VehicleMapView: View {
     
     init(
         vehicle: Vehicle? = nil,
-        vehicleState: VehicleState,
-        vehicleLocation: VehicleLocation,
+        vehicleState: VehicleStatus,
+        vehicleLocation: VehicleStatus.Location,
         onChargingStationTap: ((ChargingStation) -> Void)? = nil,
         onVehicleTap: (() -> Void)? = nil
     ) {
@@ -712,8 +712,8 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 #Preview("Vehicle Map - Standard") {
     VehicleMapView(
         vehicle: MockVehicleData.mockVehicle,
-        vehicleState: MockVehicleData.standard,
-        vehicleLocation: MockVehicleData.standard.location!,
+        vehicleState: KiaVehicleStatusMapper.map(state: MockVehicleData.standard),
+        vehicleLocation: KiaVehicleStatusMapper.map(state: MockVehicleData.standard).location!,
         onChargingStationTap: { station in
             print("Tapped charging station: \(station.name)")
         },
@@ -729,8 +729,8 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 #Preview("Vehicle Map - Charging") {
     VehicleMapView(
         vehicle: MockVehicleData.mockVehicle,
-        vehicleState: MockVehicleData.charging,
-        vehicleLocation: MockVehicleData.standard.location!,
+        vehicleState: KiaVehicleStatusMapper.map(state: MockVehicleData.charging),
+        vehicleLocation: KiaVehicleStatusMapper.map(state: MockVehicleData.standard).location!,
         onChargingStationTap: { station in
             print("Tapped charging station: \(station.name)")
         },

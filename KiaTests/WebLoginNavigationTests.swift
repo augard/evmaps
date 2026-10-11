@@ -99,6 +99,32 @@ final class WebLoginNavigationTests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(failures.first).contains("Unable to load the login page"))
         XCTAssertEqual(loading, false)
     }
+    func testPorscheCallbackCompletesLogin() throws {
+        let api = Api(configuration: PorscheApiConfiguration.europe, rsaService: .init())
+        let delegate = LoginWebViewDelegate(api: api, callback: nil)
+        var received: (code: String, state: String)?
+        delegate.callback = { code, state, success in
+            received = (code, state)
+            XCTAssertTrue(success)
+        }
+        delegate.onFailure = { XCTFail($0) }
+        let url = try XCTUnwrap(URL(string: "my-porsche-app://auth0/callback?code=porsche-code&state=s1"))
+
+        XCTAssertEqual(delegate.policy(for: url), .cancel)
+        XCTAssertEqual(received?.code, "porsche-code")
+        XCTAssertEqual(received?.state, "s1")
+    }
+
+    func testPorscheProviderIgnoresHMGCallback() throws {
+        let api = Api(configuration: PorscheApiConfiguration.europe, rsaService: .init())
+        let delegate = LoginWebViewDelegate(api: api, callback: nil)
+        delegate.callback = { _, _, _ in XCTFail("HMG callback must not complete Porsche login") }
+        delegate.onFailure = { XCTFail($0) }
+        let url = try XCTUnwrap(URL(string: "https://prd.eu-ccapi.kia.com:8080/api/v1/user/oauth2/redirect?code=test-code&login_success=y"))
+
+        XCTAssertEqual(delegate.policy(for: url), .allow)
+    }
+
 }
 
 @MainActor

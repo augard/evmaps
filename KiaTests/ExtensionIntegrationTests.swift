@@ -10,18 +10,33 @@ import XCTest
 @testable import KiaMaps
 
 final class ExtensionIntegrationTests: XCTestCase {
+    private let selectedVehicleVINKey = "selectedVehicleVIN"
     
     override func setUpWithError() throws {
-        // Start the server for integration tests
+        clearSharedState()
+        LocalCredentialServer.shared.stop()
         LocalCredentialServer.shared.start()
-        Thread.sleep(forTimeInterval: 0.5)
+        waitForServerToStart()
     }
     
     override func tearDownWithError() throws {
-        // Stop the server and clean up
         LocalCredentialServer.shared.stop()
+        clearSharedState()
+    }
+
+    private func clearSharedState() {
         Authorization.remove()
         SharedVehicleManager.shared.selectedVehicleVIN = nil
+        UserDefaults.standard.removeObject(forKey: selectedVehicleVINKey)
+    }
+
+    private func waitForServerToStart(timeout: TimeInterval = 2.0) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !LocalCredentialServer.shared.isRunning && Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+
+        XCTAssertTrue(LocalCredentialServer.shared.isRunning, "Local credential server did not start in time")
     }
     
     func testMainAppToExtensionCredentialFlow() throws {

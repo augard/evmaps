@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Tesla-style quick action buttons for common vehicle operations
 struct QuickActionsView: View {
-    let VehicleState: VehicleState
+    let VehicleState: VehicleStatus
     let onLockAction: () async throws -> Void
     let onClimateAction: () async throws -> Void
     let onHornAction: () async throws -> Void
@@ -212,7 +212,7 @@ extension ActionButton {
 // MARK: - Preview
 #Preview("Quick Actions - Standard") {
     QuickActionsView(
-        VehicleState: MockVehicleData.standard,
+        VehicleState: KiaVehicleStatusMapper.map(state: MockVehicleData.standard),
         onLockAction: { 
             print("🔒 Lock vehicle")
             try? await Task.sleep(nanoseconds: 1_000_000_000)
@@ -235,7 +235,7 @@ extension ActionButton {
 
 #Preview("Quick Actions - Charging") {
     QuickActionsView(
-        VehicleState: MockVehicleData.charging,
+        VehicleState: KiaVehicleStatusMapper.map(state: MockVehicleData.charging),
         onLockAction: {
             print("🔒 Lock vehicle")
             try? await Task.sleep(nanoseconds: 1_000_000_000)
@@ -258,7 +258,7 @@ extension ActionButton {
 
 #Preview("Quick Actions - Low Battery") {
     QuickActionsView(
-        VehicleState: MockVehicleData.lowBattery,
+        VehicleState: KiaVehicleStatusMapper.map(state: MockVehicleData.lowBattery),
         onLockAction: {
             print("🔒 Lock vehicle")
             try? await Task.sleep(nanoseconds: 1_000_000_000)

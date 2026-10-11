@@ -64,7 +64,7 @@ struct VehicleStateModernView: View {
                 // Quick Actions
                 KiaCard(elevation: .medium) {
                     QuickActionsView(
-                        VehicleState: VehicleState,
+                        VehicleState: KiaVehicleStatusMapper.map(state: VehicleState),
                         onLockAction: { handleLockAction() },
                         onClimateAction: { handleClimateAction() },
                         onHornAction: { handleHornAction() },

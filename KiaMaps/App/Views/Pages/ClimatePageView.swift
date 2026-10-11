@@ -10,7 +10,7 @@ import SwiftUI
 
 /// Climate control page with temperature dial and status
 struct ClimatePageView: View {
-    let status: VehicleState
+    let status: VehicleStatus
     let isActive: Bool
     
     var body: some View {
@@ -159,7 +159,7 @@ struct ClimatePageView: View {
 
 #Preview("Climate Page View") {
     ClimatePageView(
-        status: MockVehicleData.standard,
+        status: KiaVehicleStatusMapper.map(state: MockVehicleData.standard),
         isActive: true
     )
 }

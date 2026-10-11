@@ -69,8 +69,8 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
             } else {
                 try manager.store(status: status)
             }
-            result = status.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters, lastUpdateDate: status.lastUpdateTime)
-            logDebug("Loaded car status '\(status.state.vehicle.green.batteryManagement.batteryRemain.ratio)'", category: .vehicle)
+            result = status.status.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters, lastUpdateDate: status.lastUpdateTime)
+            logDebug("Loaded car status '\(status.status.green.batteryManagement.batteryRemain.ratio)'", category: .vehicle)
         } catch {
             if let error = error as? ApiError {
                 switch error {
@@ -92,7 +92,7 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
             logDebug("Returning cached data for failure", category: .vehicle)
             manager.restoreOutdatedData()
             if let cachedData = try? manager.vehicleState {
-                return cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters, lastUpdateDate: cachedData.lastUpdateTime)
+                return cachedData.status.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters, lastUpdateDate: cachedData.lastUpdateTime)
             } else {
                 logDebug("No cached data, returning failure", category: .vehicle)
                 manager.removeLastUpdateDate()
@@ -118,7 +118,11 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
 
             }
             logDebug("Handler: Returning mocking data", category: .vehicle)
-            return VehicleStateResponse.lowBatteryPreview.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters, lastUpdateDate: .now - 1 * 60)
+            return KiaVehicleStatusMapper.map(response: VehicleStateResponse.lowBatteryPreview).status.toIntentResponse(
+                carId: carId,
+                vehicleParameters: vehicleParameters,
+                lastUpdateDate: .now - 1 * 60
+            )
         } else if let cachedData = try? manager.vehicleState {
             // Use data from cache
             if cachedData.lastUpdateTime + 5 * 60 < Date.now {
@@ -133,7 +137,7 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
             }
 
             logDebug("Handler: Use cached data", category: .vehicle)
-            return cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters, lastUpdateDate: cachedData.lastUpdateTime)
+            return cachedData.status.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters, lastUpdateDate: cachedData.lastUpdateTime)
         } else {
             // Get data from server
             await credentialsHandler.continueOrWaitForCredentials()
@@ -160,7 +164,7 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
         // Send initial update from cached data immediately
         if let cachedData = try? manager.vehicleState {
             logDebug("Updater: Sending initial update from cached data", category: .vehicle)
-            let response = cachedData.state.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters, lastUpdateDate: .now - 1 * 60)
+            let response = cachedData.status.toIntentResponse(carId: carId, vehicleParameters: vehicleParameters, lastUpdateDate: .now - 1 * 60)
             observer.didUpdate(getCarPowerLevelStatus: response)
         }
         
@@ -179,7 +183,8 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
 
                     logDebug("Updater: Received MQTT update", category: .mqtt)
 
-                    let response = mqttStatus.state.toIntentResponse(
+                    let mappedStatus = KiaVehicleStatusMapper.map(state: mqttStatus.state.vehicle)
+                    let response = mappedStatus.toIntentResponse(
                         carId: carId,
                         vehicleParameters: self.vehicleParameters,
                         lastUpdateDate: mqttStatus.lastUpdateTime
@@ -187,12 +192,9 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
 
                     // Update stored status
                     do {
-                        let status = VehicleStateResponse(
-                            resultCode: "S",
-                            serviceNumber: "0",
-                            returnCode: "0",
+                        let status = VehicleStatusSnapshot(
                             lastUpdateTime: mqttStatus.lastUpdateTime,
-                            state: mqttStatus.state
+                            status: mappedStatus
                         )
                         try manager.store(status: status)
                     } catch {
@@ -302,7 +304,7 @@ class GetCarPowerLevelStatusHandler: NSObject, INGetCarPowerLevelStatusIntentHan
     }
 }
 
-extension VehicleStateWrapper {
+extension VehicleStatus {
     /// Converts vehicle status to Apple Maps compatible INGetCarPowerLevelStatusIntentResponse
     /// - Parameters:
     ///   - carId: Unique identifier for the vehicle
@@ -312,10 +314,10 @@ extension VehicleStateWrapper {
         let result: INGetCarPowerLevelStatusIntentResponse
 
         let dateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: lastUpdateDate)
-        let chargingInformation = vehicle.green.chargingInformation
-        let batteryManagement = vehicle.green.batteryManagement
-        let drivetrain = vehicle.drivetrain
-        let batteryCapacity = Double(batteryManagement.batteryCapacity.value)
+        let chargingInformation = green.chargingInformation
+        let batteryManagement = green.batteryManagement
+        let driveTrain = drivetrain
+        let batteryCapacity = batteryManagement.batteryCapacity ?? estimatedBatteryCapacity(from: batteryManagement)
         let batteryRemain = Float(batteryManagement.batteryRemain.ratio)
 
         result = .init(code: .success, userActivity: nil)
@@ -325,23 +327,23 @@ extension VehicleStateWrapper {
         result.chargingFormulaArguments = vehicleParameters.chargingFormulaArguments(maximumBatteryCapacity: batteryCapacity, unit: .kilojoules)
 
         result.maximumDistance = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
-        result.distanceRemaining = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.measuremntUnit)
+        result.distanceRemaining = .init(value: Double(driveTrain.fuelSystem.dte.total), unit: driveTrain.fuelSystem.dte.unit.measuremntUnit)
 
         result.maximumDistanceElectric = .init(value: vehicleParameters.maximumDistance, unit: .kilometers)
-        result.distanceRemainingElectric = .init(value: Double(drivetrain.fuelSystem.dte.total), unit: drivetrain.fuelSystem.dte.unit.measuremntUnit)
+        result.distanceRemainingElectric = .init(value: Double(driveTrain.fuelSystem.dte.total), unit: driveTrain.fuelSystem.dte.unit.measuremntUnit)
 
         result.minimumBatteryCapacity = .init(value: 0, unit: .kilowattHours)
         result.currentBatteryCapacity = .init(value: batteryCapacity * 0.01 * Double(batteryRemain), unit: .kilojoules)
         result.maximumBatteryCapacity = .init(value: batteryCapacity, unit: .kilojoules)
 
-        result.charging = chargingInformation.electricCurrentLevel.state == 1
+        result.charging = isActivelyCharging
         if result.charging == true {
             let charging = chargingInformation.charging
             let measurement = Measurement<UnitDuration>(value: charging.remainTime, unit: charging.remainTimeUnit.unitDuration)
             result.minutesToFull = Int(measurement.converted(to: .minutes).value)
             result.activeConnector = .ccs2
         } else {
-            result.minutesToFull = chargingInformation.estimatedTime.quick
+            result.minutesToFull = nil
             result.activeConnector = nil
         }
 
@@ -349,5 +351,10 @@ extension VehicleStateWrapper {
 
         return result
     }
-}
 
+    private func estimatedBatteryCapacity(from batteryManagement: VehicleStatus.Green.BatteryManagement) -> Double {
+        let ratio = batteryManagement.batteryRemain.ratio
+        guard ratio > 0 else { return batteryManagement.batteryRemain.value }
+        return batteryManagement.batteryRemain.value * 100 / ratio
+    }
+}

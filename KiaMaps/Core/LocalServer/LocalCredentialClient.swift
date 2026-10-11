@@ -18,8 +18,8 @@ enum LocalCredentialClientError: Error {
 /// Used by both the main app and extensions
 final class LocalCredentialClient {
     private let queue = DispatchQueue(label: "com.kiamaps.localclient", qos: .userInitiated)
-    private let serverHost = "127.0.0.1"
-    private let serverPort: UInt16 = 8765
+    private let serverHost: String
+    private let serverPort: UInt16
     private let extensionIdentifier: String
     private let serverPassword: String
     private let maxRetryAttempts: Int
@@ -40,7 +40,15 @@ final class LocalCredentialClient {
     }
 
     /// Initialize with explicit parameters
-    init(extensionIdentifier: String, serverPassword: String? = nil, maxRetryAttempts: Int = 3) {
+    init(
+        extensionIdentifier: String,
+        serverHost: String = "127.0.0.1",
+        serverPort: UInt16 = 8765,
+        serverPassword: String? = nil,
+        maxRetryAttempts: Int = 3
+    ) {
+        self.serverHost = serverHost
+        self.serverPort = serverPort
         self.extensionIdentifier = extensionIdentifier
         // Use provided password or get from environment/fallback
         self.serverPassword = serverPassword ?? ProcessInfo.processInfo.environment["KIAMAPS_SERVER_PASSWORD"] ?? "KiaMapsSecurePassword2025"
@@ -48,8 +56,19 @@ final class LocalCredentialClient {
     }
 
     /// Convenience initializer for extensions
-    convenience init(extensionIdentifier: String, serverPassword: String? = nil) {
-        self.init(extensionIdentifier: extensionIdentifier, serverPassword: serverPassword, maxRetryAttempts: 3)
+    convenience init(
+        extensionIdentifier: String,
+        serverHost: String = "127.0.0.1",
+        serverPort: UInt16 = 8765,
+        serverPassword: String? = nil
+    ) {
+        self.init(
+            extensionIdentifier: extensionIdentifier,
+            serverHost: serverHost,
+            serverPort: serverPort,
+            serverPassword: serverPassword,
+            maxRetryAttempts: 3
+        )
     }
 
     /// Fetches credentials from the local server

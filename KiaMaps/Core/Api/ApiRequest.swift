@@ -41,6 +41,8 @@ enum ApiError: Error {
     case unexpectedStatusCode(Int?)
     /// Authentication failed (401 status)
     case unauthorized
+    /// Feature unavailable for active API provider
+    case unsupported(String)
 
     /// Human-readable error descriptions
     var localizedDescription: String {
@@ -51,6 +53,8 @@ enum ApiError: Error {
             "unexpectedStatusCode:\(String(describing: int))"
         case .unauthorized:
             "unauthorized"
+        case let .unsupported(message):
+            message
         }
     }
 }
@@ -70,7 +74,7 @@ extension ApiConfiguration {
     /// - Parameter endpoint: The endpoint to generate URL for
     /// - Returns: Complete URL for the endpoint
     /// - Throws: URLError.badURL if URL construction fails
-    func url(for endpoint: ApiEndpoint) throws -> URL {
+    func url(for endpoint: any ApiEndpointProtocol) throws -> URL {
         let result: URL?
         let (path, base) = endpoint.path
         switch base {
@@ -91,7 +95,11 @@ extension ApiConfiguration {
 
     /// Base API URL constructed from host and port
     private var baseUrl: URL? {
-        URL(string: baseHost + ":\(port)")
+        if let configuration = self as? PorscheApiConfiguration {
+            let normalizedBase = configuration.appApiBaseURL.hasSuffix("/") ? configuration.appApiBaseURL : configuration.appApiBaseURL + "/"
+            return URL(string: normalizedBase)
+        }
+        return URL(string: baseHost + ":\(port)")
     }
 
     /// Login URL for authentication flows
@@ -106,7 +114,11 @@ extension ApiConfiguration {
 
     /// User-specific API URL
     private var userUrl: URL? {
-        URL(string: baseHost + ":\(port)" + "/api/v1/user/")
+        if let configuration = self as? PorscheApiConfiguration {
+            let normalizedBase = configuration.loginHost.hasSuffix("/") ? configuration.loginHost : configuration.loginHost + "/"
+            return URL(string: normalizedBase)
+        }
+        return URL(string: baseHost + ":\(port)" + "/api/v1/user/")
     }
 
     /// MQTT API URL
@@ -137,7 +149,7 @@ protocol ApiRequest {
     init(
         caller: ApiCaller,
         method: ApiMethod?,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem],
         headers: Headers,
         encodable: Encodable,
@@ -158,7 +170,7 @@ protocol ApiRequest {
     init(
         caller: ApiCaller,
         method: ApiMethod?,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem],
         headers: Headers,
         body: Data?,
@@ -179,7 +191,7 @@ protocol ApiRequest {
     init(
         caller: ApiCaller,
         method: ApiMethod?,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem],
         headers: Headers,
         form: Form,
@@ -214,21 +226,31 @@ protocol ApiRequest {
     func string() async throws -> String
     /// Executes request with custom status code and returns raw string
     func string(acceptStatusCode: Int) async throws -> String
+    /// Executes request with accepted status codes and returns raw string
+    func string(acceptStatusCodes: Set<Int>) async throws -> String
 
     /// Executes request expecting 200 status and returns HTTPURLResponse
     func httpResponse() async throws -> HTTPURLResponse
     /// Executes request with custom status code and returns HTTPURLResponse
     func httpResponse(acceptStatusCode: Int) async throws -> HTTPURLResponse
+    /// Executes request with accepted status codes and returns HTTPURLResponse
+    func httpResponse(acceptStatusCodes: Set<Int>) async throws -> HTTPURLResponse
 
     /// Executes request expecting 200 status and returns decoded data directly
     func data<Data: Decodable>() async throws -> Data
     /// Executes request with custom status code and returns decoded data directly
     func data<Data: Decodable>(acceptStatusCode: Int) async throws -> Data
+    /// Executes request with accepted status codes and returns decoded data directly
+    func data<Data: Decodable>(acceptStatusCodes: Set<Int>) async throws -> Data
+    /// Executes request with accepted status codes and returns raw body data
+    func rawData(acceptStatusCodes: Set<Int>) async throws -> Data
 
     /// Executes request expecting 302 redirect and returns redirect URL
     func referalUrl() async throws -> URL
     /// Executes request with custom status code and returns redirect URL
     func referalUrl(acceptStatusCode: Int) async throws -> URL
+    /// Executes request with accepted status codes and returns redirect URL
+    func referalUrl(acceptStatusCodes: Set<Int>) async throws -> URL
 }
 
 extension ApiRequest {
@@ -267,16 +289,32 @@ extension ApiRequest {
         try await string(acceptStatusCode: 200)
     }
 
+    func string(acceptStatusCode: Int) async throws -> String {
+        try await string(acceptStatusCodes: [acceptStatusCode])
+    }
+
     func httpResponse() async throws -> HTTPURLResponse {
         try await httpResponse(acceptStatusCode: 200)
+    }
+
+    func httpResponse(acceptStatusCode: Int) async throws -> HTTPURLResponse {
+        try await httpResponse(acceptStatusCodes: [acceptStatusCode])
     }
 
     func data<Data: Decodable>() async throws -> Data {
         try await data(acceptStatusCode: 200)
     }
 
+    func data<Data: Decodable>(acceptStatusCode: Int) async throws -> Data {
+        try await data(acceptStatusCodes: [acceptStatusCode])
+    }
+
     func referalUrl() async throws -> URL {
         try await referalUrl(acceptStatusCode: 302)
+    }
+
+    func referalUrl(acceptStatusCode: Int) async throws -> URL {
+        try await referalUrl(acceptStatusCodes: [acceptStatusCode])
     }
 }
 
@@ -288,7 +326,7 @@ struct ApiRequestImpl: ApiRequest {
     /// HTTP method for the request
     let method: ApiMethod
     /// API endpoint to call
-    let endpoint: ApiEndpoint
+    let endpoint: any ApiEndpointProtocol
     /// URL query parameters
     let queryItems: [URLQueryItem]
     /// HTTP headers
@@ -314,7 +352,7 @@ struct ApiRequestImpl: ApiRequest {
     init(
         caller: ApiCaller,
         method: ApiMethod?,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem],
         headers: Headers,
         encodable: Encodable,
@@ -341,7 +379,7 @@ struct ApiRequestImpl: ApiRequest {
     init(
         caller: ApiCaller,
         method: ApiMethod?,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem],
         headers: Headers,
         body: Data?,
@@ -365,16 +403,18 @@ struct ApiRequestImpl: ApiRequest {
         self.authorization = authorization
     }
 
-    init(caller: ApiCaller,
-         method: ApiMethod?,
-         endpoint: ApiEndpoint,
-         queryItems: [URLQueryItem],
-         headers: Headers,
-         form: Form,
-         timeout: TimeInterval,
-         authorization: Bool
+    init(
+        caller: ApiCaller,
+        method: ApiMethod?,
+        endpoint: any ApiEndpointProtocol,
+        queryItems: [URLQueryItem],
+        headers: Headers,
+        form: Form,
+        timeout: TimeInterval,
+        authorization: Bool
     ) {
-        var headers = Self.commonFormHeaders
+        var headers = headers
+        headers.merge(Self.commonFormHeaders) { current, _ in current }
         headers["User-Agent"] = caller.configuration.userAgent
         headers["Accept"] = "*/*"
         headers["Accept-Language"] = "en-GB,en;q=0.9"
@@ -428,11 +468,11 @@ struct ApiRequestImpl: ApiRequest {
     }
 
     func empty(acceptStatusCode: Int) async throws {
-        try await callRequest(acceptStatusCode: acceptStatusCode)
+        try await callRequest(acceptStatusCodes: [acceptStatusCode])
     }
 
-    func string(acceptStatusCode: Int) async throws -> String {
-        let (data, _) = try await callRequest(acceptStatusCode: acceptStatusCode)
+    func string(acceptStatusCodes: Set<Int>) async throws -> String {
+        let (data, _) = try await callRequest(acceptStatusCodes: acceptStatusCodes)
         guard let string = String(data: data, encoding: .utf8) else {
             throw URLError(.cannotDecodeContentData)
         }
@@ -440,8 +480,8 @@ struct ApiRequestImpl: ApiRequest {
         return string
     }
 
-    func httpResponse(acceptStatusCode: Int) async throws -> HTTPURLResponse {
-        let (_, response) = try await callRequest(acceptStatusCode: acceptStatusCode)
+    func httpResponse(acceptStatusCodes: Set<Int>) async throws -> HTTPURLResponse {
+        let (_, response) = try await callRequest(acceptStatusCodes: acceptStatusCodes)
         logDebug("\(String(describing: endpoint)) - result: \(String(describing: response))", category: .api)
         guard let response = response as? HTTPURLResponse else {
             throw URLError(.cannotDecodeContentData)
@@ -449,15 +489,20 @@ struct ApiRequestImpl: ApiRequest {
         return response
     }
 
-    func data<Data: Decodable>(acceptStatusCode: Int) async throws -> Data {
-        let (data, _) = try await callRequest(acceptStatusCode: acceptStatusCode)
+    func data<Data: Decodable>(acceptStatusCodes: Set<Int>) async throws -> Data {
+        let data = try await rawData(acceptStatusCodes: acceptStatusCodes)
         let result = try JSONDecoders.default.decode(Data.self, from: data)
         logDebug("\(String(describing: endpoint)) - result: \(String(describing: result))", category: .api)
         return result
     }
 
-    func referalUrl(acceptStatusCode: Int) async throws -> URL {
-        let httpResponse = try await httpResponse(acceptStatusCode: acceptStatusCode)
+    func rawData(acceptStatusCodes: Set<Int>) async throws -> Data {
+        let (data, _) = try await callRequest(acceptStatusCodes: acceptStatusCodes)
+        return data
+    }
+
+    func referalUrl(acceptStatusCodes: Set<Int>) async throws -> URL {
+        let httpResponse = try await httpResponse(acceptStatusCodes: acceptStatusCodes)
         guard let location = httpResponse.allHeaderFields["Location"] as? String,
               let url = URL(string: location)
         else {
@@ -467,7 +512,7 @@ struct ApiRequestImpl: ApiRequest {
     }
 
     @discardableResult
-    private func callRequest(acceptStatusCode: Int) async throws -> (Data, URLResponse) {
+    private func callRequest(acceptStatusCodes: Set<Int>) async throws -> (Data, URLResponse) {
         let urlRequest = try self.urlRequest
         logDebug("\(String(describing: endpoint)) - request: \(String(describing: urlRequest.url)) \(String(describing: urlRequest.allHTTPHeaderFields))", category: .api)
 
@@ -482,7 +527,7 @@ struct ApiRequestImpl: ApiRequest {
             }
         }
 
-        guard acceptStatusCode == acceptStatusCode else {
+        guard acceptStatusCodes.contains(response.status ?? 0) else {
             throw ApiError.unexpectedStatusCode(response.status)
         }
         return (data, response)
@@ -568,7 +613,7 @@ class ApiRequestProvider: NSObject {
     /// - Throws: Encoding errors
     func request(
         with method: ApiMethod? = nil,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         encodable: Encodable,
@@ -599,7 +644,7 @@ class ApiRequestProvider: NSObject {
     /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         body: Data? = nil,
@@ -630,7 +675,7 @@ class ApiRequestProvider: NSObject {
     /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         string: String,
@@ -661,7 +706,7 @@ class ApiRequestProvider: NSObject {
     /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         form: ApiRequest.Form,
@@ -709,4 +754,3 @@ extension ApiRequestProvider: URLSessionTaskDelegate {
         }
     }
 }
-

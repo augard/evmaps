@@ -314,7 +314,7 @@ struct TemperatureDial: View {
 
 /// Complete climate control interface with temperature dial and additional controls
 struct ClimateControlView: View {
-    let vehicleState: VehicleState?
+    let vehicleState: VehicleStatus?
     let unit: TemperatureUnit
     
     @State private var targetTemperature: Double = 22
@@ -322,7 +322,7 @@ struct ClimateControlView: View {
     @State private var fanSpeed: Double = 3
     @State private var isAutoMode: Bool = true
     
-    init(vehicleState: VehicleState? = nil, unit: TemperatureUnit = .celsius) {
+    init(vehicleState: VehicleStatus? = nil, unit: TemperatureUnit = .celsius) {
         self.vehicleState = vehicleState
         self.unit = unit
     }

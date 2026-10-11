@@ -28,13 +28,18 @@ struct AuthorizationImportPayload: Codable, Equatable {
             throw AuthorizationImportError.missingDeviceId
         }
 
+        let porscheConfiguration = configuration as? PorscheApiConfiguration
         return AuthorizationData(
-            stamp: AuthorizationData.generateStamp(for: configuration),
+            stamp: porscheConfiguration == nil ? AuthorizationData.generateStamp(for: configuration) : "porsche",
             deviceId: deviceId,
             accessToken: normalizedAccessToken,
             expiresIn: expiresIn,
             refreshToken: refreshToken?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
             isCcuCCS2Supported: isCcuCCS2Supported ?? true,
+            providerKind: porscheConfiguration == nil ? nil : "porsche",
+            tokenIssuer: porscheConfiguration?.loginHost,
+            tokenAudience: porscheConfiguration?.audience,
+            tokenScope: porscheConfiguration?.scope,
             source: .external
         )
     }

@@ -27,7 +27,7 @@ public final class RemoteLogger {
     private var _isEnabled: Bool = false
     
     public var isEnabled: Bool {
-        return _isEnabled
+        bufferQueue.sync { _isEnabled }
     }
     private let enabledKey = "RemoteLoggingEnabled"
     
@@ -55,16 +55,15 @@ public final class RemoteLogger {
     
     /// Enable or disable remote logging
     public func setEnabled(_ enabled: Bool) {
-        bufferQueue.async { [weak self] in
-            guard let self = self else { return }
-            self._isEnabled = enabled
-            UserDefaults.standard.set(enabled, forKey: self.enabledKey)
+        bufferQueue.sync {
+            _isEnabled = enabled
+            UserDefaults.standard.set(enabled, forKey: enabledKey)
             
             if enabled {
-                self.startFlushTimer()
+                startFlushTimer()
             } else {
-                self.stopFlushTimer()
-                self.logBuffer.removeAll()
+                stopFlushTimer()
+                logBuffer.removeAll()
             }
         }
     }

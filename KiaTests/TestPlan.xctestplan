@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "D66604B5-EC73-4333-952F-5F72F38FC31B",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:KiaMaps.xcodeproj",
+        "identifier" : "803D467C2E2E7413003EFC10",
+        "name" : "KiaTests"
+      }
+    }
+  ],
+  "version" : 1
+}

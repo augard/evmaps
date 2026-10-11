@@ -59,17 +59,7 @@ extension Api {
             logInfo("Attempting to refresh token using refresh token", category: .auth)
             
             do {
-                let tokenResponse = try await refreshToken(currentAuth.refreshToken)
-                
-                // Create new authorization data with refreshed tokens
-                let newAuthData = AuthorizationData(
-                    stamp: currentAuth.stamp, // Keep existing stamp
-                    deviceId: currentAuth.deviceId, // Keep existing device ID
-                    accessToken: tokenResponse.accessToken,
-                    expiresIn: tokenResponse.expiresIn,
-                    refreshToken: tokenResponse.refreshToken ?? currentAuth.refreshToken,
-                    isCcuCCS2Supported: currentAuth.isCcuCCS2Supported
-                )
+                let newAuthData = try await refreshAuthorization(currentAuth)
                 
                 // Store the new authorization data
                 Authorization.store(data: newAuthData)
@@ -201,7 +191,7 @@ extension Api {
     }
     
     /// Fetch cached vehicle status with automatic token refresh
-    func vehicleCachedStatusWithAutoRefresh(_ vehicleId: UUID) async throws -> VehicleStateResponse {
+    func vehicleCachedStatusWithAutoRefresh(_ vehicleId: UUID) async throws -> VehicleStatusSnapshot {
         return try await executeWithAutoRefresh {
             return try await self.vehicleCachedStatus(vehicleId)
         }

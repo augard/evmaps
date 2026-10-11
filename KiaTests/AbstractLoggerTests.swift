@@ -515,8 +515,8 @@ final class AbstractLoggerIntegrationTests: XCTestCase {
         let group = DispatchGroup()
         
         for queueIndex in 0..<queues {
+            group.enter()
             DispatchQueue.global().async {
-                group.enter()
                 for i in 0..<iterations {
                     logInfo("Message \(i) from queue \(queueIndex)", category: .general)
                 }
