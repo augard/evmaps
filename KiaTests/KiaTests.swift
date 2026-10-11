@@ -53,7 +53,7 @@ final class KiaTests: XCTestCase {
 
         let encoded = try encoder.encode(payload)
         let encodedString = String(decoding: encoded, as: UTF8.self)
-        XCTAssertTrue(encodedString.contains(#""eventTime":"2024-05-26 10:12:59.116""#))
+        XCTAssertTrue(encodedString.contains(#""eventTime":"2024-05-26 13:06:19.116""#))
 
         let decoded = try decoder.decode(MillisecondPayload.self, from: encoded)
         XCTAssertEqual(decoded.eventTime.timeIntervalSince1970, inputDate.timeIntervalSince1970, accuracy: 0.001)
