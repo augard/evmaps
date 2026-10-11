@@ -10,6 +10,9 @@ import Foundation
 enum PorscheVehicleMapper {
     typealias JSONObject = [String: Any]
 
+    /// Placeholder capacity until the Porsche payload exposes one; matches the remaining-energy estimate below.
+    private static let estimatedBatteryCapacityKJ: Double = 230_000
+
     static func map(summary: PorscheVehicleSummary) -> PorscheVehicleSnapshot {
         PorscheVehicleSnapshot(
             vin: summary.vin,
@@ -61,7 +64,8 @@ enum PorscheVehicleMapper {
     static func mapVehicleState(from payload: JSONObject, now: Date = Date()) throws -> VehicleStatusSnapshot {
         let summary = mapSummary(from: payload)
         let snapshot = map(summary: summary)
-        let doorLockValue = snapshot.locked
+        // Shared door model uses the HMG convention: `false` means locked.
+        let doorLockValue = !snapshot.locked
         let doorOpenFrontLeft = measurementBool("OPEN_STATE_DOOR_FRONT_LEFT", payload: payload)
         let doorOpenFrontRight = measurementBool("OPEN_STATE_DOOR_FRONT_RIGHT", payload: payload)
         let doorOpenRearLeft = measurementBool("OPEN_STATE_DOOR_REAR_LEFT", payload: payload)
@@ -70,7 +74,7 @@ enum PorscheVehicleMapper {
         let trunkOpen = measurementBool("OPEN_STATE_LID_REAR", payload: payload)
 
         return VehicleStatusSnapshot(
-            lastUpdateTime: now,
+            lastUpdateTime: latestMeasurementDate(from: payload) ?? now,
             status: VehicleStatus(
                 body: .init(
                     hood: .init(
@@ -146,9 +150,10 @@ enum PorscheVehicleMapper {
                     batteryManagement: .init(
                         soH: .init(ratio: 100),
                         batteryRemain: .init(
-                            value: max(snapshot.batterySoc, 1) * 2_300,
+                            value: max(snapshot.batterySoc, 1) * estimatedBatteryCapacityKJ / 100,
                             ratio: snapshot.batterySoc
-                        )
+                        ),
+                        batteryCapacity: estimatedBatteryCapacityKJ
                     ),
                     electric: .init(
                         smartGrid: .init(
@@ -159,7 +164,7 @@ enum PorscheVehicleMapper {
                     ),
                     chargingInformation: .init(
                         connectorFastening: .init(state: snapshot.charging ? 1 : 0),
-                        electricCurrentLevel: .init(state: 0),
+                        electricCurrentLevel: .init(state: snapshot.charging ? 1 : 0),
                         charging: .init(remainTime: 0, remainTimeUnit: .minute)
                     ),
                     chargingDoor: .init(state: snapshot.charging ? .open : .closed),
@@ -296,11 +301,27 @@ enum PorscheVehicleMapper {
 
     private static func locationDateString(from payload: JSONObject) -> String? {
         guard let value = string(["GPS_LOCATION", "lastModified"], in: measurementDictionary(from: payload)),
-              let date = ISO8601DateFormatter().date(from: value)
+              let date = isoDate(from: value)
         else {
             return nil
         }
         return TimeIntervalDateFormatter().string(from: date)
+    }
+
+    private static func latestMeasurementDate(from payload: JSONObject) -> Date? {
+        measurementDictionary(from: payload).values
+            .compactMap { ($0 as? JSONObject)?["lastModified"] as? String }
+            .compactMap(isoDate(from:))
+            .max()
+    }
+
+    private static func isoDate(from value: String) -> Date? {
+        let formatter = ISO8601DateFormatter()
+        if let date = formatter.date(from: value) {
+            return date
+        }
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: value)
     }
 
     private static func locationHeading(from payload: JSONObject) -> Double? {

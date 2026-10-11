@@ -126,6 +126,20 @@ struct PorscheAuthClient {
         try parseRedirect(callback)
     }
 
+    func authorizationCallback(from url: URL) throws -> AuthorizationCallback? {
+        let callbackURL = URL(string: configuration.redirectUri)
+        guard url.scheme == callbackURL?.scheme, url.host == callbackURL?.host,
+              url.path == callbackURL?.path else { return nil }
+        let state = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "state" })?.value ?? ""
+        switch try parseRedirect(url) {
+        case let .authorizationCode(code):
+            return (code, state, true)
+        case let .mfaRequired(challenge):
+            throw PorscheAuthError.mfaRequired(challenge)
+        }
+    }
+
     func mapMFASubmitResult(_ result: PorscheMFASubmitResult) throws {
         switch result {
         case .success:

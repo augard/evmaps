@@ -288,7 +288,7 @@ final class PorscheEndpointAndMapperTests: XCTestCase {
                 [
                     "key": "BATTERY_LEVEL",
                     "status": ["isEnabled": true],
-                    "value": ["percent": 62.5],
+                    "value": ["percent": 62.5, "lastModified": "2026-03-06T15:30:00Z"],
                 ],
                 [
                     "key": "GPS_LOCATION",
@@ -338,6 +338,31 @@ final class PorscheEndpointAndMapperTests: XCTestCase {
         XCTAssertEqual(state.status.location?.geoCoordinate.latitude, 50.1)
         XCTAssertEqual(state.status.location?.geoCoordinate.longitude, 14.4)
         XCTAssertEqual(state.status.cabin.hvac.row1.driver.blower.speedLevel, 1)
+        // Shared door model: `false` means locked.
+        XCTAssertFalse(state.status.cabin.door.row1.driver.lock)
+        XCTAssertFalse(state.status.cabin.door.row2.right.lock)
+        XCTAssertEqual(state.lastUpdateTime, ISO8601DateFormatter().date(from: "2026-03-06T16:00:00Z"))
+        XCTAssertEqual(state.status.green.batteryManagement.batteryCapacity, 230_000)
+        XCTAssertFalse(state.status.isActivelyCharging)
+    }
+
+    func testMapperFallsBackToNowWithoutMeasurementTimestamps() throws {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let state = try PorscheVehicleMapper.mapVehicleState(from: ["vin": "VIN", "measurements": []], now: now)
+        XCTAssertEqual(state.lastUpdateTime, now)
+    }
+
+    func testMapperReportsActiveChargingFromChargingState() throws {
+        let payload: [String: Any] = [
+            "vin": "VIN",
+            "measurements": [[
+                "key": "BATTERY_CHARGING_STATE",
+                "status": ["isEnabled": true],
+                "value": ["status": "CHARGING"],
+            ]],
+        ]
+        let state = try PorscheVehicleMapper.mapVehicleState(from: payload)
+        XCTAssertTrue(state.status.isActivelyCharging)
     }
 
     func testCommandBodyUsesRemoteClimatizerStartPayload() throws {
@@ -389,12 +414,20 @@ final class PorscheEndpointAndMapperTests: XCTestCase {
             tokenScope: PorscheApiConfiguration.europe.scope
         )
         let authClient = PorscheAuthClient(configuration: .europe, transport: authStub.transport, now: { Date(timeIntervalSince1970: 42) })
-        let provider = PorscheVehicleApiProvider(api: api, authClient: authClient, commandPollIntervalNanoseconds: 0)
+        var storedAuthorizations: [AuthorizationData] = []
+        let provider = PorscheVehicleApiProvider(
+            api: api,
+            authClient: authClient,
+            commandPollIntervalNanoseconds: 0,
+            storeAuthorization: { storedAuthorizations.append($0) }
+        )
 
         let response = try await provider.vehicles()
 
         XCTAssertEqual(response.vehicles.count, 1)
         XCTAssertEqual(api.authorization?.accessToken, "fresh-access")
+        XCTAssertEqual(storedAuthorizations.map(\.accessToken), ["fresh-access"])
+        XCTAssertEqual(storedAuthorizations.first?.refreshToken, "fresh-refresh")
         XCTAssertEqual(authStub.requests[0].url?.path, "/oauth/token")
     }
 
@@ -442,5 +475,37 @@ final class PorscheEndpointAndMapperTests: XCTestCase {
         let body = try XCTUnwrap(requestProvider.requests[1].httpBody)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
         XCTAssertEqual(json["key"] as? String, "REMOTE_CLIMATIZER_START")
+    }
+
+    func testProviderRejectsInitialCommandError() async throws {
+        let vehicleID = UUID.porscheVehicleID(for: "WP0AA2Y1XNSA00001")
+        let requestProvider = PorscheRequestProviderStub(responses: [
+            .init(statusCode: 200, json: [["vin": "WP0AA2Y1XNSA00001", "modelName": "Taycan"]]),
+            .init(statusCode: 200, json: [
+                "status": [
+                    "id": "4FD78B24-3C94-4EC2-8BE4-7D53FA3B84B6",
+                    "result": "ERROR",
+                ],
+            ]),
+        ])
+        let api = Api(configuration: PorscheApiConfiguration.europe, rsaService: .init(), provider: requestProvider)
+        api.authorization = AuthorizationData(
+            stamp: "porsche",
+            deviceId: UUID(),
+            accessToken: "access",
+            expiresIn: 3600,
+            refreshToken: "refresh",
+            isCcuCCS2Supported: true,
+            providerKind: "porsche"
+        )
+        let provider = PorscheVehicleApiProvider(api: api, commandPollIntervalNanoseconds: 0)
+
+        do {
+            _ = try await provider.startClimate(vehicleID, options: .init(temperature: 21), pin: "")
+            XCTFail("Initial ERROR result must not be reported as success")
+        } catch {
+            XCTAssertEqual(error as? PorscheApiError, .commandFailed("ERROR"))
+        }
+        XCTAssertEqual(requestProvider.requests.count, 2)
     }
 }

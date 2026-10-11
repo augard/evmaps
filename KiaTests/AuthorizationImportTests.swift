@@ -88,4 +88,25 @@ final class AuthorizationImportTests: XCTestCase {
         let authorization = try JSONDecoder().decode(AuthorizationData.self, from: data)
         XCTAssertEqual(authorization.effectiveSource, .legacy)
     }
+
+    func testPorscheImportUsesPorscheHeaders() throws {
+        let porsche = PorscheApiConfiguration.europe
+        let payload = AuthorizationImportPayload(
+            accessToken: "porsche-token",
+            refreshToken: nil,
+            expiresIn: 3600,
+            deviceId: UUID(),
+            isCcuCCS2Supported: nil
+        )
+
+        let authorization = try payload.authorization(for: porsche)
+        let headers = authorization.authorizatioHeaders(for: porsche)
+
+        XCTAssertEqual(authorization.providerKind, "porsche")
+        XCTAssertEqual(authorization.tokenAudience, porsche.audience)
+        XCTAssertEqual(authorization.effectiveSource, .external)
+        XCTAssertEqual(headers["Authorization"], "Bearer porsche-token")
+        XCTAssertEqual(headers["X-Client-ID"], porsche.xClientId)
+        XCTAssertNil(headers["ccsp-service-id"])
+    }
 }

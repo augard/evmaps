@@ -317,7 +317,7 @@ extension VehicleStatus {
         let chargingInformation = green.chargingInformation
         let batteryManagement = green.batteryManagement
         let driveTrain = drivetrain
-        let batteryCapacity = estimatedBatteryCapacity(from: batteryManagement)
+        let batteryCapacity = batteryManagement.batteryCapacity ?? estimatedBatteryCapacity(from: batteryManagement)
         let batteryRemain = Float(batteryManagement.batteryRemain.ratio)
 
         result = .init(code: .success, userActivity: nil)
@@ -336,7 +336,7 @@ extension VehicleStatus {
         result.currentBatteryCapacity = .init(value: batteryCapacity * 0.01 * Double(batteryRemain), unit: .kilojoules)
         result.maximumBatteryCapacity = .init(value: batteryCapacity, unit: .kilojoules)
 
-        result.charging = isCharging
+        result.charging = isActivelyCharging
         if result.charging == true {
             let charging = chargingInformation.charging
             let measurement = Measurement<UnitDuration>(value: charging.remainTime, unit: charging.remainTimeUnit.unitDuration)

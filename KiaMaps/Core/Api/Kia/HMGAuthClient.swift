@@ -345,6 +345,13 @@ struct HMGAuthClient {
         return components.queryItems?.first(where: { $0.name == "connector_session_key" })?.value
     }
 
+    func authorizationCallback(from url: URL) throws -> AuthorizationCallback? {
+        let callbackURL = URL(string: "\(configuration.baseHost):\(configuration.port)/api/v1/user/oauth2/redirect")
+        guard url.scheme == callbackURL?.scheme, url.host == callbackURL?.host,
+              url.port == callbackURL?.port, url.path == callbackURL?.path else { return nil }
+        return try extractAuthorizationCode(from: url)
+    }
+
     func extractAuthorizationCode(from location: URL) throws -> (code: String, state: String, loginSuccess: Bool) {
         guard let components = URLComponents(url: location, resolvingAgainstBaseURL: false),
               let queryItems = components.queryItems,

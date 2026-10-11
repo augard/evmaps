@@ -122,7 +122,8 @@ enum KiaVehicleStatusMapper {
                     batteryRemain: .init(
                         value: state.green.batteryManagement.batteryRemain.value,
                         ratio: state.green.batteryManagement.batteryRemain.ratio
-                    )
+                    ),
+                    batteryCapacity: state.green.batteryManagement.batteryCapacity.value
                 ),
                 electric: .init(
                     smartGrid: .init(

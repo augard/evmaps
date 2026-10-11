@@ -28,6 +28,11 @@ struct VehicleStatus: Codable {
         return isConnectorFastened && chargingDoorOpen
     }
 
+    /// Energy is flowing into the battery (plugged in alone may be scheduled, paused, or finished).
+    var isActivelyCharging: Bool {
+        green.chargingInformation.electricCurrentLevel.state == 1
+    }
+
     struct Body: Codable {
         let hood: Hood
         let trunk: Trunk
@@ -192,6 +197,8 @@ struct VehicleStatus: Codable {
         struct BatteryManagement: Codable {
             let soH: SoH
             let batteryRemain: BatteryRemain
+            /// Reported usable capacity in kilojoules. Nil for snapshots cached before it was mapped.
+            var batteryCapacity: Double? = nil
 
             struct SoH: Codable {
                 let ratio: Double

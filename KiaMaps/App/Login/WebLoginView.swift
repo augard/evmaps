@@ -78,11 +78,8 @@ class LoginWebViewDelegate: NSObject, WKNavigationDelegate {
             return .cancel
         }
 
-        let callbackURL = URL(string: "\(api.configuration.baseHost):\(api.configuration.port)/api/v1/user/oauth2/redirect")
-        guard url.scheme == callbackURL?.scheme, url.host == callbackURL?.host,
-              url.port == callbackURL?.port, url.path == callbackURL?.path else { return .allow }
         do {
-            let extract = try api.extractAuthorizationCode(from: url)
+            guard let extract = try api.authorizationCallback(from: url) else { return .allow }
             guard !extract.code.isEmpty, extract.loginSuccess else {
                 fail("Login failed. The provider did not confirm a successful sign-in.")
                 return .cancel

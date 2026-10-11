@@ -9,8 +9,12 @@
 import Foundation
 import os.log
 
+typealias AuthorizationCallback = (code: String, state: String, loginSuccess: Bool)
+
 protocol VehicleApiProvider {
     func webLoginUrl() throws -> URL?
+    /// Parses a web-login navigation. Returns nil when the URL is not this provider's OAuth callback.
+    func authorizationCallback(from url: URL) throws -> AuthorizationCallback?
     func login(username: String, password: String, recaptchaToken: String?) async throws -> AuthorizationData
     func login(authorizationCode: String) async throws -> AuthorizationData
     func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData
@@ -44,6 +48,9 @@ final class HMGVehicleApiProvider: VehicleApiProvider {
     }
 
     func webLoginUrl() throws -> URL? { try authClient.makeAuthorizeURL() }
+    func authorizationCallback(from url: URL) throws -> AuthorizationCallback? {
+        try authClient.authorizationCallback(from: url)
+    }
     func login(username: String, password: String, recaptchaToken: String?) async throws -> AuthorizationData {
         try await authClient.authenticate(username: username, password: password, recaptchaToken: recaptchaToken)
     }
@@ -74,15 +81,18 @@ final class PorscheVehicleApiProvider: VehicleApiProvider {
     private unowned let api: Api
     private let authClient: PorscheAuthClient
     private let commandPollIntervalNanoseconds: UInt64
+    private let storeAuthorization: (AuthorizationData) -> Void
     private var vinByVehicleID: [UUID: String] = [:]
 
     init(
         api: Api,
         authClient: PorscheAuthClient? = nil,
-        commandPollIntervalNanoseconds: UInt64 = 1_000_000_000
+        commandPollIntervalNanoseconds: UInt64 = 1_000_000_000,
+        storeAuthorization: @escaping (AuthorizationData) -> Void = { Authorization.store(data: $0) }
     ) {
         self.api = api
         self.commandPollIntervalNanoseconds = commandPollIntervalNanoseconds
+        self.storeAuthorization = storeAuthorization
         if let authClient {
             self.authClient = authClient
         } else {
@@ -92,6 +102,10 @@ final class PorscheVehicleApiProvider: VehicleApiProvider {
 
     func webLoginUrl() throws -> URL? {
         try authClient.makeAuthorizeURL()
+    }
+
+    func authorizationCallback(from url: URL) throws -> AuthorizationCallback? {
+        try authClient.authorizationCallback(from: url)
     }
 
     func login(username: String, password: String, recaptchaToken _: String?) async throws -> AuthorizationData {
@@ -196,7 +210,8 @@ final class PorscheVehicleApiProvider: VehicleApiProvider {
             providerKind: "porsche",
             tokenIssuer: configuration.loginHost,
             tokenAudience: configuration.audience,
-            tokenScope: tokenSet.scope ?? configuration.scope
+            tokenScope: tokenSet.scope ?? configuration.scope,
+            source: existing?.source
         )
     }
 
@@ -249,6 +264,7 @@ final class PorscheVehicleApiProvider: VehicleApiProvider {
             let refreshedTokens = try await authClient.refreshToken(authorization.refreshToken)
             let refreshedAuthorization = authorizationData(from: refreshedTokens, existing: authorization)
             api.authorization = refreshedAuthorization
+            storeAuthorization(refreshedAuthorization)
             return try await authorizedJSONObject(
                 endpoint: endpoint,
                 method: method,
@@ -274,8 +290,13 @@ final class PorscheVehicleApiProvider: VehicleApiProvider {
             throw PorscheApiError.missingCommandRequestId
         }
 
-        let initialState = (status["result"] as? String).flatMap(PorscheCommandExecutionState.init(rawValue:)) ?? .unknown
-        if initialState == .accepted {
+        let resultString = (status["result"] as? String) ?? "UNKNOWN"
+        switch PorscheCommandExecutionState(rawValue: resultString) ?? .unknown {
+        case .performed:
+            break
+        case .error:
+            throw PorscheApiError.commandFailed(resultString)
+        case .accepted, .unknown:
             try await pollCommand(vin: request.vin, requestID: requestID)
         }
         return requestID
@@ -398,6 +419,10 @@ class Api {
 
     func extractAuthorizationCode(from location: URL) throws -> (code: String, state: String, loginSuccess: Bool) {
         try hmgAuthClient.extractAuthorizationCode(from: location)
+    }
+
+    func authorizationCallback(from url: URL) throws -> AuthorizationCallback? {
+        try vehicleApiProvider.authorizationCallback(from: url)
     }
 
     /// Logout user and clean up session data

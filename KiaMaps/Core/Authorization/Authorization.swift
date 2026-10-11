@@ -58,7 +58,7 @@ struct AuthorizationData: Codable {
     /// - Parameter configuration: API configuration for header generation
     /// - Returns: Dictionary of authorization headers
     func authorizatioHeaders(for configuration: ApiConfiguration) -> ApiRequest.Headers {
-        if providerKind == "porsche" {
+        if providerKind == "porsche" || configuration is PorscheApiConfiguration {
             var headers: ApiRequest.Headers = [
                 "Authorization": "Bearer \(accessToken)",
             ]
