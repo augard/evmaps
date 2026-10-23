@@ -21,12 +21,16 @@ struct LoginWebView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> WKWebView {
+        Self.makeWebView(navigationDelegate: context.coordinator)
+    }
+
+    static func makeWebView(navigationDelegate: WKNavigationDelegate) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         configuration.applicationNameForUserAgent = "15E148_CCS_APP_iOS"
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.isInspectable = true
-        webView.navigationDelegate = context.coordinator
+        webView.navigationDelegate = navigationDelegate
         return webView
     }
 
@@ -226,7 +230,7 @@ struct WebLoginView: View {
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    showError(message: "An unexpected error occurred. Please try again.")
+                    showError(message: error.localizedDescription)
                 }
             }
         }

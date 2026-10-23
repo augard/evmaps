@@ -10,6 +10,13 @@ final class WebLoginNavigationTests: XCTestCase {
         return LoginWebViewDelegate(api: api, callback: nil)
     }
 
+    private func callbackURL(for delegate: LoginWebViewDelegate, query: String) throws -> URL {
+        let url = try XCTUnwrap(delegate.api.webLoginUrl())
+        let state = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
+            .first(where: { $0.name == "state" })?.value)
+        return try XCTUnwrap(URL(string: "https://oneapp.kia.com/redirect?state=\(state)&\(query)"))
+    }
+
     func testBlockedRedirectReportsFailureEvenWhenErrorPageReturnsHTTP200() throws {
         let delegate = makeDelegate()
         var failure: String?
@@ -38,7 +45,7 @@ final class WebLoginNavigationTests: XCTestCase {
             XCTAssertTrue(success)
         }
         delegate.onFailure = { XCTFail($0) }
-        let url = try XCTUnwrap(URL(string: "https://prd.eu-ccapi.kia.com:8080/api/v1/user/oauth2/redirect?code=test-code&state=ccsp&login_success=y"))
+        let url = try callbackURL(for: delegate, query: "code=test-code")
 
         XCTAssertEqual(delegate.policy(for: url), .cancel)
         XCTAssertEqual(receivedCode, "test-code")
@@ -49,7 +56,7 @@ final class WebLoginNavigationTests: XCTestCase {
         var failure: String?
         delegate.onFailure = { failure = $0 }
         delegate.callback = { _, _, _ in XCTFail("Malformed callback must not complete login") }
-        let url = try XCTUnwrap(URL(string: "https://prd.eu-ccapi.kia.com:8080/api/v1/user/oauth2/redirect?login_success=y"))
+        let url = try callbackURL(for: delegate, query: "login_success=y")
 
         XCTAssertEqual(delegate.policy(for: url), .cancel)
         XCTAssertTrue(try XCTUnwrap(failure).contains("did not return an authorization code"))
@@ -60,7 +67,7 @@ final class WebLoginNavigationTests: XCTestCase {
         var failure: String?
         delegate.onFailure = { failure = $0 }
         delegate.callback = { _, _, _ in XCTFail("Failed callback must not complete login") }
-        let url = try XCTUnwrap(URL(string: "https://prd.eu-ccapi.kia.com:8080/api/v1/user/oauth2/redirect?code=test-code&login_success=n"))
+        let url = try callbackURL(for: delegate, query: "error=access_denied")
 
         XCTAssertEqual(delegate.policy(for: url), .cancel)
         XCTAssertNotNil(failure)
@@ -70,8 +77,8 @@ final class WebLoginNavigationTests: XCTestCase {
         let delegate = makeDelegate()
         delegate.callback = { _, _, _ in XCTFail("Untrusted origin must not complete login") }
         delegate.onFailure = { XCTFail($0) }
-        for origin in ["https://example.test:8080", "http://prd.eu-ccapi.kia.com:8080", "https://prd.eu-ccapi.kia.com"] {
-            let url = try XCTUnwrap(URL(string: "\(origin)/api/v1/user/oauth2/redirect?code=test-code&login_success=y"))
+        for origin in ["https://example.test", "http://oneapp.kia.com", "https://oneapp.kia.com:8080"] {
+            let url = try XCTUnwrap(URL(string: "\(origin)/redirect?code=test-code&login_success=y"))
             XCTAssertEqual(delegate.policy(for: url), .allow)
         }
     }

@@ -39,28 +39,52 @@ enum VehicleApiProviderFactory {
 }
 
 final class HMGVehicleApiProvider: VehicleApiProvider {
+    private unowned let api: Api
     private let authClient: HMGAuthClient
     private let vehicleClient: HMGVehicleClient
+    private let kiaLogin: KiaOneAppAuthentication?
 
     init(api: Api) {
+        self.api = api
         authClient = api.hmgAuthClient
         vehicleClient = HMGVehicleClient(provider: api.provider)
+        kiaLogin = api.configuration.key == "kia"
+            ? KiaOneAppAuthentication(configuration: api.configuration, rsaService: api.rsaService) : nil
     }
 
-    func webLoginUrl() throws -> URL? { try authClient.makeAuthorizeURL() }
+    func webLoginUrl() throws -> URL? {
+        if let kiaLogin { return try kiaLogin.authorizationURL() }
+        return try authClient.makeAuthorizeURL()
+    }
     func authorizationCallback(from url: URL) throws -> AuthorizationCallback? {
-        try authClient.authorizationCallback(from: url)
+        if let kiaLogin {
+            guard kiaLogin.isCallback(url) else { return nil }
+            return (try kiaLogin.authorizationCode(from: url), kiaLogin.state, true)
+        }
+        return try authClient.authorizationCallback(from: url)
     }
     func login(username: String, password: String, recaptchaToken: String?) async throws -> AuthorizationData {
-        try await authClient.authenticate(username: username, password: password, recaptchaToken: recaptchaToken)
+        if let kiaLogin {
+            let authorization = try await kiaLogin.login(username: username, password: password)
+            api.authorization = authorization
+            return authorization
+        }
+        return try await authClient.authenticate(username: username, password: password, recaptchaToken: recaptchaToken)
     }
 
     func login(authorizationCode: String) async throws -> AuthorizationData {
-        try await authClient.exchangeAuthorizationCode(authorizationCode)
+        if let kiaLogin {
+            let authorization = try await kiaLogin.login(authorizationCode: authorizationCode)
+            api.authorization = authorization
+            return authorization
+        }
+        return try await authClient.exchangeAuthorizationCode(authorizationCode)
     }
 
     func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData {
-        try await authClient.refreshAuthorization(authorization)
+        // CCI refresh requires its complete token set; never send its refresh token to legacy OAuth.
+        guard authorization.effectiveSource != .oneApp else { throw KiaLoginError.reauthenticationRequired }
+        return try await authClient.refreshAuthorization(authorization)
     }
 
     func logout() async throws { try await authClient.logout() }

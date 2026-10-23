@@ -15,6 +15,7 @@ struct AuthorizationData: Codable {
     enum Source: String, Codable {
         case legacy
         case external
+        case oneApp
     }
 
     /// Authorization stamp for request validation

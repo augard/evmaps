@@ -21,7 +21,7 @@ struct LoginView: View {
     let configuration: AppConfiguration.Type
     let onLoginSuccess: (AuthorizationData) -> Void
     
-    init(mode: LoginMode = .authorizationImport, configuration: AppConfiguration.Type, onLoginSuccess: @escaping (AuthorizationData) -> Void) {
+    init(mode: LoginMode = .webView, configuration: AppConfiguration.Type, onLoginSuccess: @escaping (AuthorizationData) -> Void) {
         self.mode = mode
         self.configuration = configuration
         self.onLoginSuccess = onLoginSuccess
@@ -42,6 +42,19 @@ struct LoginView: View {
         .background(KiaDesign.Colors.background)
         .navigationTitle("Login to \(configuration.apiConfiguration.brandName)")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            Menu("Sign-in options", systemImage: "ellipsis.circle") {
+                NavigationLink("Web Login") {
+                    LoginView(mode: .webView, configuration: configuration, onLoginSuccess: onLoginSuccess)
+                }
+                NavigationLink("Email and password") {
+                    LoginView(mode: .credentials, configuration: configuration, onLoginSuccess: onLoginSuccess)
+                }
+                NavigationLink("Import authorization") {
+                    LoginView(mode: .authorizationImport, configuration: configuration, onLoginSuccess: onLoginSuccess)
+                }
+            }
+        }
     }
 }
 

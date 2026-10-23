@@ -1,4 +1,5 @@
 ---
+summary: Kia EU login diagnostics and authorization-bundle import.
 read_when:
   - Diagnosing Kia EU sign-in failures or changing web login navigation
 ---
@@ -19,16 +20,13 @@ SwiftUI updates preserve the coordinator and do not restart the initial request
 after an OAuth redirect. URL construction failures are reported rather than
 discarded with `try?`.
 
-This change improves diagnostics; it does not restore access to the blocked
-legacy authorization flow. The authentication and refresh implementation remains
-available only for existing legacy sessions. A replacement requires a
-Kia-authorized client and documented access to the appropriate authentication
-service. The private OneApp client identity used by upstream workarounds is not
-copied here.
+Kia now uses the OneApp authorization and CCS token-exchange flow to restore
+sign-in. See [Kia login](kia-login.md) for the current protocol and verification.
+The existing diagnostics still handle blocked pages and navigation failures.
 
 ## Authorized token import
 
-Kia login now opens an authorization-bundle importer by default. It accepts JSON
+The Sign-in options menu retains an authorization-bundle importer. It accepts JSON
 issued by an approved Kia integration or a local broker. The token must be
 valid for this app's configured EU vehicle API; importing a token does not
 translate between Kia API generations:
