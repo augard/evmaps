@@ -39,7 +39,7 @@ struct MainView: View {
     @State var state: ViewState
     @State var vehicles: [Vehicle] = []
     @State var selectedVehicle: Vehicle? = nil
-    @State var selectedVehicleState: VehicleStateResponse? = nil
+    @State var selectedVehicleState: VehicleStatusSnapshot? = nil
     @State var isSelectedVahicleExpanded = true
     @State var lastUpdateDate: Date?
     @State var showingProfile = false
@@ -47,7 +47,7 @@ struct MainView: View {
     
     // MQTT Integration State
     @StateObject private var mqttManager: MQTTManager
-    @State private var currentVehicleState: VehicleState?
+    @State private var currentVehicleState: VehicleStatus?
     @State private var mqttConnectionStatus: MQTTConnectionStatus = .disconnected
     @State private var receivedMQTTUpdate = false
 
@@ -115,7 +115,7 @@ struct MainView: View {
         .onAppear {
             setupMQTTIntegration()
         }
-        .onChange(of: selectedVehicleState?.state.vehicle.isCharging) { _, isCharging in
+        .onChange(of: selectedVehicleState?.status.isCharging) { _, isCharging in
             handleChargingStateChange(isCharging ?? false)
         }
         .onChange(of: mqttManager.connectionStatus) { _, connectionStatus in
@@ -133,7 +133,7 @@ struct MainView: View {
     var contentView: some View {
         if let selectedVehicle = selectedVehicle, let selectedVehicleState = selectedVehicleState {
             // Use MQTT-updated status if available, otherwise use API status
-            let currentStatus = currentVehicleState ?? selectedVehicleState.state.vehicle
+            let currentStatus = currentVehicleState ?? selectedVehicleState.status
             
             OverviewPageView(
                 brandName: api.configuration.brandName,
@@ -156,7 +156,7 @@ struct MainView: View {
     
     // MARK: - Vehicle Status Icons (for toolbar)
     
-    private func VehicleStateIcons(status: VehicleStateResponse) -> some View {
+    private func VehicleStateIcons(status: VehicleStatusSnapshot) -> some View {
         HStack(spacing: KiaDesign.Spacing.small) {
             // Last update indicator
             VStack(spacing: 2) {
@@ -170,7 +170,7 @@ struct MainView: View {
             }
             
             // Battery status
-            let batteryLevel = status.state.vehicle.green.batteryManagement.batteryRemain.ratio
+            let batteryLevel = status.status.green.batteryManagement.batteryRemain.ratio
             VStack(spacing: 2) {
                 if batteryLevel > 80 {
                     Image(systemName: "battery.100percent")
@@ -192,7 +192,7 @@ struct MainView: View {
             }
             
             // Charging status (if applicable)
-            if status.state.vehicle.isCharging {
+            if status.status.isCharging {
                 VStack(spacing: 2) {
                     Image(systemName: "bolt.circle.fill")
                         .font(.caption)
@@ -218,7 +218,7 @@ struct MainView: View {
             }
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Vehicle status: \(Int(status.state.vehicle.green.batteryManagement.batteryRemain.ratio))% battery, \(status.state.vehicle.drivingReady ? "ready" : "not ready"), updated \(timeAgoString(from: status.lastUpdateTime))")
+        .accessibilityLabel("Vehicle status: \(Int(status.status.green.batteryManagement.batteryRemain.ratio))% battery, \(status.status.drivingReady ? "ready" : "not ready"), updated \(timeAgoString(from: status.lastUpdateTime))")
     }
     
     // MARK: - Helper Views
@@ -276,9 +276,9 @@ struct MainView: View {
             if let cachedVehicle = try? manager.vehicleState {
                 selectedVehicleState = cachedVehicle
             } else {
-                let VehicleState = try await api.vehicleCachedStatusWithAutoRefresh(vehicle.vehicleId)
-                try manager.store(status: VehicleState)
-                selectedVehicleState = VehicleState
+                let vehicleStatus = try await api.vehicleCachedStatusWithAutoRefresh(vehicle.vehicleId)
+                try manager.store(status: vehicleStatus)
+                selectedVehicleState = vehicleStatus
             }
 
             state = .authorized
@@ -360,7 +360,7 @@ struct MainView: View {
         mqttConnectionStatus = mqttManager.connectionStatus
         
         // Start MQTT if car is already charging
-        if selectedVehicleState?.state.vehicle.isCharging == true {
+        if selectedVehicleState?.status.isCharging == true {
             startMQTTCommunication()
         }
     }
@@ -370,21 +370,16 @@ struct MainView: View {
         guard let VehicleState = VehicleState else { return }
         receivedMQTTUpdate = true
 
-        if let status = selectedVehicleState {
+        let status = KiaVehicleStatusMapper.map(state: VehicleState.state.vehicle)
+        if selectedVehicleState != nil {
             selectedVehicleState = .init(
-                resultCode: status.resultCode,
-                serviceNumber: status.serviceNumber,
-                returnCode: status.returnCode,
                 lastUpdateTime: VehicleState.lastUpdateTime,
-                state: .init(vehicle: VehicleState.state.vehicle)
+                status: status
             )
         } else {
             selectedVehicleState = .init(
-                resultCode: "S",
-                serviceNumber: "0",
-                returnCode: "0",
                 lastUpdateTime: VehicleState.lastUpdateTime,
-                state: .init(vehicle: VehicleState.state.vehicle)
+                status: status
             )
         }
     }

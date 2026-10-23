@@ -21,7 +21,7 @@ struct RootView: View {
 
     private var rootStep: NavigationDestination {
         let credentials = LoginCredentialManager.retrieveCredentials()
-        if isAuthorized || (credentials?.username.isEmpty == false && credentials?.password.isEmpty == false) {
+        if isAuthorized {
             return .main
         } else if credentials?.username.isEmpty == false || credentials?.password.isEmpty == false {
             return .login

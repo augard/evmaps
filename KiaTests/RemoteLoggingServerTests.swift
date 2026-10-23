@@ -25,11 +25,19 @@ final class RemoteLoggingServerTests: XCTestCase {
         // Ensure server is stopped before each test
         server.stop()
         server.clearLogs()
+        server.filterText = ""
+        server.selectedLevel = nil
+        server.selectedSource = nil
+        server.selectedCategory = nil
     }
     
     override func tearDownWithError() throws {
         server?.stop()
         server?.clearLogs()
+        server?.filterText = ""
+        server?.selectedLevel = nil
+        server?.selectedSource = nil
+        server?.selectedCategory = nil
         cancellables?.removeAll()
         
         try super.tearDownWithError()

@@ -11,6 +11,9 @@ import SwiftUI
 @testable import KiaMaps
 
 final class UIComponentMockDataTests: XCTestCase {
+    private func mappedStatus(_ state: VehicleState) -> VehicleStatus {
+        KiaVehicleStatusMapper.map(state: state)
+    }
     
     // MARK: - CircularBatteryView Tests
     
@@ -78,7 +81,7 @@ final class UIComponentMockDataTests: XCTestCase {
         ]
 
         for (index, VehicleState) in scenarios.enumerated() {
-            let view = BatteryHeroView(from: VehicleState)
+            let view = BatteryHeroView(from: mappedStatus(VehicleState))
             
             // View should be created successfully
             XCTAssertNotNil(view)
@@ -109,7 +112,7 @@ final class UIComponentMockDataTests: XCTestCase {
         var locateActionCalled = false
         
         let view = QuickActionsView(
-            VehicleState: MockVehicleData.standard,
+            VehicleState: mappedStatus(MockVehicleData.standard),
             onLockAction: { lockActionCalled = true },
             onClimateAction: { climateActionCalled = true },
             onHornAction: { hornActionCalled = true },
@@ -248,8 +251,8 @@ final class UIComponentMockDataTests: XCTestCase {
     func testVehicleSilhouetteViewWithMockData() {
         let VehicleState = MockVehicleData.preconditioning
         
-        let view = VehicleSilhouetteView(vehicleState: VehicleState)
-        
+        let view = VehicleSilhouetteView(vehicleState: mappedStatus(VehicleState))
+
         // View should be created successfully
         XCTAssertNotNil(view)
         
@@ -259,8 +262,8 @@ final class UIComponentMockDataTests: XCTestCase {
     
     func testVehicleSilhouetteViewDoorStates() {
         let VehicleState = MockVehicleData.standard
-        let view = VehicleSilhouetteView(vehicleState: VehicleState)
-        
+        let view = VehicleSilhouetteView(vehicleState: mappedStatus(VehicleState))
+
         XCTAssertNotNil(view)
         
         // All doors should be closed and locked
@@ -283,7 +286,7 @@ final class UIComponentMockDataTests: XCTestCase {
             isCharging: isCharging
         )
         
-        let batteryHero = BatteryHeroView(from: VehicleState)
+        let batteryHero = BatteryHeroView(from: mappedStatus(VehicleState))
         
         let progressBar = KiaProgressBar(
             value: batteryLevel,
@@ -335,10 +338,10 @@ final class UIComponentMockDataTests: XCTestCase {
                 isCharging: MockVehicleData.isCharging(VehicleState)
             )
             
-            _ = BatteryHeroView(from: VehicleState)
+            _ = BatteryHeroView(from: mappedStatus(VehicleState))
             
             _ = QuickActionsView(
-                VehicleState: VehicleState,
+                VehicleState: mappedStatus(VehicleState),
                 onLockAction: {},
                 onClimateAction: {},
                 onHornAction: {},

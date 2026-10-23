@@ -13,6 +13,7 @@ enum ApiBrand: String {
     case kia
     case hyundai
     case genesis
+    case porsche
 
     /// Returns the appropriate API configuration for the brand and region combination
     /// - Parameter region: The geographic region for API endpoints
@@ -22,15 +23,29 @@ enum ApiBrand: String {
         case .kia, .hyundai, .genesis:
             switch region {
             case .europe:
-                guard let configuration = ApiConfigurationEurope(rawValue: rawValue) else {
+                guard let configuration = KiaApiConfigurationEurope(rawValue: rawValue) else {
                     fatalError("Api region not supported")
                 }
                 return configuration
             case .usa, .canada, .china, .korea:
                 fatalError("Api region not supported")
             }
+        case .porsche:
+            switch region {
+            case .europe:
+                return PorscheApiConfiguration.europe
+            case .usa:
+                return PorscheApiConfiguration.usa
+            case .canada, .china, .korea:
+                fatalError("Api region not supported")
+            }
         }
     }
+}
+
+enum ApiProviderKind {
+    case hmg
+    case porsche
 }
 
 /// Protocol defining required configuration properties for API communication
@@ -85,153 +100,157 @@ protocol ApiConfiguration {
 
     /// Push notification type ("APNS" for iOS, "GCM" for Android)
     var pushType: String { get }
+
+    /// Backend provider kind.
+    var apiProviderKind: ApiProviderKind { get }
 }
 
-/// European region API configuration for supported vehicle brands
-/// Provides brand-specific endpoints, credentials, and service identifiers for EU market
-enum ApiConfigurationEurope: String, ApiConfiguration {
-    case kia
-    case hyundai
-    case genesis
+enum PorscheApiConfiguration: String, ApiConfiguration {
+    case europe
+    case usa
 
     var key: String {
-        switch self {
-        case .kia:
-            "kia"
-        case .hyundai:
-            "hyundai"
-        case .genesis:
-            "genesis"
-        }
+        "porsche"
     }
 
     var name: String {
-        switch self {
-        case .kia:
-            "Kia"
-        case .hyundai:
-            "Hyundai"
-        case .genesis:
-            "Genesis"
-        }
+        "Porsche"
     }
 
     var port: Int {
-        switch self {
-        case .kia:
-            8080
-        case .hyundai, .genesis:
-            443
-        }
+        443
     }
 
     var serviceAgent: String {
-        "okhttp/3.12.0"
+        "PorscheConnect/1.0"
     }
 
     var userAgent: String {
         let device = UIDevice.current
-        return "EU_BlueLink/2.1.18 (com.kia.connect.eu; build:10560; \(device.systemName) \(device.systemVersion)) Alamofire/5.8.0"
+        return "MyPorscheApp/1.0 (\(device.systemName) \(device.systemVersion))"
     }
 
     var acceptHeader: String {
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+        "application/json"
     }
 
+    // HMG-only host fields; kept for protocol compatibility.
     var baseHost: String {
         switch self {
-        case .kia:
-            "https://prd.eu-ccapi.kia.com"
-        case .hyundai:
-            "https://prd.eu-ccapi.hyundai.com"
-        case .genesis:
-            "https://prd-eu-ccapi.genesis.com"
+        case .europe:
+            "https://api.ppa.porsche.com"
+        case .usa:
+            "https://api.ppa.porsche.com"
         }
     }
 
     var loginHost: String {
-        "https://idpconnect-eu.\(key).com"
+        "https://identity.porsche.com"
     }
 
     var mqttHost: String {
-        "https://egw-svchub-ccs-\(brandCode.lowercased())-eu.eu-central.hmgmobility.com:31010"
+        "https://api.ppa.porsche.com"
     }
 
     var serviceId: String {
         switch self {
-        case .kia:
-            "fdc85c00-0a2f-4c64-bcb4-2cfb1500730a"
-        case .hyundai:
-            "6d477c38-3ca4-4cf3-9557-2a1929a94654"
-        case .genesis:
-            "3020afa2-30ff-412a-aa51-d28fbe901e10"
+        case .europe:
+            "porsche-eu-service"
+        case .usa:
+            "porsche-us-service"
         }
     }
 
     var appId: String {
-        switch self {
-        case .kia:
-            "a2b8469b-30a3-4361-8e13-6fceea8fbe74"
-        case .hyundai:
-            "014d2225-8495-4735-812d-2616334fd15d"
-        case .genesis:
-            "f11f2b86-e0e7-4851-90df-5600b01d8b70"
-        }
+        "porsche-app-id"
     }
 
     var senderId: Int {
-        199_360_397_125
+        0
     }
 
     var authClientId: String {
-        switch self {
-        case .kia:
-            "572e0304-5f8d-4b4c-9dd5-41aa84eed160"
-        case .hyundai:
-            "64621b96-0f0d-11ec-82a8-0242ac130003"
-        case .genesis:
-            "3020afa2-30ff-412a-aa51-d28fbe901e10"
-        }
+        "XhygisuebbrqQ80byOuU5VncxLIm8E6H"
+    }
+
+    var xClientId: String {
+        "41843fb4-691d-4970-85c7-2673e8ecef40"
     }
 
     var cfb: String {
-        switch self {
-        case .kia:
-            "wLTVxwidmH8CfJYBWSnHD6E0huk0ozdiuygB4hLkM5XCgzAL1Dk5sE36d/bx5PFMbZs="
-        case .hyundai:
-            "RFtoRq/vDXJmRndoZaZQyfOot7OrIqGVFj96iY2WL3yyH5Z/pUvlUhqmCxD2t+D65SQ="
-        case .genesis:
-            "RFtoRq/vDXJmRndoZaZQyYo3/qFLtVReW8P7utRPcc0ZxOzOELm9mexvviBk/qqIp4A="
-        }
+        // No HMG-style stamp for Porsche.
+        "cG9yc2NoZS1tb2NrLWNmYi10b2tlbi0xMjM0NTY3ODkwMTIzNA=="
     }
 
     var brandCode: String {
-        switch self {
-        case .kia:
-            "K"
-        case .hyundai:
-            "H"
-        case .genesis:
-            "G"
-        }
+        "P"
     }
 
     var brandName: String {
-        switch self {
-        case .kia:
-            "Kia"
-        case .hyundai:
-            "Hyundai"
-        case .genesis:
-            "Genesis"
-        }
+        "Porsche"
     }
 
     var pushType: String {
-        if self == .kia {
-            "APNS"
-        } else {
-            "GCM"
+        "APNS"
+    }
+
+    var apiProviderKind: ApiProviderKind {
+        .porsche
+    }
+
+    var audience: String {
+        "https://api.porsche.com"
+    }
+
+    var redirectUri: String {
+        "my-porsche-app://auth0/callback"
+    }
+
+    var scope: String {
+        [
+            "openid",
+            "profile",
+            "email",
+            "offline_access",
+            "mbb",
+            "ssodb",
+            "badge",
+            "vin",
+            "dealers",
+            "cars",
+            "charging",
+            "manageCharging",
+            "plugAndCharge",
+            "climatisation",
+            "manageClimatisation",
+            "pid:user_profile.porscheid:read",
+            "pid:user_profile.name:read",
+            "pid:user_profile.vehicles:read",
+            "pid:user_profile.dealers:read",
+            "pid:user_profile.emails:read",
+            "pid:user_profile.phones:read",
+            "pid:user_profile.addresses:read",
+            "pid:user_profile.birthdate:read",
+            "pid:user_profile.locale:read",
+            "pid:user_profile.legal:read",
+        ].joined(separator: " ")
+    }
+
+    var appApiBaseURL: String {
+        switch self {
+        case .europe:
+            "https://api.ppa.porsche.com/app"
+        case .usa:
+            "https://api.ppa.porsche.com/app"
+        }
+    }
+
+    var locale: String {
+        switch self {
+        case .europe:
+            "de_DE"
+        case .usa:
+            "en_US"
         }
     }
 }
@@ -274,4 +293,5 @@ struct MockApiConfiguration: ApiConfiguration {
     var brandCode: String = "M"
     var brandName: String = "Mocker"
     var pushType: String = "MOCK"
+    var apiProviderKind: ApiProviderKind = .hmg
 }

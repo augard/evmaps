@@ -24,12 +24,14 @@ final class RemoteLoggerTests: XCTestCase {
         
         // Create RemoteLogger instance
         remoteLogger = RemoteLogger.shared
-        remoteLogger.setEnabled(false) // Start disabled
+        UserDefaults.standard.removeObject(forKey: "RemoteLoggingEnabled")
+        remoteLogger.setEnabled(false)
     }
     
     override func tearDownWithError() throws {
         mockServer?.stop()
         remoteLogger?.setEnabled(false)
+        UserDefaults.standard.removeObject(forKey: "RemoteLoggingEnabled")
         
         try super.tearDownWithError()
     }

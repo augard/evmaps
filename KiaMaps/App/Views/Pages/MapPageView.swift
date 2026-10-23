@@ -11,8 +11,8 @@ import SwiftUI
 /// Map page showing vehicle location and navigation
 struct MapPageView: View {
     let vehicle: Vehicle
-    let vehicleState: VehicleState
-    let vehicleLocation: VehicleLocation
+    let vehicleState: VehicleStatus
+    let vehicleLocation: VehicleStatus.Location
     let isActive: Bool
     
     var body: some View {
@@ -30,8 +30,8 @@ struct MapPageView: View {
 #Preview("Map Page View") {
     MapPageView(
         vehicle: MockVehicleData.mockVehicle,
-        vehicleState: MockVehicleData.standard,
-        vehicleLocation: MockVehicleData.standard.location!,
+        vehicleState: KiaVehicleStatusMapper.map(state: MockVehicleData.standard),
+        vehicleLocation: KiaVehicleStatusMapper.map(state: MockVehicleData.standard).location!,
         isActive: true
     )
 }

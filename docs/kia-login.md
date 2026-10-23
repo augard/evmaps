@@ -46,5 +46,12 @@ without sending account credentials. Normal tests use local HTTP fixtures.
 For UI verification, open Web Login and check that the Kia account form loads.
 Account sign-in and vehicle access require a real Kia account. Credentials,
 callback codes, response bodies, and token headers are never logged by the
-new authentication client. Existing automatic recovery reauthenticates using
-saved email/password; Web Login does not save those credentials.
+new authentication client. OneApp sessions have a distinct stored source so
+their refresh tokens never reach the legacy OAuth endpoint. Automatic recovery
+reauthenticates using saved email/password; Web Login requires signing in again
+after expiry because it does not save those credentials. Full CCI token-set
+refresh is not implemented.
+
+Web Login is the default. The Sign-in options menu also provides email/password
+login and the existing authorization-bundle importer. Imported sessions retain
+their externally managed refresh behavior.

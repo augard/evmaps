@@ -13,7 +13,7 @@ import Combine
 struct OverviewPageView: View {
     let brandName: String
     let vehicle: Vehicle
-    let status: VehicleState
+    let status: VehicleStatus
     let lastUpdateTime: Date
     let isActive: Bool
     let mqttConnectionStatus: MQTTConnectionStatus
@@ -449,7 +449,7 @@ struct OverviewPageView: View {
     OverviewPageView(
         brandName: "Mocker",
         vehicle: MockVehicleData.mockVehicle,
-        status: MockVehicleData.lowTirePressure,
+        status: KiaVehicleStatusMapper.map(state: MockVehicleData.lowTirePressure),
         lastUpdateTime: .now,
         isActive: true,
         mqttConnectionStatus: .disconnected,

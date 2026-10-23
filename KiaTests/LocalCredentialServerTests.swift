@@ -12,15 +12,21 @@ import Network
 
 final class LocalCredentialServerTests: XCTestCase {
     var server: LocalCredentialServer!
-    let testPort: UInt16 = 8766  // Use different port for testing
+    let testPort: UInt16 = 8766
+    let testPassword = "test"
     
     override func setUpWithError() throws {
-        // Use separate server instance for testing to avoid conflicts
-        server = LocalCredentialServer(password: "test")
+        server = LocalCredentialServer(port: testPort, password: testPassword)
+        Authorization.remove()
+        SharedVehicleManager.shared.selectedVehicleVIN = nil
+        UserDefaults.standard.removeObject(forKey: "selectedVehicleVIN")
     }
     
     override func tearDownWithError() throws {
         server.stop()
+        Authorization.remove()
+        SharedVehicleManager.shared.selectedVehicleVIN = nil
+        UserDefaults.standard.removeObject(forKey: "selectedVehicleVIN")
         server = nil
     }
     
@@ -54,7 +60,11 @@ final class LocalCredentialServerTests: XCTestCase {
         SharedVehicleManager.shared.selectedVehicleVIN = "TEST123VIN"
         
         // Create client to test server
-        let client = LocalCredentialClient(extensionIdentifier: "TestExtension")
+        let client = LocalCredentialClient(
+            extensionIdentifier: "TestExtension",
+            serverPort: testPort,
+            serverPassword: testPassword
+        )
         
         let credentials = try await client.fetchCredentials()
         XCTAssertNotNil(credentials)
@@ -69,15 +79,18 @@ final class LocalCredentialServerTests: XCTestCase {
         server.start()
         try await Task.sleep(for: .milliseconds(500))
 
-        // Create client with wrong password
-        let client = LocalCredentialClient(extensionIdentifier: "TestExtension")
-        
-        // Override the password to test rejection
-        // Note: This is a simplified test - in practice we'd need to modify the client
-        // to accept a custom password for testing
-        
-        // For now, test with correct password but check that server validates requests
-        let _ = try await client.fetchCredentials()
+        let client = LocalCredentialClient(
+            extensionIdentifier: "TestExtension",
+            serverPort: testPort,
+            serverPassword: "wrong-password"
+        )
+
+        do {
+            _ = try await client.fetchCredentials()
+            XCTFail("Expected invalid password error")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("Invalid password"))
+        }
 
         server.stop()
     }
@@ -86,9 +99,6 @@ final class LocalCredentialServerTests: XCTestCase {
         server.start()
         try await Task.sleep(for: .milliseconds(500))
 
-        let expectation1 = XCTestExpectation(description: "Client 1 gets response")
-        let expectation2 = XCTestExpectation(description: "Client 2 gets response")
-        
         // Store test data
         let testAuth = AuthorizationData(
             stamp: "test-stamp",
@@ -100,32 +110,20 @@ final class LocalCredentialServerTests: XCTestCase {
         )
         Authorization.store(data: testAuth)
 
-        // Test concurrent access
-        DispatchQueue.global().async {
-            Task {
-                do {
-                    let client1 = LocalCredentialClient(extensionIdentifier: "TestExtension1")
-                    _ = try await client1.fetchCredentials()
-                    expectation1.fulfill()
-                } catch {
-                    XCTFail("Failed to get credentials for TestExtension1")
-                }
-            }
-        }
-        
-        DispatchQueue.global().async {
-            Task {
-                do {
-                    let client2 = LocalCredentialClient(extensionIdentifier: "TestExtension2")
-                    _ = try await client2.fetchCredentials()
-                    expectation2.fulfill()
-                } catch {
-                    XCTFail("Failed to get credentials for TestExtension2")
-                }
-            }
-        }
+        async let response1 = LocalCredentialClient(
+            extensionIdentifier: "TestExtension1",
+            serverPort: testPort,
+            serverPassword: testPassword
+        ).fetchCredentials()
+        async let response2 = LocalCredentialClient(
+            extensionIdentifier: "TestExtension2",
+            serverPort: testPort,
+            serverPassword: testPassword
+        ).fetchCredentials()
 
-        await fulfillment(of: [expectation1, expectation2], timeout: 10.0)
+        let credentials = try await [response1, response2]
+        XCTAssertEqual(credentials.count, 2)
+        XCTAssertTrue(credentials.allSatisfy { $0.authorization?.accessToken == "test-token" })
 
         // Cleanup
         Authorization.remove()
@@ -136,12 +134,14 @@ final class LocalCredentialServerTests: XCTestCase {
         server.start()
         try await Task.sleep(for: .milliseconds(500))
 
-        let expectation = XCTestExpectation(description: "Server handles no credentials gracefully")
-        
         // Ensure no credentials are stored
         Authorization.remove()
 
-        let client = LocalCredentialClient(extensionIdentifier: "TestExtension", serverPassword: "")
+        let client = LocalCredentialClient(
+            extensionIdentifier: "TestExtension",
+            serverPort: testPort,
+            serverPassword: ""
+        )
 
         // Server should still respond, but with nil authorization
         do {
@@ -160,4 +160,3 @@ final class LocalCredentialServerTests: XCTestCase {
         server.stop()
     }
 }
-

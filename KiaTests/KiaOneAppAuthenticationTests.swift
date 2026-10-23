@@ -11,7 +11,7 @@ final class KiaOneAppAuthenticationTests: XCTestCase {
         requests = []
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [KiaLoginURLProtocol.self]
-        login = KiaOneAppAuthentication(configuration: ApiConfigurationEurope.kia, rsaService: .init(),
+        login = KiaOneAppAuthentication(configuration: KiaApiConfigurationEurope.kia, rsaService: .init(),
                                          sessionConfiguration: configuration, state: state)
         KiaLoginURLProtocol.handler = { [unowned self] request in
             self.requests.append(request)
@@ -33,11 +33,10 @@ final class KiaOneAppAuthenticationTests: XCTestCase {
         XCTAssertEqual(parameters["redirect_uri"], "https://oneapp.kia.com/redirect")
         XCTAssertEqual(parameters["state"], state)
 
-        let api = Api(configuration: ApiConfigurationEurope.kia, rsaService: .init())
+        let api = Api(configuration: KiaApiConfigurationEurope.kia, rsaService: .init())
         let webURL = try XCTUnwrap(api.webLoginUrl())
         let callback = URL(string: "https://oneapp.kia.com/redirect?code=web-code&state=\(query(webURL)["state"]!)")!
-        XCTAssertTrue(api.isLoginCallback(callback))
-        let result = try api.extractAuthorizationCode(from: callback)
+        let result = try XCTUnwrap(api.authorizationCallback(from: callback))
         XCTAssertEqual(result.code, "web-code")
         XCTAssertTrue(result.loginSuccess)
     }
@@ -87,8 +86,9 @@ final class KiaOneAppAuthenticationTests: XCTestCase {
 
         XCTAssertEqual(auth.accessToken, "ccs-vehicle-token")
         XCTAssertEqual(auth.refreshToken, "cci-refresh")
+        XCTAssertEqual(auth.effectiveSource, .oneApp)
         XCTAssertEqual(auth.expiresIn, 86400)
-        XCTAssertEqual(auth.authorizatioHeaders(for: ApiConfigurationEurope.kia)["Authorization"], "Bearer ccs-vehicle-token")
+        XCTAssertEqual(auth.authorizatioHeaders(for: KiaApiConfigurationEurope.kia)["Authorization"], "Bearer ccs-vehicle-token")
         let tokenRequest = requests[3]
         XCTAssertEqual(query(tokenRequest.url!)["code"], "auth-code")
         XCTAssertEqual(tokenRequest.url?.host, "cci-api-eu.kia.com")
@@ -171,11 +171,24 @@ final class KiaOneAppAuthenticationTests: XCTestCase {
         XCTAssertNil(requests.last?.value(forHTTPHeaderField: "exchangeable-token"))
     }
 
+    func testOneAppRefreshDoesNotUseLegacyOAuthEndpoint() async throws {
+        let auth = try await login.login(authorizationCode: "code")
+        let stored = try JSONDecoder().decode(AuthorizationData.self, from: JSONEncoder().encode(auth))
+        XCTAssertEqual(stored.effectiveSource, .oneApp)
+        let api = Api(configuration: KiaApiConfigurationEurope.kia, rsaService: .init())
+        do {
+            _ = try await api.refreshAuthorization(stored)
+            XCTFail("CCI tokens must not be submitted to legacy OAuth")
+        } catch KiaLoginError.reauthenticationRequired {
+            XCTAssertEqual(requests.count, 2)
+        }
+    }
+
     func testLiveKiaLoginBootstrap() async throws {
         guard ProcessInfo.processInfo.environment["KIAMAPS_LIVE_AUTH_CHECK"] == "1" else {
             throw XCTSkip("Opt-in public Kia endpoint check; no account credentials submitted")
         }
-        let live = KiaOneAppAuthentication(configuration: ApiConfigurationEurope.kia, rsaService: .init())
+        let live = KiaOneAppAuthentication(configuration: KiaApiConfigurationEurope.kia, rsaService: .init())
         let (key, referer) = try await live.prepareLogin()
         XCTAssertEqual(referer?.host, "prd.eu-ccapi.kia.com")
         XCTAssertEqual(referer?.path, "/web/v1/user/authorize")

@@ -8,7 +8,7 @@ final class KiaWebLoginTests: XCTestCase {
         guard ProcessInfo.processInfo.environment["KIAMAPS_LIVE_AUTH_CHECK"] == "1" else {
             throw XCTSkip("Opt-in real Kia page check in simulator WebKit; no credentials submitted")
         }
-        let api = Api(configuration: ApiConfigurationEurope.kia, rsaService: .init())
+        let api = Api(configuration: KiaApiConfigurationEurope.kia, rsaService: .init())
         let delegate = LoginWebViewDelegate(api: api, callback: nil)
         let webView = LoginWebView.makeWebView(navigationDelegate: delegate)
         webView.frame = CGRect(x: 0, y: 0, width: 390, height: 844)

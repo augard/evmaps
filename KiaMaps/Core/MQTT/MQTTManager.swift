@@ -101,6 +101,9 @@ class MQTTManager: ObservableObject {
      * Activates MQTT communication following the documented sequence
      */
     func activateMQTTCommunication(for vehicleId: UUID) async throws {
+        guard api.configuration.apiProviderKind == .hmg else {
+            throw ApiError.unsupported("MQTT is not supported for Porsche.")
+        }
         logDebug("MQTT 5.0 activation sequence started", category: .mqtt)
         connectionStatus = .connecting
         lastError = nil

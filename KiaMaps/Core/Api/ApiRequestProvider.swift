@@ -74,15 +74,17 @@ class ApiRequestProvider: NSObject {
     ///   - headers: HTTP headers
     ///   - encodable: Object to encode as JSON body
     ///   - timeout: Request timeout
+    ///   - authorization: If authorization header should be set
     /// - Returns: Configured API request
     /// - Throws: Encoding errors
     func request(
         with method: ApiMethod? = nil,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         encodable: Encodable,
-        timeout: TimeInterval = ApiDefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout,
+        authorization: Bool = true
     ) throws -> ApiRequest {
         try requestType.init(
             caller: caller,
@@ -91,7 +93,8 @@ class ApiRequestProvider: NSObject {
             queryItems: queryItems,
             headers: headers,
             encodable: encodable,
-            timeout: timeout
+            timeout: timeout,
+            authorization: authorization
         )
     }
 
@@ -103,14 +106,16 @@ class ApiRequestProvider: NSObject {
     ///   - headers: HTTP headers
     ///   - body: Raw body data
     ///   - timeout: Request timeout
+    ///   - authorization: If authorization header should be set
     /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         body: Data? = nil,
-        timeout: TimeInterval = ApiDefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout,
+        authorization: Bool = true
     ) -> ApiRequest {
         requestType.init(
             caller: caller,
@@ -119,7 +124,8 @@ class ApiRequestProvider: NSObject {
             queryItems: queryItems,
             headers: headers,
             body: body,
-            timeout: timeout
+            timeout: timeout,
+            authorization: authorization
         )
     }
 
@@ -131,14 +137,16 @@ class ApiRequestProvider: NSObject {
     ///   - headers: HTTP headers
     ///   - string: String to encode as UTF-8 body
     ///   - timeout: Request timeout
+    ///   - authorization: If authorization header should be set
     /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         string: String,
-        timeout: TimeInterval = ApiDefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout,
+        authorization: Bool = true
     ) -> ApiRequest {
         requestType.init(
             caller: caller,
@@ -147,7 +155,8 @@ class ApiRequestProvider: NSObject {
             queryItems: queryItems,
             headers: headers,
             body: string.data(using: .utf8),
-            timeout: timeout
+            timeout: timeout,
+            authorization: authorization
         )
     }
 
@@ -159,14 +168,16 @@ class ApiRequestProvider: NSObject {
     ///   - headers: HTTP headers
     ///   - form: Form data dictionary
     ///   - timeout: Request timeout
+    ///   - authorization: If authorization header should be set
     /// - Returns: Configured API request
     func request(
         with method: ApiMethod? = nil,
-        endpoint: ApiEndpoint,
+        endpoint: any ApiEndpointProtocol,
         queryItems: [URLQueryItem] = [],
         headers: ApiRequest.Headers = [:],
         form: ApiRequest.Form,
-        timeout: TimeInterval = ApiDefaultTimeout
+        timeout: TimeInterval = ApiDefaultTimeout,
+        authorization: Bool = true
     ) -> ApiRequest {
         requestType.init(
             caller: caller,
@@ -175,7 +186,8 @@ class ApiRequestProvider: NSObject {
             queryItems: queryItems,
             headers: headers,
             form: form,
-            timeout: timeout
+            timeout: timeout,
+            authorization: authorization
         )
     }
 
@@ -208,4 +220,3 @@ extension ApiRequestProvider: URLSessionTaskDelegate {
         }
     }
 }
-

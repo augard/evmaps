@@ -136,7 +136,7 @@ final class KiaOneAppAuthentication {
         return AuthorizationData(
             stamp: AuthorizationData.generateStamp(for: configuration), deviceId: deviceID,
             accessToken: accessToken, expiresIn: ccs.expiresIn, refreshToken: tokens.refreshToken,
-            isCcuCCS2Supported: true
+            isCcuCCS2Supported: true, source: .oneApp
         )
     }
 
@@ -239,7 +239,7 @@ private struct CCSToken: Decodable {
 }
 
 enum KiaLoginError: LocalizedError {
-    case clientRejected, invalidCallback, credentialsRejected, consentRequired, missingTokens
+    case clientRejected, invalidCallback, credentialsRejected, consentRequired, missingTokens, reauthenticationRequired
     case unexpectedStatus(Int)
 
     var errorDescription: String? {
@@ -254,6 +254,8 @@ enum KiaLoginError: LocalizedError {
             "Kia requires account consent. Use Web Login to accept the terms, then try again."
         case .missingTokens:
             "Kia did not return the tokens needed to connect your vehicle. Please try again."
+        case .reauthenticationRequired:
+            "Your Kia session has expired. Please sign in again."
         case .unexpectedStatus(let status):
             "Kia login returned HTTP \(status). Please try again later."
         }

@@ -201,8 +201,7 @@ private struct DetailItem: View {
 
 // MARK: - Convenience Initializers
 extension BatteryHeroView {
-    /// Create BatteryHeroView from VehicleState
-    init(from status: VehicleState) {
+    init(from status: VehicleStatus) {
         let batteryPercent = status.green.batteryManagement.batteryRemain.ratio
         let dte = status.drivetrain.fuelSystem.dte
         let rangeValue = dte.total
@@ -265,10 +264,15 @@ extension BatteryHeroView {
             }
         }
     }
+
+    /// Create BatteryHeroView from VehicleState
+    init(from status: VehicleState) {
+        self.init(from: KiaVehicleStatusMapper.map(state: status))
+    }
     
     /// Create BatteryHeroView from VehicleStateResponse
     init(from response: VehicleStateResponse) {
-        self.init(from: response.state.vehicle)
+        self.init(from: KiaVehicleStatusMapper.map(response: response).status)
     }
 }
 

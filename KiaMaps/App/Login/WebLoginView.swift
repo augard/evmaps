@@ -10,11 +10,18 @@ import SwiftUI
 import WebKit
 
 struct LoginWebView: UIViewRepresentable {
-    let url: URL?
-    let navigationDelegate: WKNavigationDelegate
+    let url: URL
+    let api: Api
+    let onAuthorization: LoginWebViewDelegate.Callback
+    let onFailure: (String) -> Void
+    let onLoadingChange: (Bool) -> Void
+
+    func makeCoordinator() -> LoginWebViewDelegate {
+        LoginWebViewDelegate(api: api, callback: nil)
+    }
 
     func makeUIView(context: Context) -> WKWebView {
-        Self.makeWebView(navigationDelegate: navigationDelegate)
+        Self.makeWebView(navigationDelegate: context.coordinator)
     }
 
     static func makeWebView(navigationDelegate: WKNavigationDelegate) -> WKWebView {
@@ -28,17 +35,23 @@ struct LoginWebView: UIViewRepresentable {
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        guard let url = url, webView.url == nil else { return }
-        let request = URLRequest(url: url)
-        webView.load(request)
+        let delegate = context.coordinator
+        delegate.callback = onAuthorization
+        delegate.onFailure = onFailure
+        delegate.onLoadingChange = onLoadingChange
+        delegate.loadIfNeeded(url, in: webView)
     }
 }
 
+@MainActor
 class LoginWebViewDelegate: NSObject, WKNavigationDelegate {
     typealias Callback = (_ code: String, _ state: String, _ loginSuccess: Bool) -> Void
 
     let api: Api
     var callback: Callback?
+    var onFailure: ((String) -> Void)?
+    var onLoadingChange: ((Bool) -> Void)?
+    private var requestedURL: URL?
 
     init(api: Api, callback: Callback?) {
         self.api = api
@@ -46,17 +59,83 @@ class LoginWebViewDelegate: NSObject, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
-        if let url = navigationAction.request.url, api.isLoginCallback(url) {
-            guard let extract = try? api.extractAuthorizationCode(from: url) else {
-                callback?("", "", false)
+        guard let url = navigationAction.request.url else { return .allow }
+        return policy(for: url)
+    }
+
+    func loadIfNeeded(_ url: URL, in webView: WKWebView) {
+        // Compare the requested URL, not webView.url: OAuth redirects change the latter.
+        guard requestedURL != url else { return }
+        requestedURL = url
+        webView.load(URLRequest(url: url))
+    }
+
+    func policy(for url: URL) -> WKNavigationActionPolicy {
+        if url.host == URL(string: api.configuration.loginHost)?.host, url.path == "/error" {
+            let description = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?.first(where: { $0.name == "error_description" })?.value ?? ""
+            let blocked = description.replacingOccurrences(of: "+", with: " ")
+                .localizedCaseInsensitiveContains("abusing request")
+            fail(blocked
+                 ? "\(api.configuration.brandName) blocked this login request. Sign-in here is currently unavailable. Check your account in the official \(api.configuration.brandName) app."
+                 : "\(api.configuration.brandName) rejected the login request. Check your account in the official app.")
+            return .cancel
+        }
+
+        do {
+            guard let extract = try api.authorizationCallback(from: url) else { return .allow }
+            guard !extract.code.isEmpty, extract.loginSuccess else {
+                fail("Login failed. The provider did not confirm a successful sign-in.")
                 return .cancel
             }
-            callback?(extract.code, extract.state, extract.loginSuccess)
-            return .cancel
-        } else {
-            print(navigationAction.request.url?.path ?? "no path")
-            return .allow
+            onLoadingChange?(false)
+            callback?(extract.code, extract.state, true)
+        } catch {
+            fail("Login failed. The provider did not return an authorization code.")
         }
+        return .cancel
+    }
+
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        if navigationResponse.isForMainFrame,
+           let response = navigationResponse.response as? HTTPURLResponse,
+           response.statusCode >= 400 {
+            fail("The login page returned HTTP \(response.statusCode). Please try again later.")
+            return .cancel
+        }
+        return .allow
+    }
+
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        onLoadingChange?(true)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        onLoadingChange?(false)
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        navigationFailed(error)
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        navigationFailed(error)
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        fail("The login page stopped responding. Please reopen sign-in.")
+    }
+
+    func navigationFailed(_ error: Error) {
+        let error = error as NSError
+        // Cancelling navigation is expected when intercepting the OAuth callback.
+        guard error.domain != NSURLErrorDomain || error.code != NSURLErrorCancelled else { return }
+        fail("Unable to load the login page. \(error.localizedDescription)")
+    }
+
+    private func fail(_ message: String) {
+        onLoadingChange?(false)
+        onFailure?(message)
     }
 }
 
@@ -64,39 +143,25 @@ struct WebLoginView: View {
     @State private var isLoading: Bool = false
     @State private var errorMessage: String = ""
     @State private var showError: Bool = false
+    @State private var loginURL: URL?
+    @State private var isPageLoading: Bool = false
 
     let configuration: AppConfiguration.Type
     let api: Api
     let onLoginSuccess: (AuthorizationData) -> Void
-    let delegateObject: LoginWebViewDelegate
 
     init(configuration: AppConfiguration.Type, onLoginSuccess: @escaping (AuthorizationData) -> Void) {
         let api = Api(configuration: configuration.apiConfiguration, rsaService: .init())
         self.configuration = configuration
         self.api = api
         self.onLoginSuccess = onLoginSuccess
-        self.delegateObject = LoginWebViewDelegate(api: api, callback: nil)
     }
 
     var body: some View {
         VStack {
-            if showError && !errorMessage.isEmpty {
-                HStack {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(KiaDesign.Colors.error)
-
-                    Text(errorMessage)
-                        .font(KiaDesign.Typography.caption)
-                        .foregroundStyle(KiaDesign.Colors.error)
-
-                    Spacer()
-                }
-                .padding(.horizontal, KiaDesign.Spacing.large)
-                .padding(.top, KiaDesign.Spacing.small)
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            if isLoading {
+            if showError {
+                ContentUnavailableView("Unable to sign in", systemImage: "exclamationmark.triangle", description: Text(errorMessage))
+            } else if isLoading {
                 VStack(spacing: KiaDesign.Spacing.medium) {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: KiaDesign.Colors.primary))
@@ -108,18 +173,36 @@ struct WebLoginView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(KiaDesign.Colors.background)
-            } else {
-                LoginWebView(url: try? api.webLoginUrl(), navigationDelegate: delegateObject)
+            } else if let loginURL {
+                LoginWebView(
+                    url: loginURL,
+                    api: api,
+                    onAuthorization: { code, _, _ in finishLogin(code: code) },
+                    onFailure: { message in showError(message: message) },
+                    onLoadingChange: { isPageLoading = $0 }
+                )
                     .ignoresSafeArea()
+                    .overlay(alignment: .top) {
+                        if isPageLoading {
+                            ProgressView("Loading sign-in...")
+                                .padding()
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        }
+                    }
+            } else {
+                ProgressView("Preparing sign-in...")
             }
         }
         .onAppear {
-            self.delegateObject.callback = { code, _, success in
-                guard success else {
-                    showError(message: "Login failed. Please try again.")
+            guard loginURL == nil, !showError else { return }
+            do {
+                guard let url = try api.webLoginUrl() else {
+                    showError(message: "Unable to create the login page URL.")
                     return
                 }
-                self.finishLogin(code: code)
+                loginURL = url
+            } catch {
+                showError(message: "Unable to create the login page URL.")
             }
         }
     }

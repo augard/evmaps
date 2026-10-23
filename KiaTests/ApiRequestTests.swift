@@ -5,9 +5,9 @@ final class ApiRequestTests: XCTestCase {
     func testFormValuesRoundTripAndPreserveNavigationHeaders() throws {
         let form = ["email": "driver+ev&maps@example.com", "password": "a=b&c+ d%é", "key&=": "value"]
         let caller = RequestTestCaller(configuration: MockApiConfiguration(), urlSession: .shared, authorization: nil)
-        let request = try ApiRequestImpl(caller: caller, method: .post, endpoint: .loginSignin, queryItems: [],
+        let request = try ApiRequestImpl(caller: caller, method: .post, endpoint: KiaApiEndpoint.loginSignin, queryItems: [],
                                         headers: ["Origin": "https://example.com", "Referer": "https://example.com/login"],
-                                        form: form, timeout: 30).urlRequest
+                                        form: form, timeout: 30, authorization: false).urlRequest
         let encoded = String(decoding: request.httpBody!, as: UTF8.self)
         let pairs = encoded.split(separator: "&").map { pair -> (String, String) in
             let parts = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
@@ -28,8 +28,8 @@ final class ApiRequestTests: XCTestCase {
         let session = URLSession(configuration: sessionConfiguration)
         defer { session.invalidateAndCancel() }
         let caller = RequestTestCaller(configuration: MockApiConfiguration(), urlSession: session, authorization: nil)
-        let request = ApiRequestImpl(caller: caller, method: .get, endpoint: .loginCertificates,
-                                     queryItems: [], headers: [:], body: nil, timeout: 30)
+        let request = ApiRequestImpl(caller: caller, method: .get, endpoint: KiaApiEndpoint.loginCertificates,
+                                     queryItems: [], headers: [:], body: nil, timeout: 30, authorization: false)
         do {
             _ = try await request.httpResponse(acceptStatusCode: 200)
             XCTFail("HTTP 201 must not satisfy an expected HTTP 200 response")

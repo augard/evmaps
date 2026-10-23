@@ -24,7 +24,7 @@ enum MQTTConnectionStatus {
         case .error: return "Error"
         }
     }
-    
+
     var displayText: String {
         switch self {
         case .disconnected: return "Disconnected"
@@ -146,7 +146,7 @@ struct MQTTHostResponse: Decodable {
 
     struct HTTPInfo: Decodable {
         let name: String
-        let `protocol`: String  // Escaped Swift keyword
+        let `protocol`: String
         let host: String
         let port: Int
         let ssl: Bool
@@ -154,7 +154,7 @@ struct MQTTHostResponse: Decodable {
 
     struct MQTTInfo: Decodable {
         let name: String
-        let `protocol`: String  // Escaped Swift keyword
+        let `protocol`: String
         let host: String
         let port: Int
         let ssl: Bool

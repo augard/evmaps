@@ -9,6 +9,347 @@
 import Foundation
 import os.log
 
+typealias AuthorizationCallback = (code: String, state: String, loginSuccess: Bool)
+
+protocol VehicleApiProvider {
+    func webLoginUrl() throws -> URL?
+    /// Parses a web-login navigation. Returns nil when the URL is not this provider's OAuth callback.
+    func authorizationCallback(from url: URL) throws -> AuthorizationCallback?
+    func login(username: String, password: String, recaptchaToken: String?) async throws -> AuthorizationData
+    func login(authorizationCode: String) async throws -> AuthorizationData
+    func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData
+    func logout() async throws
+    func vehicles() async throws -> VehicleResponse
+    func refreshVehicle(_ vehicleId: UUID) async throws -> UUID
+    func vehicleCachedStatus(_ vehicleId: UUID) async throws -> VehicleStatusSnapshot
+    func profile() async throws -> String
+    func startClimate(_ vehicleId: UUID, options: ClimateControlOptions, pin: String) async throws -> UUID
+    func stopClimate(_ vehicleId: UUID) async throws -> UUID
+}
+
+enum VehicleApiProviderFactory {
+    static func provider(for api: Api) -> VehicleApiProvider {
+        switch api.configuration.apiProviderKind {
+        case .hmg:
+            HMGVehicleApiProvider(api: api)
+        case .porsche:
+            PorscheVehicleApiProvider(api: api)
+        }
+    }
+}
+
+final class HMGVehicleApiProvider: VehicleApiProvider {
+    private unowned let api: Api
+    private let authClient: HMGAuthClient
+    private let vehicleClient: HMGVehicleClient
+    private let kiaLogin: KiaOneAppAuthentication?
+
+    init(api: Api) {
+        self.api = api
+        authClient = api.hmgAuthClient
+        vehicleClient = HMGVehicleClient(provider: api.provider)
+        kiaLogin = api.configuration.key == "kia"
+            ? KiaOneAppAuthentication(configuration: api.configuration, rsaService: api.rsaService) : nil
+    }
+
+    func webLoginUrl() throws -> URL? {
+        if let kiaLogin { return try kiaLogin.authorizationURL() }
+        return try authClient.makeAuthorizeURL()
+    }
+    func authorizationCallback(from url: URL) throws -> AuthorizationCallback? {
+        if let kiaLogin {
+            guard kiaLogin.isCallback(url) else { return nil }
+            return (try kiaLogin.authorizationCode(from: url), kiaLogin.state, true)
+        }
+        return try authClient.authorizationCallback(from: url)
+    }
+    func login(username: String, password: String, recaptchaToken: String?) async throws -> AuthorizationData {
+        if let kiaLogin {
+            let authorization = try await kiaLogin.login(username: username, password: password)
+            api.authorization = authorization
+            return authorization
+        }
+        return try await authClient.authenticate(username: username, password: password, recaptchaToken: recaptchaToken)
+    }
+
+    func login(authorizationCode: String) async throws -> AuthorizationData {
+        if let kiaLogin {
+            let authorization = try await kiaLogin.login(authorizationCode: authorizationCode)
+            api.authorization = authorization
+            return authorization
+        }
+        return try await authClient.exchangeAuthorizationCode(authorizationCode)
+    }
+
+    func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData {
+        // CCI refresh requires its complete token set; never send its refresh token to legacy OAuth.
+        guard authorization.effectiveSource != .oneApp else { throw KiaLoginError.reauthenticationRequired }
+        return try await authClient.refreshAuthorization(authorization)
+    }
+
+    func logout() async throws { try await authClient.logout() }
+    func vehicles() async throws -> VehicleResponse { try await vehicleClient.vehicles() }
+    func refreshVehicle(_ vehicleId: UUID) async throws -> UUID { try await vehicleClient.refreshVehicle(vehicleId) }
+    func vehicleCachedStatus(_ vehicleId: UUID) async throws -> VehicleStatusSnapshot { try await vehicleClient.vehicleCachedStatus(vehicleId) }
+    func profile() async throws -> String { try await vehicleClient.profile() }
+    func startClimate(_ vehicleId: UUID, options: ClimateControlOptions, pin: String) async throws -> UUID {
+        try await vehicleClient.startClimate(vehicleId, options: options, pin: pin)
+    }
+
+    func stopClimate(_ vehicleId: UUID) async throws -> UUID {
+        try await vehicleClient.stopClimate(vehicleId)
+    }
+}
+
+final class PorscheVehicleApiProvider: VehicleApiProvider {
+    private unowned let api: Api
+    private let authClient: PorscheAuthClient
+    private let commandPollIntervalNanoseconds: UInt64
+    private let storeAuthorization: (AuthorizationData) -> Void
+    private var vinByVehicleID: [UUID: String] = [:]
+
+    init(
+        api: Api,
+        authClient: PorscheAuthClient? = nil,
+        commandPollIntervalNanoseconds: UInt64 = 1_000_000_000,
+        storeAuthorization: @escaping (AuthorizationData) -> Void = { Authorization.store(data: $0) }
+    ) {
+        self.api = api
+        self.commandPollIntervalNanoseconds = commandPollIntervalNanoseconds
+        self.storeAuthorization = storeAuthorization
+        if let authClient {
+            self.authClient = authClient
+        } else {
+            self.authClient = PorscheAuthClient(configuration: Self.configuration(for: api))
+        }
+    }
+
+    func webLoginUrl() throws -> URL? {
+        try authClient.makeAuthorizeURL()
+    }
+
+    func authorizationCallback(from url: URL) throws -> AuthorizationCallback? {
+        try authClient.authorizationCallback(from: url)
+    }
+
+    func login(username: String, password: String, recaptchaToken _: String?) async throws -> AuthorizationData {
+        let tokenSet = try await authClient.authenticate(username: username, password: password)
+        let authorization = authorizationData(from: tokenSet, existing: api.authorization)
+        api.authorization = authorization
+        return authorization
+    }
+
+    func login(authorizationCode: String) async throws -> AuthorizationData {
+        let tokenSet = try await authClient.exchangeAuthorizationCode(authorizationCode)
+        let authorization = authorizationData(from: tokenSet, existing: api.authorization)
+        api.authorization = authorization
+        return authorization
+    }
+
+    func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData {
+        let tokenSet = try await authClient.refreshToken(authorization.refreshToken)
+        return authorizationData(from: tokenSet, existing: authorization)
+    }
+
+    func logout() async throws {
+        api.authorization = nil
+        vinByVehicleID.removeAll()
+    }
+
+    func vehicles() async throws -> VehicleResponse {
+        let payload = try await authorizedJSONObject(endpoint: .vehicles)
+        guard let vehiclesPayload = payload as? [PorscheVehicleMapper.JSONObject] else {
+            throw PorscheApiError.decodingFailed("vehicle list payload")
+        }
+        let response = try PorscheVehicleMapper.mapVehicles(from: vehiclesPayload)
+        vinByVehicleID = Dictionary(uniqueKeysWithValues: response.vehicles.map { ($0.vehicleId, $0.vin) })
+        return response
+    }
+
+    func refreshVehicle(_ vehicleId: UUID) async throws -> UUID {
+        let vin = try await resolveVIN(for: vehicleId)
+        _ = try await authorizedJSONObject(
+            endpoint: .vehicle(vin),
+            queryItems: measurementQueryItems(wakeUp: true)
+        )
+        return vehicleId
+    }
+
+    func vehicleCachedStatus(_ vehicleId: UUID) async throws -> VehicleStatusSnapshot {
+        let vin = try await resolveVIN(for: vehicleId)
+        let payload = try await authorizedJSONObject(
+            endpoint: .vehicle(vin),
+            queryItems: measurementQueryItems(wakeUp: false)
+        )
+        guard let statusPayload = payload as? PorscheVehicleMapper.JSONObject else {
+            throw PorscheApiError.decodingFailed("vehicle status payload")
+        }
+        return try PorscheVehicleMapper.mapVehicleState(from: statusPayload)
+    }
+
+    func profile() async throws -> String {
+        let payload = try await authorizedJSONObject(endpoint: .profile)
+        let data = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    func startClimate(_ vehicleId: UUID, options: ClimateControlOptions, pin _: String) async throws -> UUID {
+        guard options.isValid else {
+            if !options.isTemperatureValid {
+                throw ClimateControlError.invalidTemperature(options.temperature)
+            }
+            if !options.areSeatLevelsValid {
+                throw ClimateControlError.invalidSeatLevel(-1)
+            }
+            throw ClimateControlError.invalidDuration(options.duration)
+        }
+        let vin = try await resolveVIN(for: vehicleId)
+        return try await sendCommand(.climateOn(vin: vin, temperatureC: Double(options.temperature)))
+    }
+
+    func stopClimate(_ vehicleId: UUID) async throws -> UUID {
+        let vin = try await resolveVIN(for: vehicleId)
+        return try await sendCommand(.climateOff(vin: vin))
+    }
+
+    private static func configuration(for api: Api) -> PorscheApiConfiguration {
+        guard let configuration = api.configuration as? PorscheApiConfiguration else {
+            fatalError("Porsche provider requires PorscheApiConfiguration")
+        }
+        return configuration
+    }
+
+    private var configuration: PorscheApiConfiguration {
+        Self.configuration(for: api)
+    }
+
+    private func authorizationData(from tokenSet: PorscheTokenSet, existing: AuthorizationData?) -> AuthorizationData {
+        AuthorizationData(
+            stamp: existing?.stamp ?? "porsche",
+            deviceId: existing?.deviceId ?? UUID(),
+            accessToken: tokenSet.accessToken,
+            expiresIn: tokenSet.expiresIn,
+            refreshToken: tokenSet.refreshToken,
+            isCcuCCS2Supported: true,
+            providerKind: "porsche",
+            tokenIssuer: configuration.loginHost,
+            tokenAudience: configuration.audience,
+            tokenScope: tokenSet.scope ?? configuration.scope,
+            source: existing?.source
+        )
+    }
+
+    private func resolveVIN(for vehicleId: UUID) async throws -> String {
+        if let vin = vinByVehicleID[vehicleId] {
+            return vin
+        }
+        let vehicles = try await self.vehicles()
+        guard let vehicle = vehicles.vehicles.first(where: { $0.vehicleId == vehicleId }) else {
+            throw PorscheApiError.missingVehicle(vehicleId.uuidString)
+        }
+        return vehicle.vin
+    }
+
+    private func measurementQueryItems(wakeUp: Bool) -> [URLQueryItem] {
+        var items = PorscheMeasurementCatalog.overview.map { URLQueryItem(name: "mf", value: $0) }
+        if wakeUp {
+            items.append(URLQueryItem(name: "wakeUpJob", value: UUID().uuidString))
+        }
+        return items
+    }
+
+    private func authorizedJSONObject(
+        endpoint: PorscheApiEndpoint,
+        method: ApiMethod = .get,
+        queryItems: [URLQueryItem] = [],
+        body: Data? = nil,
+        retryOnUnauthorized: Bool = true
+    ) async throws -> Any {
+        guard let authorization = api.authorization else {
+            throw ApiError.unauthorized
+        }
+
+        do {
+            let responseData = try await api.provider.request(
+                with: method,
+                endpoint: endpoint,
+                queryItems: queryItems,
+                body: body
+            ).rawData(acceptStatusCodes: [200, 202])
+
+            if responseData.isEmpty {
+                return [:]
+            }
+            return try JSONSerialization.jsonObject(with: responseData)
+        } catch ApiError.unauthorized {
+            guard retryOnUnauthorized else {
+                throw ApiError.unauthorized
+            }
+            let refreshedTokens = try await authClient.refreshToken(authorization.refreshToken)
+            let refreshedAuthorization = authorizationData(from: refreshedTokens, existing: authorization)
+            api.authorization = refreshedAuthorization
+            storeAuthorization(refreshedAuthorization)
+            return try await authorizedJSONObject(
+                endpoint: endpoint,
+                method: method,
+                queryItems: queryItems,
+                body: body,
+                retryOnUnauthorized: false
+            )
+        }
+    }
+
+    private func sendCommand(_ request: PorscheCommandRequest) async throws -> UUID {
+        let payload = try await authorizedJSONObject(
+            endpoint: .commands(request.vin),
+            method: .post,
+            body: PorscheVehicleMapper.commandBody(for: request)
+        )
+
+        guard let json = payload as? PorscheVehicleMapper.JSONObject,
+              let status = json["status"] as? PorscheVehicleMapper.JSONObject,
+              let identifier = status["id"] as? String,
+              let requestID = UUID(uuidString: identifier)
+        else {
+            throw PorscheApiError.missingCommandRequestId
+        }
+
+        let resultString = (status["result"] as? String) ?? "UNKNOWN"
+        switch PorscheCommandExecutionState(rawValue: resultString) ?? .unknown {
+        case .performed:
+            break
+        case .error:
+            throw PorscheApiError.commandFailed(resultString)
+        case .accepted, .unknown:
+            try await pollCommand(vin: request.vin, requestID: requestID)
+        }
+        return requestID
+    }
+
+    private func pollCommand(vin: String, requestID: UUID) async throws {
+        for _ in 0..<10 {
+            if commandPollIntervalNanoseconds > 0 {
+                try await Task.sleep(nanoseconds: commandPollIntervalNanoseconds)
+            }
+            let payload = try await authorizedJSONObject(endpoint: .commandStatus(vin: vin, requestId: requestID.uuidString))
+            guard let json = payload as? PorscheVehicleMapper.JSONObject else {
+                continue
+            }
+            let resultString = ((json["status"] as? PorscheVehicleMapper.JSONObject)?["result"] as? String) ?? "UNKNOWN"
+            switch PorscheCommandExecutionState(rawValue: resultString) ?? .unknown {
+            case .performed:
+                return
+            case .error:
+                throw PorscheApiError.commandFailed(resultString)
+            case .accepted, .unknown:
+                continue
+            }
+        }
+        throw PorscheApiError.commandFailed("timeout")
+    }
+
+}
+
 /**
  * Api - Main interface for Kia/Hyundai/Genesis vehicle API communication
  * 
@@ -58,8 +399,9 @@ class Api {
     
     /// Provider that handles actual API request execution and token management
     let provider: ApiRequestProvider
-
-    lazy var kiaLogin = KiaOneAppAuthentication(configuration: configuration, rsaService: rsaService)
+    private lazy var vehicleApiProvider: VehicleApiProvider = VehicleApiProviderFactory.provider(for: self)
+    fileprivate lazy var hmgAuthClient = HMGAuthClient(configuration: configuration, provider: provider, rsaService: rsaService)
+    private lazy var hmgMQTTClient = HMGMQTTClient(configuration: configuration, provider: provider)
 
     init(configuration: ApiConfiguration, rsaService: RSAEncryptionService) {
         self.configuration = configuration
@@ -74,22 +416,7 @@ class Api {
     }
 
     func webLoginUrl() throws -> URL? {
-        if configuration.key == "kia" {
-            return try kiaLogin.authorizationURL()
-        }
-        let queryItems = [
-            URLQueryItem(name: "client_id", value: configuration.serviceId),
-            URLQueryItem(name: "redirect_uri", value: "https://prd.eu-ccapi.kia.com:8080/api/v1/user/oauth2/redirect"),
-            URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "lang", value: "en"),
-            URLQueryItem(name: "state", value: "ccsp"),
-        ]
-
-        return try provider.request(
-            endpoint: .oauth2UserAuthorize,
-            queryItems: queryItems,
-            headers: commonNavigationHeaders()
-        ).urlRequest.url
+        try vehicleApiProvider.webLoginUrl()
     }
 
     /// Authenticate user and establish session with vehicle API using RSA-encrypted authentication
@@ -100,112 +427,39 @@ class Api {
     /// - Returns: Complete authorization data including tokens and device ID
     /// - Throws: Authentication errors, network errors, or validation failures
     func login(username: String, password: String, recaptchaToken: String? = nil) async throws -> AuthorizationData {
-        if configuration.key == "kia" {
-            let authorization = try await kiaLogin.login(username: username, password: password)
-            provider.authorization = authorization
-            return authorization
-        }
-        cleanCookies()
-        // Step 0: Get connector authorization (handles 302 redirect to get next_uri)
-        let referer: String
-        do {
-            referer = try await fetchConnectorAuthorization()
-            logInfo("Retrieved referer: \(referer)", category: .api)
-        } catch {
-            logError("Client connector authorization failed: \(error.localizedDescription)", category: .api)
-            throw AuthenticationError.clientConfigurationFailed
-        }
-
-        // Step 1: Get client configuration
-        let clientConfig = try await fetchClientConfiguration(referer: referer)
-        logInfo("Client configured for: \(clientConfig.clientName)", category: .api)
-        
-        // Step 2: Check if password encryption is enabled
-        let encryptionSettings = try await fetchPasswordEncryptionSettings(referer: referer)
-        guard encryptionSettings.useEnabled && encryptionSettings.value1 == "true" else {
-            throw AuthenticationError.encryptionSettingsFailed
-        }
-        
-        // Step 3: Get RSA certificate for password encryption
-        let rsaKey: RSAEncryptionService.RSAKeyData
-        do {
-            rsaKey = try await fetchRSACertificate(referer: referer)
-        } catch {
-            logError("Fetch RSA Certificate failed: \(error.localizedDescription)", category: .api)
-            throw AuthenticationError.certificateRetrievalFailed
-        }
-        // Step 4: Initialize OAuth2 flow
-        let csrfToken = try await initializeOAuth2(referer: referer)
-
-        // Step 5: Sign in with encrypted password
-        let authorizationCode = try await signIn(
-            referer: referer,
-            username: username,
-            password: password,
-            rsaKey: rsaKey,
-            csrfToken: csrfToken,
-            recaptchaToken: recaptchaToken
-        )
-
-        // Step 6: Exchange authorization code for tokens
-        return try await login(authorizationCode: authorizationCode)
+        try await vehicleApiProvider.login(username: username, password: password, recaptchaToken: recaptchaToken)
     }
 
     func login(authorizationCode: String) async throws -> AuthorizationData {
-        if configuration.key == "kia" {
-            let authorization = try await kiaLogin.login(authorizationCode: authorizationCode)
-            provider.authorization = authorization
-            return authorization
-        }
-        // Step 6: Exchange authorization code for tokens
-        let tokenResponse: TokenResponse
-        do {
-            tokenResponse = try await exchangeCodeForTokens(authorizationCode: authorizationCode)
-        } catch {
-            logError("Exchange code for token failed: \(error.localizedDescription)", category: .api)
-            throw AuthenticationError.tokenExchangeFailed
-        }
+        try await vehicleApiProvider.login(authorizationCode: authorizationCode)
+    }
 
-        // Generate device ID and stamp for compatibility
-        let stamp = AuthorizationData.generateStamp(for: configuration)
-        let deviceId = try await deviceId(stamp: stamp)
+    /// Exchange the stored refresh token for a new access token
+    /// - Parameter authorization: Current authorization containing the refresh token
+    /// - Returns: Authorization data with refreshed tokens; device ID and stamp are preserved
+    func refreshAuthorization(_ authorization: AuthorizationData) async throws -> AuthorizationData {
+        try await vehicleApiProvider.refreshAuthorization(authorization)
+    }
 
-        // Convert to existing AuthorizationData format
-        let authorizationData = AuthorizationData(
-            stamp: stamp,
-            deviceId: deviceId,
-            accessToken: tokenResponse.accessToken,
-            expiresIn: tokenResponse.expiresIn,
-            refreshToken: tokenResponse.refreshToken,
-            isCcuCCS2Supported: true
-        )
+    func extractAuthorizationCode(from location: URL) throws -> (code: String, state: String, loginSuccess: Bool) {
+        try hmgAuthClient.extractAuthorizationCode(from: location)
+    }
 
-        provider.authorization = authorizationData
-        try await notificationRegister(deviceId: deviceId)
-        return authorizationData
+    func authorizationCallback(from url: URL) throws -> AuthorizationCallback? {
+        try vehicleApiProvider.authorizationCallback(from: url)
     }
 
     /// Logout user and clean up session data
     /// - Throws: Network errors (non-critical - cleanup continues regardless)
     func logout() async throws {
-        do {
-            try await provider.request(with: .post, endpoint: .logout).empty()
-            logInfo("Successfully logout", category: .auth)
-        } catch {
-            logError("Failed to logout: \(error.localizedDescription)", category: .auth)
-        }
-        provider.authorization = nil
-        cleanCookies()
+        try await vehicleApiProvider.logout()
     }
 
     /// Retrieve list of vehicles associated with the user account
     /// - Returns: Complete vehicle response containing all registered vehicles
     /// - Throws: Network errors or authentication failures
     func vehicles() async throws -> VehicleResponse {
-        guard authorization != nil else {
-            throw ApiError.unauthorized
-        }
-        return try await provider.request(endpoint: .vehicles).response()
+        try await vehicleApiProvider.vehicles()
     }
 
     /// Request fresh vehicle status update from the vehicle
@@ -214,11 +468,7 @@ class Api {
     /// - Note: Uses CCS2 endpoint if supported, fallback to standard endpoint
     /// - Throws: Network errors or vehicle communication failures
     func refreshVehicle(_ vehicleId: UUID) async throws -> UUID {
-        guard let authorization = authorization else {
-            throw ApiError.unauthorized
-        }
-        let endpoint: ApiEndpoint = authorization.isCcuCCS2Supported == true ? .refreshCCS2Vehicle(vehicleId) : .refreshVehicle(vehicleId)
-        return try await provider.request(endpoint: endpoint).responseEmpty().resultId
+        try await vehicleApiProvider.refreshVehicle(vehicleId)
     }
 
     /// Retrieve cached vehicle status (last known state)
@@ -226,22 +476,15 @@ class Api {
     /// - Returns: Complete vehicle status including battery, location, and system states
     /// - Note: Uses CCS2 endpoint if supported, fallback to standard endpoint
     /// - Throws: Network errors or data parsing failures
-    func vehicleCachedStatus(_ vehicleId: UUID) async throws -> VehicleStateResponse {
-        guard let authorization = authorization else {
-            throw ApiError.unauthorized
-        }
-        let endpoint: ApiEndpoint = authorization.isCcuCCS2Supported == true ? .vehicleCachedCCS2Status(vehicleId) : .vehicleCachedStatus(vehicleId)
-        return try await provider.request(endpoint: endpoint).response()
+    func vehicleCachedStatus(_ vehicleId: UUID) async throws -> VehicleStatusSnapshot {
+        try await vehicleApiProvider.vehicleCachedStatus(vehicleId)
     }
 
     /// Retrieve user profile information
     /// - Returns: User profile data as JSON string
     /// - Throws: Network errors or authentication failures
     func profile() async throws -> String {
-        guard authorization != nil else {
-            throw ApiError.unauthorized
-        }
-        return try await provider.request(endpoint: .userProfile).string()
+        try await vehicleApiProvider.profile()
     }
     
     // MARK: - Climate Control
@@ -253,49 +496,14 @@ class Api {
     ///   - pin: Vehicle PIN (required for climate control)
     /// - Returns: Operation result ID for tracking
     func startClimate(_ vehicleId: UUID, options: ClimateControlOptions, pin: String) async throws -> UUID {
-        guard authorization?.accessToken != nil else {
-            throw ApiError.unauthorized
-        }
-        guard !pin.isEmpty else {
-            throw ClimateControlError.missingPin
-        }
-        
-        guard options.isValid else {
-            if !options.isTemperatureValid {
-                throw ClimateControlError.invalidTemperature(options.temperature)
-            }
-            if !options.areSeatLevelsValid {
-                let invalidLevel = [options.driverSeatLevel, options.passengerSeatLevel, 
-                                 options.rearLeftSeatLevel, options.rearRightSeatLevel]
-                    .first { $0 < 0 || $0 > 3 } ?? -1
-                throw ClimateControlError.invalidSeatLevel(invalidLevel)
-            }
-            if !options.isDurationValid {
-                throw ClimateControlError.invalidDuration(options.duration)
-            }
-            throw ClimateControlError.vehicleNotReady
-        }
-
-        let request = options.toClimateControlRequest(pin: pin)
-        
-        return try await provider.request(
-            with: .post,
-            endpoint: .startClimate(vehicleId),
-            encodable: request
-        ).responseEmpty().resultId
+        try await vehicleApiProvider.startClimate(vehicleId, options: options, pin: pin)
     }
     
     /// Stop climate control
     /// - Parameter vehicleId: The vehicle ID
     /// - Returns: Operation result ID for tracking
     func stopClimate(_ vehicleId: UUID) async throws -> UUID {
-        guard authorization?.accessToken != nil else {
-            throw ApiError.unauthorized
-        }
-        return try await provider.request(
-            with: .post,
-            endpoint: .stopClimate(vehicleId)
-        ).responseEmpty().resultId
+        try await vehicleApiProvider.stopClimate(vehicleId)
     }
 }
 
@@ -307,16 +515,7 @@ extension Api {
      * GET /api/v3/servicehub/device/host
      */
     func fetchMQTTDeviceHost() async throws -> MQTTHostInfo {
-        guard authorization?.accessToken != nil else {
-            throw ApiError.unauthorized
-        }
-
-        let response: MQTTHostResponse = try await provider.request(endpoint: .mqttDeviceHost).data()
-        return MQTTHostInfo(
-            host: response.mqtt.host,
-            port: response.mqtt.port,
-            ssl: response.mqtt.ssl
-        )
+        try await hmgMQTTClient.fetchDeviceHost()
     }
 
     /**
@@ -324,19 +523,7 @@ extension Api {
      * POST /api/v3/servicehub/device/register
      */
     func registerMQTTDevice() async throws -> MQTTDeviceInfo {
-        guard authorization?.accessToken != nil else {
-            throw ApiError.unauthorized
-        }
-
-        let deviceUUID = "\(UUID().uuidString)_UVO"
-        let request = DeviceRegisterRequest(unit: "mobile", uuid: deviceUUID)
-        let response: DeviceRegisterResponse = try await provider.request(endpoint: .mqttRegisterDevice, encodable: request).data()
-
-        return MQTTDeviceInfo(
-            clientId: response.clientId,
-            deviceId: response.deviceId,
-            uuid: deviceUUID
-        )
+        try await hmgMQTTClient.registerDevice()
     }
 
     /**
@@ -344,22 +531,7 @@ extension Api {
      * GET /api/v3/servicehub/vehicles/metadatalist?carId=<carId>&brand=K
      */
     func fetchMQTTVehicleMetadata(for vehicleId: UUID, clientId: String) async throws -> [MQTTVehicleMetadata] {
-        guard authorization?.accessToken != nil else {
-            throw ApiError.unauthorized
-        }
-
-        let response: VehicleMetadataResponse = try await provider.request(
-            endpoint: .mqttVehicleMetadata,
-            queryItems: [
-                URLQueryItem(name: "carId", value: vehicleId.uuidString),
-                URLQueryItem(name: "brand", value: configuration.brandCode)
-            ],
-            headers: [
-                "client-id": clientId
-            ]
-        ).data()
-
-        return response.vehicles
+        try await hmgMQTTClient.fetchVehicleMetadata(for: vehicleId, clientId: clientId)
     }
 
     /**
@@ -367,25 +539,12 @@ extension Api {
      * POST /api/v3/servicehub/device/protocol
      */
     func subscribeMQTTVehicleProtocols(for vehicleId: UUID, clientId: String, protocolId: any MQTTProtocol, protocols: [any MQTTProtocol]) async throws {
-        guard authorization?.accessToken != nil else {
-            throw ApiError.unauthorized
-        }
-
-        // Subscribe to CCU (Car Control Unit) real-time updates
-        let request = ProtocolSubscriptionRequest(
-            protocols: protocols,
+        try await hmgMQTTClient.subscribeVehicleProtocols(
+            for: vehicleId,
+            clientId: clientId,
             protocolId: protocolId,
-            carId: vehicleId,
-            brand: configuration.brandCode
+            protocols: protocols
         )
-
-        try await provider.request(
-            endpoint: .mqttDeviceProtocol,
-            headers: [
-                "client-id": clientId
-            ],
-            encodable: request
-        ).empty()
     }
 
     /**
@@ -393,19 +552,6 @@ extension Api {
      * GET /api/v3/vstatus/connstate?clientId=<clientId>
      */
     func checkMQTTConnectionState(clientId: String) async throws -> ConnectionStateResponse {
-        guard authorization?.accessToken != nil else {
-            throw ApiError.unauthorized
-        }
-
-        return try await provider.request(
-            endpoint: .mqttConnectionState,
-            queryItems: [
-                URLQueryItem(name: "clientId", value: clientId),
-            ],
-            headers: [
-                "client-id": clientId
-            ]
-        ).data()
+        try await hmgMQTTClient.checkConnectionState(clientId: clientId)
     }
 }
-

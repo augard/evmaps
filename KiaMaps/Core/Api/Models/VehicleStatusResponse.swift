@@ -121,6 +121,10 @@ struct VehicleMQTTLocationResponse: Codable {
         }
     }
 
+    enum CodingKeys: String, CodingKey {
+        case lastUpdateTime = "latestUpdateTime"
+        case state
+    }
 }
 
 // MARK: - VehicleState
