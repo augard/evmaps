@@ -319,4 +319,3 @@ extension ApiRequest {
         try await referalUrl(acceptStatusCodes: [acceptStatusCode])
     }
 }
-

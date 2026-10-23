@@ -40,7 +40,7 @@ class ApiRequestProvider: NSObject {
     var caller: ApiCaller {
         callerType.init(configuration: configuration, urlSession: urlSession, authorization: authorization)
     }
-    
+
     /// API configuration for endpoints and settings
     let configuration: ApiConfiguration
     /// Type of caller to create (for dependency injection)
