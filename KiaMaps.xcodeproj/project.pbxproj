@@ -85,10 +85,13 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Api/Api.swift,
+				"Api/Api+Authentication.swift",
 				Api/ApiConfiguration.swift,
 				Api/ApiEndpoints.swift,
 				Api/ApiRequest.swift,
+				Api/ApiRequestProvider.swift,
 				Api/ApiResponse.swift,
+				Api/KiaOneAppAuthentication.swift,
 				Api/Helpers/BoolPropertyWrapper.swift,
 				Api/Helpers/DatePropertyWrapper.swift,
 				Api/Models/AuthenticationModels.swift,

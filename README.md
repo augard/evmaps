@@ -2,6 +2,9 @@
 
 This application is adding support for your EV to Apple Maps. Currently it's working just for cars from Europe.
 
+Kia EU login uses the OneApp authentication flow. See [Kia login](docs/kia-login.md)
+for protocol details and verification steps.
+
 ## Building with Xcode and Manual Provisioning Profile (Porsche Configuration)
 
 ### Prerequisites

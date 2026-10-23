@@ -222,7 +222,7 @@ struct CredentialsLoginView: View {
         } catch {
             await MainActor.run {
                 isLoading = false
-                errorMessage = "An unexpected error occurred. Please try again."
+                errorMessage = error.localizedDescription
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showError = true
                 }

@@ -14,6 +14,10 @@ struct LoginWebView: UIViewRepresentable {
     let navigationDelegate: WKNavigationDelegate
 
     func makeUIView(context: Context) -> WKWebView {
+        Self.makeWebView(navigationDelegate: navigationDelegate)
+    }
+
+    static func makeWebView(navigationDelegate: WKNavigationDelegate) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         configuration.applicationNameForUserAgent = "15E148_CCS_APP_iOS"
@@ -24,7 +28,7 @@ struct LoginWebView: UIViewRepresentable {
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        guard let url = url else { return }
+        guard let url = url, webView.url == nil else { return }
         let request = URLRequest(url: url)
         webView.load(request)
     }
@@ -42,8 +46,11 @@ class LoginWebViewDelegate: NSObject, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
-        if let url = navigationAction.request.url, url.path == "/api/v1/user/oauth2/redirect" {
-            guard let extract = try? api.extractAuthorizationCode(from: url) else { return .cancel }
+        if let url = navigationAction.request.url, api.isLoginCallback(url) {
+            guard let extract = try? api.extractAuthorizationCode(from: url) else {
+                callback?("", "", false)
+                return .cancel
+            }
             callback?(extract.code, extract.state, extract.loginSuccess)
             return .cancel
         } else {
@@ -140,7 +147,7 @@ struct WebLoginView: View {
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    showError(message: "An unexpected error occurred. Please try again.")
+                    showError(message: error.localizedDescription)
                 }
             }
         }
